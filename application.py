@@ -1,5 +1,4 @@
-# Python 3.9.13
-
+#!/usr/bin/env python
 from flask import Flask
 
 # print a nice greeting.
