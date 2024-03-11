@@ -1,31 +1,31 @@
 #!/usr/bin/env python
-from flask import Flask
-
-# print a nice greeting.
-def say_hello(username = "World"):
-    return '<p>Hello %s!</p>\n' % username
-
-# some bits of text for the page.
-header_text = '''
-    <html>\n<head> <title>EB Flask Test</title> </head>\n<body>'''
-instructions = '''
-    <p><em>Hint</em>: This is a RESTful web service! Append a username
-    to the URL (for example: <code>/Thelonious</code>) to say hello to
-    someone specific.</p>\n'''
-home_link = '<p><a href="/">Back</a></p>\n'
-footer_text = '</body>\n</html>'
+from flask import Flask, request, jsonify
 
 # EB looks for an 'application' callable by default.
 application = Flask(__name__)
 
 # add a rule for the index page.
-application.add_url_rule('/', 'index', (lambda: header_text +
-    say_hello() + instructions + footer_text))
+application.add_url_rule('/', 'index', (lambda: "<title>OneNode Brain</title><body>Access the API at /api/v1</body>"))
 
-# add a rule when the page is accessed with a name appended to the site
-# URL.
-application.add_url_rule('/<username>', 'hello', (lambda username:
-    header_text + say_hello(username) + home_link + footer_text))
+@application.route('/api/v1/query', methods=['POST'])
+def query():
+    # Parse JSON from the incoming request
+    data = request.json
+
+    # Check if "message" is in the data
+    if not data or 'message' not in data:
+        return jsonify({'error': 'Missing "message" in request'}), 400
+
+    # Extract the message from the request data
+    message = data['message']
+
+    # Create a response dictionary
+    response = {
+        'message': f"Yes, you like {message.split(' ')[-1]}"
+    }
+
+    # Return the response as JSON
+    return jsonify(response)
 
 # run the app.
 if __name__ == "__main__":
