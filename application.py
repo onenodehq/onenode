@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from flask import Flask, request, jsonify
 import os
 from llama_index.core import (
@@ -31,13 +31,13 @@ def initialize_index():
         diff_ms = (endtime - starttime).total_seconds() * 1000
         print(f"[END] Done creating Vector Database, it took {diff_ms} ms")
 
-# EB looks for an 'app' callable by default.
-app = Flask(__name__)
+# EB looks for an 'application' callable by default.
+application = Flask(__name__)
 
 # add a rule for the index page.
-app.add_url_rule('/', 'index', (lambda: "<title>OneNode Brain</title><body>Access the API at /api/v1</body>"))
+application.add_url_rule('/', 'index', (lambda: "<title>OneNode Brain</title><body>Access the API at /api/v1</body>"))
 
-@app.route('/api/v1/query', methods=['POST'])
+@application.route('/api/v1/query', methods=['POST'])
 def query():
     # Parse JSON from the incoming request
     data = request.json
@@ -58,7 +58,7 @@ def query():
     return jsonify(response)
 
 
-@app.route("/api/v1/example", methods=["GET"])
+@application.route("/api/v1/example", methods=["GET"])
 def query_index():
     global index
     query_text = request.args.get("text", None)
@@ -71,13 +71,13 @@ def query_index():
     response = query_engine.query(query_text)
     return str(response), 200
 
-# run the app.
+# run the application.
 if __name__ == "__main__":
     if os.environ.get("FLASK_RUN_FROM_RELOADER") == "true":
         initialize_index()
     else:
         os.environ["FLASK_RUN_FROM_RELOADER"] = "true"
     # Setting debug to True enables debug output. This line should be
-    # removed before deploying a production app.
-    app.debug = True
-    app.run()
+    # removed before deploying a production application.
+    application.debug = True
+    application.run()
