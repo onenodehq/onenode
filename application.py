@@ -1,66 +1,44 @@
-#!/usr/bin/env python3
-from flask import Flask, request, jsonify
+# Import external libraries
 import os
-from llama_index.core import (
-        SimpleDirectoryReader,
-        VectorStoreIndex,
-        StorageContext,
-        load_index_from_storage,
-)
+from flask import Flask, request
 from dotenv import load_dotenv
-from datetime import datetime
+from llama_index.core import (
+    SimpleDirectoryReader,
+    VectorStoreIndex,
+    StorageContext,
+    load_index_from_storage,
+)
 
+# Load environment variables
 load_dotenv()
 
-index = None
+# Flask application configuration
+application = Flask(__name__)
+
+# Home route
+@application.route("/")
+def home():
+    return "Hello World!"
 
 def initialize_index():
     global index
-    storage_context = StorageContext.from_defaults()
-    if os.path.exists("./storage"):
+    storage_context = StorageContext.from_defaults(persist_dir=index_dir)
+    if os.path.exists(index_dir):
         index = load_index_from_storage(storage_context)
     else:
-        print("[START] Creating Vector Database")
-        starttime = datetime.now()
         documents = SimpleDirectoryReader("./documents").load_data()
         index = VectorStoreIndex.from_documents(
-                documents, storage_context=storage_context
+            documents, storage_context=storage_context
         )
-        storage_context.persist()
-        endtime = datetime.now()
-        diff_ms = (endtime - starttime).total_seconds() * 1000
-        print(f"[END] Done creating Vector Database, it took {diff_ms} ms")
+        storage_context.persist(index_dir)
 
-# EB looks for an 'application' callable by default.
-application = Flask(__name__)
-
-# add a rule for the index page.
-application.add_url_rule('/', 'index', (lambda: "<title>OneNode Brain</title><body>Access the API at /api/v1</body>"))
-
-@application.route('/api/v1/query', methods=['POST'])
-def query():
-    # Parse JSON from the incoming request
-    data = request.json
-
-    # Check if "message" is in the data
-    if not data or 'message' not in data:
-        return jsonify({'error': 'Missing "message" in request'}), 400
-
-    # Extract the message from the request data
-    message = data['message']
-
-    # Create a response dictionary
-    response = {
-        'message': f"Yes, you like {message.split(' ')[-1]}"
-    }
-
-    # Return the response as JSON
-    return jsonify(response)
-
-
-@application.route("/api/v1/example", methods=["GET"])
+        # Query route
+@application.route("/query", methods=["GET"])
 def query_index():
     global index
+    if index is None:
+        # This should not happen after moving initialize_index, but added as a precaution
+        return "Index not initialized", 500
     query_text = request.args.get("text", None)
     if query_text is None:
         return (
@@ -71,13 +49,14 @@ def query_index():
     response = query_engine.query(query_text)
     return str(response), 200
 
-# run the application.
+# Index initialization
+index = None
+index_dir = os.path.join(os.path.dirname(__file__), "index")
+
+# Call initialize_index directly (outside of the if __name__ == "__main__": block)
+initialize_index()
+
+# Main execution
 if __name__ == "__main__":
-    if os.environ.get("FLASK_RUN_FROM_RELOADER") == "true":
-        initialize_index()
-    else:
-        os.environ["FLASK_RUN_FROM_RELOADER"] = "true"
-    # Setting debug to True enables debug output. This line should be
-    # removed before deploying a production application.
-    application.debug = True
-    application.run()
+    initialize_index()
+    application.run(host="0.0.0.0", port=5601)
