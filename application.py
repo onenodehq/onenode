@@ -8,6 +8,7 @@ from llama_index.core import (
     StorageContext,
     load_index_from_storage,
 )
+from blueprints.test.view import test
 
 # Load environment variables
 load_dotenv()
