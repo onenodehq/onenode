@@ -16,6 +16,9 @@ load_dotenv()
 # Flask application configuration
 application = Flask(__name__)
 
+# Register the Blueprint
+application.register_blueprint(test)
+
 # Home route
 @application.route("/")
 def home():
