@@ -9,6 +9,7 @@ from llama_index.core import (
     load_index_from_storage,
 )
 from blueprints.test.view import test
+from blueprints.v1.view import v1
 
 # Load environment variables
 load_dotenv()
@@ -18,6 +19,7 @@ application = Flask(__name__)
 
 # Register the Blueprint
 application.register_blueprint(test)
+application.register_blueprint(v1)
 
 # Home route
 @application.route("/")
@@ -25,13 +27,12 @@ def home():
     return "Hello World!"
 
 def initialize_index():
-    global index
     storage_context = StorageContext.from_defaults(persist_dir=index_dir)
     if os.path.exists(index_dir):
-        index = load_index_from_storage(storage_context)
+        application.config["INDEX"] = load_index_from_storage(storage_context)
     else:
         documents = SimpleDirectoryReader("./documents").load_data()
-        index = VectorStoreIndex.from_documents(
+        application.config["INDEX"] = VectorStoreIndex.from_documents(
             documents, storage_context=storage_context
         )
         storage_context.persist(index_dir)
@@ -39,8 +40,7 @@ def initialize_index():
         # Query route
 @application.route("/query", methods=["GET"])
 def query_index():
-    global index
-    if index is None:
+    if application.config["INDEX"] is None:
         # This should not happen after moving initialize_index, but added as a precaution
         return "Index not initialized", 500
     query_text = request.args.get("text", None)
@@ -49,12 +49,12 @@ def query_index():
             "No text found, please include a ?text=blah parameter in the URL",
             400,
         )
-    query_engine = index.as_query_engine()
+    query_engine = application.config["INDEX"].as_query_engine()
     response = query_engine.query(query_text)
     return str(response), 200
 
 # Index initialization
-index = None
+application.config["INDEX"] = None
 index_dir = os.path.join(os.path.dirname(__file__), "index")
 
 # Call initialize_index directly (outside of the if __name__ == "__main__": block)
