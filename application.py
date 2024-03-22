@@ -57,10 +57,9 @@ def query_index():
 application.config["INDEX"] = None
 index_dir = os.path.join(os.path.dirname(__file__), "index")
 
-# Call initialize_index directly (outside of the if __name__ == "__main__": block)
 initialize_index()
 
-# Main execution
+# Only for development environment
 if __name__ == "__main__":
     initialize_index()
-    application.run(host="0.0.0.0", port=5601)
+    application.run()
