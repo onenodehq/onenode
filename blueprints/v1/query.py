@@ -1,6 +1,9 @@
 import chromadb
+import os
 from flask import Blueprint, request, jsonify
 from config import get_db_path
+import chromadb.utils.embedding_functions as embedding_functions
+
 
 v1_blueprint_query = Blueprint("query", __name__, url_prefix="/v1/query")
 
@@ -18,7 +21,11 @@ def query_posts():
 
     db_path = get_db_path()
     client = chromadb.PersistentClient(path=db_path)
-    collection = client.get_or_create_collection("post_collection")
+    openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+        api_key=os.environ.get("OPENAI_API_KEY"),
+        model_name="text-embedding-ada-002",
+    )
+    collection = client.get_or_create_collection("post_collection", embedding_function=openai_ef)
 
     try:
         if is_public == "true":
