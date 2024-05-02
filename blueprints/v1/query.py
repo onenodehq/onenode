@@ -1,48 +1,82 @@
+from flask import Blueprint, request, jsonify, Response, stream_with_context
+import json
+from langchain_chroma import Chroma
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import chromadb
 import os
-from flask import Blueprint, request, jsonify
+import chromadb.errors
 from config import get_db_path
-import chromadb.utils.embedding_functions as embedding_functions
-
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+import asyncio
 
 v1_blueprint_query = Blueprint("query", __name__, url_prefix="/v1/query")
 
 
-@v1_blueprint_query.route("/", methods=["GET"])  # Adjust '/your_endpoint' as needed
-def query_posts():
+@v1_blueprint_query.route("/", methods=["POST"])  # Adjust '/your_endpoint' as needed
+def test():
+    def generate():
+        try:
+            query = request.form["query"]
+            is_public = request.form["is_public"]
+            chat_history = []
 
-    query = request.args.get("query")
-    n_results = request.args.get("nResults", default=20, type=int)
-    is_public = request.args.get("isPublic")
-    user_id = request.args.get("userId")
+            if not (query and is_public):
+                yield json.dumps(
+                    {
+                        "message": "Missing one or more required fields: 'query', 'is_public', 'chat_history'."
+                    }
+                ) + "\n"
+                return
 
-    if not query or is_public is None:
-        return jsonify({"message": "Query not found in the API request."}), 400
-
-    db_path = get_db_path()
-    client = chromadb.PersistentClient(path=db_path)
-    openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-        api_key=os.environ.get("OPENAI_API_KEY"),
-        model_name="text-embedding-ada-002",
-    )
-    collection = client.get_or_create_collection("post_collection", embedding_function=openai_ef)
-
-    try:
-        if is_public == "true":
-            results = collection.query(
-                n_results=n_results,
-                query_texts=[query],
-                include=["documents", "metadatas"],
-                where={"isPublic": "true"},
+            db_path = get_db_path()
+            client = chromadb.PersistentClient(path=db_path)
+            openai_ef = OpenAIEmbeddings(model="text-embedding-ada-002")
+            vectorstore = Chroma(
+                client=client,
+                collection_name="collection_name",
+                embedding_function=openai_ef,
             )
-        else:
-            results = collection.query(
-                n_results=n_results,
-                query_texts=[query],
-                include=["documents", "metadatas"],
-                where={"userId": user_id},
+            retriever = vectorstore.as_retriever()
+            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+
+            contextualize_q_system_prompt = """Given a chat history and the latest user question which might reference context in the chat history, formulate a standalone question which can be understood without the chat history. Do NOT answer the question, just reformulate it if needed and otherwise return it as is."""
+            contextualize_q_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", contextualize_q_system_prompt),
+                    MessagesPlaceholder(variable_name="chat_history"),
+                    ("human", "{question}"),
+                ]
             )
-        return jsonify({"message": "Success", "status": 200, "items": results})
-    except Exception as e:
-        print(f"An Error was caught:\n{e}")
-        return jsonify({"message": "Internal Server Error"}), 500
+            contextualize_q_chain = (
+                contextualize_q_prompt | llm | StrOutputParser()
+            ).with_config(tags=["contextualize_q_chain"])
+
+            qa_system_prompt = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise."""
+            qa_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", qa_system_prompt),
+                    MessagesPlaceholder(variable_name="chat_history"),
+                    ("human", "{question}"),
+                ]
+            )
+
+            rag_chain = (
+                RunnablePassthrough.assign(context=contextualize_q_chain | retriever)
+                | qa_prompt
+                | llm
+            )
+
+            question = query
+
+            for jsonpatch_op in rag_chain.stream(
+                {"question": question, "chat_history": chat_history},
+            ):
+                yield json.dumps(jsonpatch_op.content) + "\n"
+
+        except Exception as e:
+            yield json.dumps({"error": str(e)}) + "\n"
+
+    return Response(stream_with_context(generate()), mimetype="application/json")
