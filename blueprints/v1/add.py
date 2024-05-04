@@ -1,6 +1,9 @@
 import chromadb
+import os
 from flask import Blueprint, request, jsonify, current_app
 from config import get_db_path
+import chromadb.utils.embedding_functions as embedding_functions
+
 
 v1_blueprint_add = Blueprint("add", __name__, url_prefix="/v1/add")
 
@@ -15,7 +18,13 @@ def add_post():
         # Use an application config or environment variable for db path
         db_path = get_db_path()
         client = chromadb.PersistentClient(path=db_path)
-        collection = client.get_or_create_collection("post_collection")
+        openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+            api_key=os.environ.get("OPENAI_API_KEY"),
+            model_name="text-embedding-ada-002",
+        )
+        collection = client.get_or_create_collection(
+            "post_collection", embedding_function=openai_ef
+        )
 
         body = request.json
         required_fields = [
