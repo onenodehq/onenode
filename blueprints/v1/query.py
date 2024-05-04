@@ -1,16 +1,14 @@
-from flask import Blueprint, request, jsonify, Response, stream_with_context
+from flask import Blueprint, request, Response, stream_with_context
 import json
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import chromadb
-import os
 import chromadb.errors
 from config import get_db_path
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-import asyncio
 
 v1_blueprint_query = Blueprint("query", __name__, url_prefix="/v1/query")
 
@@ -19,9 +17,10 @@ v1_blueprint_query = Blueprint("query", __name__, url_prefix="/v1/query")
 def test():
     def generate():
         try:
-            query = request.form["query"]
-            is_public = request.form["is_public"]
-            chat_history = []
+            data = request.get_json()  # Get JSON data from request body
+            query = data.get("query")
+            is_public = data.get("is_public")
+            chat_history = data.get("chat_history", [])
 
             if not (query and is_public):
                 yield json.dumps(
