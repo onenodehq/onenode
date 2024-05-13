@@ -9,11 +9,13 @@ import chromadb.errors
 from config import get_db_path
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from auth.auth import jwt_required
 
 v1_blueprint_query = Blueprint("query", __name__, url_prefix="/v1/query")
 
 
 @v1_blueprint_query.route("/", methods=["POST"])  # Adjust '/your_endpoint' as needed
+@jwt_required
 def test():
     def generate():
         try:
