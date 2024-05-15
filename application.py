@@ -4,6 +4,7 @@ from langchain_openai import ChatOpenAI
 from blueprints.v1.view import v1
 from blueprints.v1.query import v1_blueprint_query
 from blueprints.test.view import test_blueprint_query
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv()
@@ -12,6 +13,7 @@ llm = ChatOpenAI()
 
 # Flask application configuration
 application = Flask(__name__)
+CORS(application)
 
 # Register the Blueprint
 application.register_blueprint(v1)
@@ -22,7 +24,7 @@ application.register_blueprint(v1_blueprint_query)
 # Home route
 @application.route("/")
 def home():
-    return 'Hello, World!'
+    return "Hello, World!"
 
 
 # Only for development environment
