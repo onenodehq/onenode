@@ -16,7 +16,7 @@ v1_blueprint_query = Blueprint("query", __name__, url_prefix="/v1/query")
 
 @v1_blueprint_query.route("/", methods=["POST"])  # Adjust '/your_endpoint' as needed
 @jwt_required
-def test():
+def generate_response():
     def generate():
         try:
             data = request.get_json()  # Get JSON data from request body
