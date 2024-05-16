@@ -6,6 +6,7 @@ import requests, json
 # Your AWS Cognito User Pool:
 COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
 COGNITO_AWS_REGION = os.getenv("COGNITO_AWS_REGION")
+COGNITO_APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID")
 COGNITO_PUBLIC_KEYS = {}  # You need to fetch and cache the public keys from AWS
 
 COGNITO_JWKS_URL = f"https://cognito-idp.{COGNITO_AWS_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
@@ -60,7 +61,7 @@ def verify_jwt(token):
             token,
             key=public_key,
             algorithms=["RS256"],
-            audience="4jguvc21kantiscg5vi3qs9mve",
+            audience=COGNITO_APP_CLIENT_ID,
         )
         return decoded
     except jwt.ExpiredSignatureError as e:
