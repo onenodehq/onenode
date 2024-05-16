@@ -1,13 +1,14 @@
 from flask import Flask, jsonify
 from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
+
 from langchain_openai import ChatOpenAI
 from blueprints.v1.view import v1
 from blueprints.v1.query import v1_blueprint_query
 from blueprints.test.view import test_blueprint_query
 from flask_cors import CORS
 
-# Load environment variables
-load_dotenv()
 
 llm = ChatOpenAI()
 
