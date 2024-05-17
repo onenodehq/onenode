@@ -15,10 +15,10 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 
 # Define a Blueprint for the '/v1/query' endpoint
-v1_blueprint_query = Blueprint("query", __name__, url_prefix="/v1/query")
+v1_blueprint_question = Blueprint("question", __name__, url_prefix="/v1/question")
 
 
-@v1_blueprint_query.route("/", methods=["POST"])
+@v1_blueprint_question.route("/", methods=["POST"])
 @jwt_required  # JWT token required for authorization
 def generate_response():
     # Function to generate the response stream
@@ -26,17 +26,16 @@ def generate_response():
         try:
             # Parse JSON data from the request body
             data = request.get_json()
-            query = data.get("query")
-            question = query
+            question = data.get("question")
             is_public = data.get("is_public")
             chat_history = data.get("chat_history", [])
 
             # Check if required fields are present
-            if not (query and is_public):
+            if not (question and is_public):
                 # Yield error message if required fields are missing
                 yield json.dumps(
                     {
-                        "message": "Missing one or more required fields: 'query', 'is_public', 'chat_history'."
+                        "message": "Missing one or more required fields: 'question', 'is_public', 'chat_history'."
                     }
                 ) + "\n"
                 return
