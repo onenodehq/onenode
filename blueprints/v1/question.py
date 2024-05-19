@@ -11,8 +11,6 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from auth.auth import jwt_required
 from langchain.chains import create_history_aware_retriever
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
 
 # Define a Blueprint for the '/v1/query' endpoint
 v1_blueprint_question = Blueprint("question", __name__, url_prefix="/v1/question")
@@ -75,12 +73,14 @@ def generate_response():
                 llm, retriever, contextualize_q_prompt
             )
 
-            qa_system_prompt = """You are an assistant for question-answering tasks. \
-            Use the following pieces of retrieved context to answer the question. \
-            If you don't know the answer, just say that you don't know. \
-            Use three sentences maximum and keep the answer concise.\
+            qa_system_prompt = """You are a large language AI assistant built by OneNode. You are given a user question, and please write clean, concise and accurate answer to the question. You will be given a set of related/unrelated contexts to the question, each starting with a reference number like [citation:x], where x is a number. Please use the context and cite the context at the end of each sentence if applicable.
+            Your answer must be correct, accurate and written by an expert using an unbiased and professional tone. Please limit to 1024 tokens. Do not give any information that is not related to the question, and do not repeat. Say "information is missing on" followed by the related topic, if the given context do not provide sufficient information. Do not give information that doesn't appear in any given context.
+            Please cite the contexts with the reference numbers, in the format [citation:x]. If a sentence comes from multiple contexts, please list all applicable citations, like [citation:3][citation:5]. Other than code and specific names and citations, your answer must be written in the same language as the question.
+            Here are the set of contexts:
 
-            {context}"""
+            {context}
+            
+            Remember, don't blindly repeat the contexts verbatim. And here is the user question:"""
             qa_prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", qa_system_prompt),
@@ -88,11 +88,11 @@ def generate_response():
                     ("human", "{input}"),
                 ]
             )
+            question_answer_chain = qa_prompt | llm | StrOutputParser()
 
-            question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-            rag_chain = create_retrieval_chain(
-                history_aware_retriever, question_answer_chain
-            )
+            rag_chain = RunnablePassthrough.assign(
+                context=history_aware_retriever | format_docs_with_id
+            ) | RunnablePassthrough.assign(answer=question_answer_chain)
 
             # Stream the responses from the RAG chain
             for jsonpatch_op in rag_chain.stream(
@@ -107,3 +107,11 @@ def generate_response():
 
     # Return a streamed response with the generated conten
     return Response(stream_with_context(generate()), mimetype="application/json")
+
+
+def format_docs_with_id(docs) -> str:
+    formatted = [
+        f"Source ID: {i}, Source Snippet: {doc.page_content}"
+        for i, doc in enumerate(docs)
+    ]
+    return "\n\n" + "\n\n".join(formatted)
