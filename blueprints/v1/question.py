@@ -73,9 +73,9 @@ def generate_response():
                 llm, retriever, contextualize_q_prompt
             )
 
-            qa_system_prompt = """You are a large language AI assistant built by OneNode. You are given a user question, and please write clean, concise and accurate answer to the question. You will be given a set of related/unrelated contexts to the question, each starting with a reference number like [citation:x], where x is a number. Please use the context and cite the context at the end of each sentence if applicable.
+            qa_system_prompt = """You are a large language AI assistant built by OneNode. You are given a user question, and please write clean, concise and accurate answer to the question. You will be given a set of related/unrelated contexts to the question, each starting with a reference number like [xxxx], where x is a number. Please use the context and cite the context at the end of each sentence if applicable.
             Your answer must be correct, accurate and written by an expert using an unbiased and professional tone. Please limit to 1024 tokens. Do not give any information that is not related to the question, and do not repeat. Say "information is missing on" followed by the related topic, if the given context do not provide sufficient information. Do not give information that doesn't appear in any given context.
-            Please cite the contexts with the reference numbers, in the format [citation:x]. If a sentence comes from multiple contexts, please list all applicable citations, like [citation:3][citation:5]. Other than code and specific names and citations, your answer must be written in the same language as the question.
+            Please cite the contexts with the reference IDs, in the format [xxxx]. If a sentence comes from multiple contexts, please list all applicable citations, like [b77bad72-e639-4cb6-9a74-c3aa42c2902e][3fa85f64-5717-4562-b3fc-2c963f66afa6]. Other than code and specific names and citations, your answer must be written in the same language as the question.
             Here are the set of contexts:
 
             {context}
@@ -111,7 +111,7 @@ def generate_response():
 
 def format_docs_with_id(docs) -> str:
     formatted = [
-        f"Source ID: {i}, Source Snippet: {doc.page_content}"
+        f"Source ID: {doc.metadata['postId']}, Source Snippet: {doc.page_content}"
         for i, doc in enumerate(docs)
     ]
     return "\n\n" + "\n\n".join(formatted)
