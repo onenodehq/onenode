@@ -2,6 +2,8 @@ import chromadb
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 from config import get_db_path
+from migrations.db_version_manager import check_and_migrate_db, read_db_version
+
 # Load environment variables
 load_dotenv()
 
@@ -23,14 +25,14 @@ application.register_blueprint(v1)
 application.register_blueprint(test_blueprint_query)
 application.register_blueprint(v1_blueprint_question)
 
-db_path = get_db_path()
-client = chromadb.PersistentClient(path=db_path)
-collection = client.delete_collection("document_collection")
+check_and_migrate_db()
+
 
 # Home route
 @application.route("/")
 def home():
-    return "Hello, World!"
+    current_version = read_db_version()
+    return f"Hello, World!\nVersion: {current_version}"
 
 
 # Only for development environment
