@@ -174,3 +174,5 @@ index/
 virt/
 db/
 test.py
+
+migrations/db_version.txt
