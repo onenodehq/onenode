@@ -1,5 +1,7 @@
+import chromadb
 from flask import Flask, jsonify
 from dotenv import load_dotenv
+from config import get_db_path
 # Load environment variables
 load_dotenv()
 
@@ -21,6 +23,9 @@ application.register_blueprint(v1)
 application.register_blueprint(test_blueprint_query)
 application.register_blueprint(v1_blueprint_question)
 
+db_path = get_db_path()
+client = chromadb.PersistentClient(path=db_path)
+collection = client.delete_collection("document_collection")
 
 # Home route
 @application.route("/")
