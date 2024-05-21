@@ -1,4 +1,4 @@
-from ast import Or
+
 import datetime
 import re
 from uuid import uuid4
@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 
 
-def migrate():
+def migrate_to_0_1_0():
     try:
         db_path = get_db_path()
         client = chromadb.PersistentClient(path=db_path)
@@ -59,8 +59,6 @@ def migrate():
                 except Exception as e:
                     logging.error(f"Failed to add item: {item} with error: {e}")
                     raise  # Stop execution if there is any error
-        print(new_collection.get())
-        print("\nsuccessfully migrated.\n")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         client.delete_collection("document_collection")  # Delete the new collection on error
