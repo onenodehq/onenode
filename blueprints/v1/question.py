@@ -48,7 +48,7 @@ def generate_response():
             # Initialize Chroma vector store
             vectorstore = Chroma(
                 client=client,
-                collection_name="content_collection",
+                collection_name="resource_collection",
                 embedding_function=openai_ef,
             )
 
@@ -111,7 +111,7 @@ def generate_response():
 
 def format_docs_with_id(docs) -> str:
     formatted = [
-        f"Source ID: {doc.metadata['postId']}, Source Snippet: {doc.page_content}"
+        f"Source ID: {doc.metadata['id']}, Source Snippet: {doc.page_content}"
         for i, doc in enumerate(docs)
     ]
     return "\n\n" + "\n\n".join(formatted)

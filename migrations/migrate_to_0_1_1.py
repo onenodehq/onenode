@@ -13,7 +13,7 @@ logging.basicConfig(
 )
 
 
-def migrate_to_0_1_0():
+def migrate():
     try:
         db_path = get_db_path()
         client = chromadb.PersistentClient(path=db_path)
@@ -23,21 +23,20 @@ def migrate_to_0_1_0():
             "resource_collection", embedding_function=openai_ef
         )
 
+        new_collection.delete()
+
         data = prev_collection.get()
         documents = data["documents"]
         metadatas = data["metadatas"]
 
-        for i, document in enumerate(documents):
-            try:
-                new_collection.add(
-                    documents=documents,
-                    metadatas=metadatas,
-                    ids=metadatas.get("ids"),
-                )
-                logging.info(f"Added document ID: {id} to new collection.")
-            except Exception as e:
-                logging.error(f"Failed to add item: {item} with error: {e}")
-                raise  # Stop execution if there is any error
+        try:
+            new_collection.add(
+                documents=documents,
+                metadatas=metadatas,
+                ids=metadatas.get("ids"),
+            )
+        except Exception as e:
+            raise  # Stop execution if there is any error
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         client.delete_collection(
