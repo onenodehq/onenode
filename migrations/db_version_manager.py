@@ -19,7 +19,7 @@ def write_db_version(version):
 def check_and_migrate_db():
     current_version = read_db_version()
     expected_version = os.getenv("CURRENT_DB_VERSION")
-    re_migrate = bool(os.getenv("RE_MIGRATE"))
+    re_migrate = os.getenv("RE_MIGRATE") == "True"
 
     if current_version is None or current_version < expected_version or re_migrate:
         print(
