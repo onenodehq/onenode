@@ -10,7 +10,7 @@ v1_blueprint_document = Blueprint("document", __name__, url_prefix="/v1/document
 
 
 @v1_blueprint_document.route("/", methods=["GET"])
-@jwt_required()
+@jwt_required
 def get_document():
     ids = request.args.get("document_ids")
     where = request.args.get("where")
@@ -19,7 +19,7 @@ def get_document():
         # Initialize ChromaDB client with persistent storage
         db_path = get_db_path()
         client = chromadb.PersistentClient(path=db_path)
-        collection = client.get_or_create_collection("document_collection")
+        collection = client.get_or_create_collection("resource_collection")
         result = collection.get(ids=ids, where=where)
         return jsonify(result), 200
     else:
@@ -27,7 +27,7 @@ def get_document():
 
 
 @v1_blueprint_document.route("/", methods=["POST"])
-@jwt_required()
+@jwt_required
 def create_document():
     content_type = request.content_type
 
@@ -38,8 +38,9 @@ def create_document():
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
 
-        documents = data.get("documents")
+        documents = data.get("contents")
         user_id = data.get("user_id")
+        types = data.get("types")
         if not documents or not user_id:
             return (
                 jsonify(
@@ -54,12 +55,13 @@ def create_document():
         created_at = datetime.datetime.now(datetime.UTC).isoformat()
         metadatas = []
 
-        for id in ids:
+        for i, id in enumerate(ids):
             metadatas.append(
                 {
-                    "id": ids,
+                    "id": id,
+                    "type": types[i],
                     "user_id": user_id,
-                    "is_public": is_public,
+                    "is_public": str(is_public),
                     "created_at": created_at,
                     "updated_at": created_at,
                     "group_id": group_id,
@@ -69,7 +71,7 @@ def create_document():
         # Initialize ChromaDB client with persistent storage
         db_path = get_db_path()
         client = chromadb.PersistentClient(path=db_path)
-        collection = client.get_or_create_collection("document_collection")
+        collection = client.get_or_create_collection("resource_collection")
         collection.add(
             documents=documents,
             metadatas=metadatas,
@@ -77,7 +79,7 @@ def create_document():
         )
 
         response = {
-            "documents": documents,
+            "contents": documents,
             "metadatas": metadatas,
         }
 
