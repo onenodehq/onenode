@@ -1,4 +1,5 @@
-from flask import Blueprint, request, Response, stream_with_context
+import os
+from flask import Blueprint, cli, request, Response, stream_with_context
 import json
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
@@ -11,6 +12,8 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from auth.auth import jwt_required
 from langchain.chains import create_history_aware_retriever
+import chromadb.utils.embedding_functions as embedding_functions
+
 
 # Define a Blueprint for the '/v1/query' endpoint
 v1_blueprint_question = Blueprint("question", __name__, url_prefix="/v1/question")
@@ -44,12 +47,23 @@ def generate_response():
 
             # Create an embedding function using OpenAI embeddings
             openai_ef = OpenAIEmbeddings(model="text-embedding-ada-002")
+            openai_ef_ = embedding_functions.OpenAIEmbeddingFunction(
+            api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-ada-002"
+        )
 
             # Initialize Chroma vector store
             vectorstore = Chroma(
                 client=client,
                 collection_name="resource_collection",
                 embedding_function=openai_ef,
+            )
+
+            collection = client.get_or_create_collection("resource_collection", embedding_function=openai_ef_)
+            print("test\n\n",
+                collection.query(
+                    query_texts=["ramen"],
+                    n_results=10,
+                )
             )
 
             # Set up the retriever for the vector store
@@ -91,7 +105,8 @@ def generate_response():
             question_answer_chain = qa_prompt | llm | StrOutputParser()
 
             rag_chain = RunnablePassthrough.assign(
-                context=history_aware_retriever | format_docs_with_id
+                context=history_aware_retriever
+                | format_docs_with_id
             ) | RunnablePassthrough.assign(answer=question_answer_chain)
 
             # Stream the responses from the RAG chain
