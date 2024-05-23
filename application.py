@@ -10,6 +10,7 @@ load_dotenv()
 from langchain_openai import ChatOpenAI
 from blueprints.v1.view import v1
 from blueprints.v1.question import v1_blueprint_question
+from blueprints.v1.document import v1_blueprint_document
 from blueprints.test.view import test_blueprint_query
 from flask_cors import CORS
 
@@ -24,6 +25,7 @@ CORS(application)
 application.register_blueprint(v1)
 application.register_blueprint(test_blueprint_query)
 application.register_blueprint(v1_blueprint_question)
+application.register_blueprint(v1_blueprint_document)
 
 check_and_migrate_db()
 
