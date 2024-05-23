@@ -1,18 +1,21 @@
-import os
+from hmac import new
+from http import client
+from typing import List, Set
+from chromadb import GetResult
 from flask import Blueprint, cli, request, Response, stream_with_context
 import json
-from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-import chromadb
-import chromadb.errors
-from config import get_db_path
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
+from typeguard import typechecked
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from auth.auth import jwt_required
 from langchain.chains import create_history_aware_retriever
-import chromadb.utils.embedding_functions as embedding_functions
+from langchain_core.documents.base import Document
+from blueprints.v1.utils.chroma_setup import (
+    vectorstore,
+    collection,
+)  # Import the initialized components
 
 
 # Define a Blueprint for the '/v1/query' endpoint
@@ -41,31 +44,6 @@ def generate_response():
                 ) + "\n"
                 return
 
-            # Initialize ChromaDB client with persistent storage
-            db_path = get_db_path()
-            client = chromadb.PersistentClient(path=db_path)
-
-            # Create an embedding function using OpenAI embeddings
-            openai_ef = OpenAIEmbeddings(model="text-embedding-ada-002")
-            openai_ef_ = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-ada-002"
-        )
-
-            # Initialize Chroma vector store
-            vectorstore = Chroma(
-                client=client,
-                collection_name="resource_collection",
-                embedding_function=openai_ef,
-            )
-
-            collection = client.get_or_create_collection("resource_collection", embedding_function=openai_ef_)
-            print("test\n\n",
-                collection.query(
-                    query_texts=["ramen"],
-                    n_results=10,
-                )
-            )
-
             # Set up the retriever for the vector store
             retriever = vectorstore.as_retriever()
 
@@ -88,7 +66,7 @@ def generate_response():
             )
 
             qa_system_prompt = """You are a large language AI assistant built by OneNode. You are given a user question, and please write clean, concise and accurate answer to the question. You will be given a set of related/unrelated contexts to the question, each starting with a reference number like [xxxx], where x is a number. Please use the context and cite the context at the end of each sentence if applicable.
-            Your answer must be correct, accurate and written by an expert using an unbiased and professional tone. Please limit to 1024 tokens. Do not give any information that is not related to the question, and do not repeat. Say "information is missing on" followed by the related topic, if the given context do not provide sufficient information. Do not give information that doesn't appear in any given context.
+            Your answer must be correct, accurate and written by an expert using an unbiased and professional tone. Do not give any information that is not related to the question, and do not repeat. Say "information is missing on" followed by the related topic, if the given context do not provide sufficient information. Do not give information that doesn't appear in any given context.
             Please cite the contexts with the reference IDs, in the format [xxxx]. If a sentence comes from multiple contexts, please list all applicable citations, like [b77bad72-e639-4cb6-9a74-c3aa42c2902e][3fa85f64-5717-4562-b3fc-2c963f66afa6]. Other than code and specific names and citations, your answer must be written in the same language as the question.
             Here are the set of contexts:
 
@@ -105,8 +83,7 @@ def generate_response():
             question_answer_chain = qa_prompt | llm | StrOutputParser()
 
             rag_chain = RunnablePassthrough.assign(
-                context=history_aware_retriever
-                | format_docs_with_id
+                context=history_aware_retriever | add_linked_docs | format_docs_with_id | RunnablePassthrough(print)
             ) | RunnablePassthrough.assign(answer=question_answer_chain)
 
             # Stream the responses from the RAG chain
@@ -124,9 +101,34 @@ def generate_response():
     return Response(stream_with_context(generate()), mimetype="application/json")
 
 
-def format_docs_with_id(docs) -> str:
+@typechecked
+def format_docs_with_id(docs: List[Document]) -> str:
     formatted = [
-        f"Source ID: {doc.metadata['id']}, Source Snippet: {doc.page_content}"
+        f"Source ID: {doc.metadata['group_id']}, Source Snippet: {doc.page_content}"
         for i, doc in enumerate(docs)
     ]
     return "\n\n" + "\n\n".join(formatted)
+
+
+@typechecked
+def add_linked_docs(docs: List[Document]) -> List[Document]:
+    new_docs: List[Document] = []
+    processed_group_ids = set()
+
+    for doc in docs:
+        group_id = doc.metadata.get("group_id")
+
+        if group_id not in processed_group_ids:
+            processed_group_ids.add(group_id)
+            items = collection.get(where={"group_id": group_id})
+            documents = items["documents"]
+            metadatas = items["metadatas"]
+            print("number of items: ", len(documents))
+
+            new_doc = Document(metadata={"group_id": group_id}, page_content="")
+            new_docs.append(new_doc)
+
+            for document in documents:
+                new_docs[-1].page_content += "'" + document.strip() + "', "
+
+    return new_docs
