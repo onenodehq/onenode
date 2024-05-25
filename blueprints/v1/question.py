@@ -33,19 +33,22 @@ def generate_response():
             question = data.get("question")
             is_public = data.get("is_public")
             chat_history = data.get("chat_history", [])
+            user_id = data.get("user_id")
 
             # Check if required fields are present
-            if not (question and is_public):
+            if not (question and is_public and user_id):
                 # Yield error message if required fields are missing
                 yield json.dumps(
                     {
-                        "message": "Missing one or more required fields: 'question', 'is_public', 'chat_history'."
+                        "message": "Missing one or more required fields: 'question', 'is_public', 'chat_history', 'user_id."
                     }
                 ) + "\n"
                 return
 
             # Set up the retriever for the vector store
-            retriever = vectorstore.as_retriever()
+            retriever = vectorstore.as_retriever(
+                search_kwargs={"filter": {"user_id": user_id}}
+            )
 
             # Initialize OpenAI Chat model
             llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
@@ -83,7 +86,10 @@ def generate_response():
             question_answer_chain = qa_prompt | llm | StrOutputParser()
 
             rag_chain = RunnablePassthrough.assign(
-                context=history_aware_retriever | add_linked_docs | format_docs_with_id | RunnablePassthrough(print)
+                context=history_aware_retriever
+                | add_linked_docs
+                | format_docs_with_id
+                | RunnablePassthrough(print)
             ) | RunnablePassthrough.assign(answer=question_answer_chain)
 
             # Stream the responses from the RAG chain
