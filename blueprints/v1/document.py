@@ -4,6 +4,10 @@ import chromadb
 from flask import Blueprint, jsonify, request
 from config import get_db_path
 from auth.auth import jwt_required
+from blueprints.v1.utils.chroma_setup import (
+    vectorstore,
+    collection,
+)  # Import the initialized components
 
 # Define a Blueprint for the '/v1/query' endpoint
 v1_blueprint_document = Blueprint("document", __name__, url_prefix="/v1/document")
@@ -68,10 +72,6 @@ def create_document():
                 }
             )
 
-        # Initialize ChromaDB client with persistent storage
-        db_path = get_db_path()
-        client = chromadb.PersistentClient(path=db_path)
-        collection = client.get_or_create_collection("resource_collection")
         collection.add(
             documents=documents,
             metadatas=metadatas,
