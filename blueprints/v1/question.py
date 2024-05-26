@@ -14,7 +14,6 @@ from langchain.chains import create_history_aware_retriever
 from langchain_core.documents.base import Document
 from blueprints.v1.utils.chroma_setup import (
     vectorstore,
-    collection,
 )  # Import the initialized components
 
 
@@ -126,7 +125,7 @@ def add_linked_docs(docs: List[Document]) -> List[Document]:
 
         if group_id not in processed_group_ids:
             processed_group_ids.add(group_id)
-            items = collection.get(where={"group_id": group_id})
+            items = vectorstore.get(where={"group_id": group_id})
             documents = items["documents"]
             metadatas = items["metadatas"]
             print("number of items: ", len(documents))

@@ -6,7 +6,6 @@ from config import get_db_path
 from auth.auth import jwt_required
 from blueprints.v1.utils.chroma_setup import (
     vectorstore,
-    collection,
 )  # Import the initialized components
 
 # Define a Blueprint for the '/v1/query' endpoint
@@ -24,7 +23,7 @@ def get_document():
         db_path = get_db_path()
         client = chromadb.PersistentClient(path=db_path)
         collection = client.get_or_create_collection("resource_collection")
-        result = collection.get(ids=ids, where=where)
+        result = vectorstore.get(ids=ids, where=where)
         return jsonify(result), 200
     else:
         return jsonify({"error": "No document IDs provided"}), 400
@@ -72,7 +71,7 @@ def create_document():
                 }
             )
 
-        collection.add(
+        vectorstore.add_documents(
             documents=documents,
             metadatas=metadatas,
             ids=ids,
