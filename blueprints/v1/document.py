@@ -17,12 +17,7 @@ v1_blueprint_document = Blueprint("document", __name__, url_prefix="/v1/document
 def get_document():
     ids = request.args.get("document_ids")
     where = request.args.get("where")
-    print("id", ids)
     if ids:
-        # Initialize ChromaDB client with persistent storage
-        db_path = get_db_path()
-        client = chromadb.PersistentClient(path=db_path)
-        collection = client.get_or_create_collection("resource_collection")
         result = vectorstore.get(ids=ids, where=where)
         return jsonify(result), 200
     else:
@@ -70,6 +65,8 @@ def create_document():
                     "group_id": group_id,
                 }
             )
+
+        
 
         vectorstore.add_documents(
             documents=documents,

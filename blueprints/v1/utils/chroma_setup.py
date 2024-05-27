@@ -21,3 +21,5 @@ vectorstore = Chroma(
     collection_name="resource_collection",
     embedding_function=openai_ef,
 )
+
+collection = client.get_collection(name="resource_collection", embedding_function=openai_ef_)
