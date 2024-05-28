@@ -20,10 +20,6 @@ def migrate():
         db_path = get_db_path()
         client = chromadb.PersistentClient(path=db_path)
 
-        client.get_or_create_collection("document_collection")
-        client.get_or_create_collection("resource_collection")
-        client.delete_collection("document_collection")
-        client.delete_collection("resource_collection")
         prev_collection = client.get_or_create_collection("content_collection")
         openai_ef = embedding_functions.OpenAIEmbeddingFunction(
             api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-ada-002"
@@ -31,6 +27,10 @@ def migrate():
         new_collection = client.get_or_create_collection(
             "resource_collection", embedding_function=openai_ef
         )
+
+        if (new_collection.count() != 0):
+            # Clean up
+            new_collection.delete(ids=new_collection.get()["ids"])
 
         data = prev_collection.get()
         documents = data["documents"]
