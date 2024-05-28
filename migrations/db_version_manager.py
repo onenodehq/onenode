@@ -5,14 +5,14 @@ from migrations.migrate_to_0_1_0 import migrate_to_0_1_0
 
 def read_db_version():
     try:
-        with open("migrations/db_version.txt", "r") as file:
+        with open("db/db_version.txt", "r") as file:
             return file.read().strip()
     except FileNotFoundError:
         return None
 
 
 def write_db_version(version):
-    with open("migrations/db_version.txt", "w") as file:
+    with open("db/db_version.txt", "w") as file:
         file.write(version)
 
 
