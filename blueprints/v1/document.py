@@ -16,7 +16,7 @@ v1_blueprint_document = Blueprint("document", __name__, url_prefix="/v1/document
 @v1_blueprint_document.route("/", methods=["GET"])
 @jwt_required
 def get_document():
-    ids = request.args.get("document_ids")
+    ids = request.args.get("resource_ids")
     where = request.args.get("where")
     if ids:
         result = vectorstore.get(ids=ids, where=where)
