@@ -1,4 +1,5 @@
 import datetime
+from typing import Dict, List
 import uuid
 import chromadb
 from flask import Blueprint, jsonify, request
@@ -16,13 +17,34 @@ v1_blueprint_document = Blueprint("document", __name__, url_prefix="/v1/document
 @v1_blueprint_document.route("/", methods=["GET"])
 @jwt_required
 def get_document():
-    ids = request.args.get("resource_ids")
-    where = request.args.get("where")
-    if ids:
-        result = vectorstore.get(ids=ids, where=where)
-        return jsonify(result), 200
-    else:
-        return jsonify({"error": "No document IDs provided"}), 400
+    try:
+        resource_ids = request.args.get("resource_ids")
+        where_clause = request.args.get("where")
+
+        if not resource_ids:
+            return jsonify({"error": "No document IDs provided"}), 400
+
+        data = collection.get(ids=resource_ids, where=where_clause)
+
+        if not data:
+            return jsonify({"error": "No data found for the provided IDs"}), 404
+
+        documents = data.get("documents")
+        metadatas = data.get("metadatas")
+
+        if documents is None or metadatas is None:
+            return jsonify({"error": "Malformed data returned from collection"}), 500
+
+        response: List[Dict] = [
+            {"content": documents[i], "metadata": metadatas[i]}
+            for i in range(len(data.get("ids")))
+        ]
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        # Log the exception if needed
+        return jsonify({"error": str(e)}), 500
 
 
 @v1_blueprint_document.route("/", methods=["POST"])
