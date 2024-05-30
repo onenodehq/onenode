@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Dict, List
 import uuid
 import chromadb
@@ -18,13 +19,10 @@ v1_blueprint_document = Blueprint("document", __name__, url_prefix="/v1/document
 @jwt_required
 def get_document():
     try:
-        resource_ids = request.args.get("resource_ids")
-        where_clause = request.args.get("where")
+        # Parse where_clause as a dictionary
+        where_clause = json.loads(request.args.get("where", "{}"))
 
-        if not resource_ids:
-            return jsonify({"error": "No document IDs provided"}), 400
-
-        data = collection.get(ids=resource_ids, where=where_clause)
+        data = collection.get(where=where_clause)
 
         if not data:
             return jsonify({"error": "No data found for the provided IDs"}), 404
