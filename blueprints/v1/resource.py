@@ -12,12 +12,12 @@ from blueprints.v1.utils.chroma_setup import (
 )  # Import the initialized components
 
 # Define a Blueprint for the '/v1/query' endpoint
-v1_blueprint_document = Blueprint("document", __name__, url_prefix="/v1/document")
+v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource")
 
 
-@v1_blueprint_document.route("/", methods=["GET"])
+@v1_blueprint_resource.route("/", methods=["GET"])
 @jwt_required
-def get_document():
+def get_resource():
     try:
         # Parse where_clause as a dictionary
         where_clause = json.loads(request.args.get("where", "{}"))
@@ -45,9 +45,9 @@ def get_document():
         return jsonify({"error": str(e)}), 500
 
 
-@v1_blueprint_document.route("/", methods=["POST"])
+@v1_blueprint_resource.route("/", methods=["POST"])
 @jwt_required
-def create_document():
+def create_resource():
     try:
         content_type = request.content_type
 
