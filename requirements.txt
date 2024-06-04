@@ -80,6 +80,7 @@ opentelemetry-util-http==0.45b0
 orjson==3.9.15
 overrides==7.7.0
 packaging==23.2
+pinecone-client==4.1.0
 posthog==3.5.0
 protobuf==4.25.3
 pulsar-client==3.4.0
