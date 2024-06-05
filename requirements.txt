@@ -51,6 +51,7 @@ langchain-chroma==0.1.1
 langchain-community==0.2.1
 langchain-core==0.2.1
 langchain-openai==0.1.7
+langchain-pinecone==0.1.1
 langchain-text-splitters==0.2.0
 langchainhub==0.1.15
 langsmith==0.1.31
@@ -80,7 +81,7 @@ opentelemetry-util-http==0.45b0
 orjson==3.9.15
 overrides==7.7.0
 packaging==23.2
-pinecone-client==4.1.0
+pinecone-client==3.2.2
 posthog==3.5.0
 protobuf==4.25.3
 pulsar-client==3.4.0
