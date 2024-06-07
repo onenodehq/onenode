@@ -6,9 +6,9 @@ import chromadb
 from flask import Blueprint, jsonify, request
 from config import get_db_path
 from auth.auth import jwt_required
-from blueprints.v1.utils.chroma_setup import (
+from blueprints.v1.utils.pinecone_setup import (
     vectorstore,
-    collection,
+    index,
 )  # Import the initialized components
 
 # Define a Blueprint for the '/v1/query' endpoint
@@ -20,21 +20,21 @@ v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource
 def get_resource():
     try:
         # Parse where_clause as a dictionary
-        where_clause = json.loads(request.args.get("where", "{}"))
+        filter = json.loads(request.args.get("where", "{}"))
 
-        data = collection.get(where=where_clause)
+        data = index.query(filter=filter)
 
         if not data:
             return jsonify({"error": "No data found for the provided IDs"}), 404
 
-        documents = data.get("documents")
         metadatas = data.get("metadatas")
+        semantic_texts = metadatas.get("texts")
 
-        if documents is None or metadatas is None:
+        if semantic_texts is None or metadatas is None:
             return jsonify({"error": "Malformed data returned from collection"}), 500
 
         response: List[Dict] = [
-            {"content": documents[i], "metadata": metadatas[i]}
+            {"content": semantic_texts[i], "metadata": metadatas[i]}
             for i in range(len(data.get("ids")))
         ]
 
@@ -58,20 +58,24 @@ def create_resource():
             if not data:
                 return jsonify({"error": "No JSON data provided"}), 400
 
-            documents = data.get("contents")
+            contents = data.get("contents")
             user_id = data.get("user_id")
             types = data.get("types")
-            if not documents or not user_id:
+            if not contents or not user_id:
                 return (
                     jsonify(
-                        {"error": "Missing required fields: 'documents' and 'user_id'"}
+                        {"error": "Missing required fields: 'contents' and 'user_id'"}
                     ),
                     400,
                 )
 
+            semantic_texts = []
+            for content in contents:
+                semantic_texts.append(content)
+
             is_public = bool(data.get("is_public", False))
             group_id = data.get("group_id", str(uuid.uuid4()))
-            ids = [str(uuid.uuid4()) for _ in documents]
+            ids = [str(uuid.uuid4()) for _ in semantic_texts]
             created_at = datetime.datetime.now(datetime.UTC).isoformat()
             metadatas = []
 
@@ -88,14 +92,10 @@ def create_resource():
                     }
                 )
 
-            collection.add(
-                documents=documents,
-                metadatas=metadatas,
-                ids=ids,
-            )
+            vectorstore.add_texts(texts=semantic_texts, metadatas=metadatas)
 
             response = {
-                "contents": documents,
+                "contents": semantic_texts,
                 "metadatas": metadatas,
             }
 
