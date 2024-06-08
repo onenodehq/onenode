@@ -1,3 +1,5 @@
+import asyncio
+from asyncore import loop
 import datetime
 import json
 from typing import Dict, List
@@ -8,6 +10,7 @@ from config import get_db_path
 from auth.auth import jwt_required
 from blueprints.v1.utils.pinecone_setup import (
     vectorstore,
+    openai_ef,
     index,
 )  # Import the initialized components
 
@@ -58,46 +61,34 @@ def create_resource():
             if not data:
                 return jsonify({"error": "No JSON data provided"}), 400
 
-            contents = data.get("contents")
-            user_id = data.get("user_id")
-            types = data.get("types")
-            if not contents or not user_id:
-                return (
-                    jsonify(
-                        {"error": "Missing required fields: 'contents' and 'user_id'"}
-                    ),
-                    400,
-                )
+            resources = data.get("resources")
 
-            semantic_texts = []
-            for content in contents:
-                semantic_texts.append(content)
-
-            is_public = bool(data.get("is_public", False))
-            group_id = data.get("group_id", str(uuid.uuid4()))
-            ids = [str(uuid.uuid4()) for _ in semantic_texts]
+            ids = [str(uuid.uuid4()) for _ in resources]
             created_at = datetime.datetime.now(datetime.UTC).isoformat()
-            metadatas = []
+            vectors: List[dict] = []
 
-            for i, id in enumerate(ids):
-                metadatas.append(
+            for i, resource in enumerate(resources):
+
+                vector_value: List[float] = run_async_task(openai_ef.aembed_documents, [resource["content"]])[0]
+
+                resource.get("metadata").update(
                     {
-                        "id": id,
-                        "type": types[i],
-                        "user_id": user_id,
-                        "is_public": str(is_public),
+                        "semantic_text": resource.get("content"),
                         "created_at": created_at,
                         "updated_at": created_at,
-                        "group_id": group_id,
+                    }
+                )
+                vectors.append(
+                    {
+                        "id": str(uuid.uuid4()),
+                        "values": vector_value,
+                        "metadata": resource.get("metadata"),
                     }
                 )
 
-            vectorstore.add_texts(texts=semantic_texts, metadatas=metadatas)
+            upsert_response = index.upsert(vectors=vectors)
 
-            response = {
-                "contents": semantic_texts,
-                "metadatas": metadatas,
-            }
+            response = resources
 
             return jsonify(response), 200
 
@@ -106,3 +97,10 @@ def create_resource():
 
     except Exception as e:
         return jsonify({"error": "An error occurred", "details": str(e)}), 500
+
+def run_async_task(async_func, *args):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    result = loop.run_until_complete(async_func(*args))
+    loop.close()
+    return result
