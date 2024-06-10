@@ -1,12 +1,9 @@
 import asyncio
-from asyncore import loop
 import datetime
 import json
 import re
-import time
 from typing import Dict, List
 import uuid
-import chromadb
 from flask import Blueprint, jsonify, request
 from config import get_db_path
 from auth.auth import jwt_required
@@ -25,29 +22,33 @@ v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource
 @jwt_required
 def get_resource():
     try:
-        # Parse where_clause as a dictionary
-        filter = json.loads(request.args.get("where", "{}"))
+        id = request.args.get("resource_id", "")
+        if not id:
+            return jsonify({"error": "resource_id is required"}), 400
+        filter = {"id": {"$eq": id}}
 
-        data = index.query(filter=filter)
+        dummy_vector = [0] * 1536
+
+        data = index.query(
+            vector=dummy_vector, filter=filter, include_metadata=True, top_k=10
+        )
 
         if not data:
             return jsonify({"error": "No data found for the provided IDs"}), 404
 
-        metadatas = data.get("metadatas")
-        semantic_texts = metadatas.get("texts")
+        matches: List = data.get("matches")
 
-        if semantic_texts is None or metadatas is None:
-            return jsonify({"error": "Malformed data returned from collection"}), 500
-
-        response: List[Dict] = [
-            {"content": semantic_texts[i], "metadata": metadatas[i]}
-            for i in range(len(data.get("ids")))
-        ]
+        response = []
+        for item in matches:
+            item_dict = {
+                "content": item.get("metadata").get("text"),
+                'metadata': item.get("metadata"),
+            }
+            response.append(item_dict)
 
         return jsonify(response), 200
-
     except Exception as e:
-        # Log the exception if needed
+
         return jsonify({"error": str(e)}), 500
 
 
