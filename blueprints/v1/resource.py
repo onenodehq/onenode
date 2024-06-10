@@ -23,15 +23,17 @@ v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource
 def get_resource():
     try:
         id = request.args.get("resource_id", "")
-        if not id:
-            return jsonify({"error": "resource_id is required"}), 400
-        filter = {"id": {"$eq": id}}
-
         dummy_vector = [0] * 1536
 
-        data = index.query(
-            vector=dummy_vector, filter=filter, include_metadata=True, top_k=10
-        )
+        if id:
+            filter = {"id": {"$eq": id}}
+            data = index.query(
+                vector=dummy_vector, filter=filter, include_metadata=True, top_k=10
+            )
+        else:
+            data = index.query(
+                vector=dummy_vector, include_metadata=True, top_k=1000
+            )
 
         if not data:
             return jsonify({"error": "No data found for the provided IDs"}), 404
@@ -46,7 +48,10 @@ def get_resource():
             }
             response.append(item_dict)
 
-        return jsonify(response), 200
+        # Sort the response list by updated_at in descending order
+        sorted_response = sorted(response, key=lambda x: x['metadata']['updated_at'], reverse=True)
+
+        return jsonify(sorted_response), 200
     except Exception as e:
 
         return jsonify({"error": str(e)}), 500
