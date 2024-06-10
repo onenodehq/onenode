@@ -75,6 +75,7 @@ def create_resource():
                 metadata_snake_case = convert_keys_to_snake_case(metadata)
                 metadata_snake_case.update(
                     {
+                        "id": ids[i],
                         "created_at": created_at,
                         "updated_at": created_at,
                     }
