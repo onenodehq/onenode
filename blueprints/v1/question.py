@@ -12,7 +12,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from auth.auth import jwt_required
 from langchain.chains import create_history_aware_retriever
 from langchain_core.documents.base import Document
-from blueprints.v1.utils.chroma_setup import (
+from blueprints.v1.utils.pinecone_setup import (
     vectorstore,
 )  # Import the initialized components
 
@@ -86,7 +86,6 @@ def generate_response():
 
             rag_chain = RunnablePassthrough.assign(
                 context=history_aware_retriever
-                | add_linked_docs
                 | format_docs_with_id
                 | RunnablePassthrough(print)
             ) | RunnablePassthrough.assign(answer=question_answer_chain)
@@ -109,7 +108,7 @@ def generate_response():
 @typechecked
 def format_docs_with_id(docs: List[Document]) -> str:
     formatted = [
-        f"Source ID: {doc.metadata['group_id']}, Source Snippet: {doc.page_content}"
+        f"Source ID: {doc.metadata['id']}, Source Snippet: {doc.page_content}"
         for i, doc in enumerate(docs)
     ]
     return "\n\n" + "\n\n".join(formatted)
