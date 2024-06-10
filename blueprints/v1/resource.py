@@ -2,6 +2,8 @@ import asyncio
 from asyncore import loop
 import datetime
 import json
+import re
+import time
 from typing import Dict, List
 import uuid
 import chromadb
@@ -13,6 +15,7 @@ from blueprints.v1.utils.pinecone_setup import (
     openai_ef,
     index,
 )  # Import the initialized components
+from langchain.schema import Document
 
 # Define a Blueprint for the '/v1/query' endpoint
 v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource")
@@ -65,28 +68,23 @@ def create_resource():
 
             ids = [str(uuid.uuid4()) for _ in resources]
             created_at = datetime.datetime.now(datetime.UTC).isoformat()
-            vectors: List[dict] = []
+            documents: List[Document] = []
 
             for i, resource in enumerate(resources):
-
-                vector_value: List[float] = run_async_task(openai_ef.aembed_documents, [resource["content"]])[0]
-
-                resource.get("metadata").update(
+                metadata = resource.get("metadata")
+                metadata_snake_case = convert_keys_to_snake_case(metadata)
+                metadata_snake_case.update(
                     {
-                        "semantic_text": resource.get("content"),
                         "created_at": created_at,
                         "updated_at": created_at,
                     }
                 )
-                vectors.append(
-                    {
-                        "id": str(uuid.uuid4()),
-                        "values": vector_value,
-                        "metadata": resource.get("metadata"),
-                    }
+                document = Document(
+                    metadata=metadata_snake_case, page_content=resource.get("content")
                 )
+                documents.append(document)
 
-            upsert_response = index.upsert(vectors=vectors)
+            vectorstore.add_documents(documents=documents, ids=ids)
 
             response = resources
 
@@ -98,9 +96,29 @@ def create_resource():
     except Exception as e:
         return jsonify({"error": "An error occurred", "details": str(e)}), 500
 
+
 def run_async_task(async_func, *args):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     result = loop.run_until_complete(async_func(*args))
     loop.close()
     return result
+
+
+def to_snake_case(s):
+    """Convert a string to snake_case."""
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", s).lower().replace("-", "_")
+
+
+def convert_keys_to_snake_case(d):
+    """Convert all keys in a dictionary to snake_case recursively."""
+    if not isinstance(d, dict):
+        return d
+    new_dict = {}
+    for k, v in d.items():
+        new_key = to_snake_case(k)
+        if isinstance(v, dict):
+            new_dict[new_key] = convert_keys_to_snake_case(v)
+        else:
+            new_dict[new_key] = v
+    return new_dict
