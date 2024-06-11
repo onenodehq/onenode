@@ -31,9 +31,7 @@ def get_resource():
                 vector=dummy_vector, filter=filter, include_metadata=True, top_k=10
             )
         else:
-            data = index.query(
-                vector=dummy_vector, include_metadata=True, top_k=1000
-            )
+            data = index.query(vector=dummy_vector, include_metadata=True, top_k=1000)
 
         if not data:
             return jsonify({"error": "No data found for the provided IDs"}), 404
@@ -44,12 +42,14 @@ def get_resource():
         for item in matches:
             item_dict = {
                 "content": item.get("metadata").get("text"),
-                'metadata': item.get("metadata"),
+                "metadata": item.get("metadata"),
             }
             response.append(item_dict)
 
         # Sort the response list by updated_at in descending order
-        sorted_response = sorted(response, key=lambda x: x['metadata']['updated_at'], reverse=True)
+        sorted_response = sorted(
+            response, key=lambda x: x["metadata"]["updated_at"], reverse=True
+        )
 
         return jsonify(sorted_response), 200
     except Exception as e:
@@ -70,30 +70,44 @@ def create_resource():
             if not data:
                 return jsonify({"error": "No JSON data provided"}), 400
 
+            id = data.get("resource_id")
             resources = data.get("resources")
 
             ids = [str(uuid.uuid4()) for _ in resources]
             created_at = datetime.datetime.now(datetime.UTC).isoformat()
             documents: List[Document] = []
 
-            for i, resource in enumerate(resources):
-                metadata = resource.get("metadata")
-                metadata_snake_case = convert_keys_to_snake_case(metadata)
-                metadata_snake_case.update(
-                    {
-                        "id": ids[i],
-                        "created_at": created_at,
-                        "updated_at": created_at,
-                    }
-                )
-                document = Document(
-                    metadata=metadata_snake_case, page_content=resource.get("content")
-                )
-                documents.append(document)
+            if id:
+                # Update
+                content = resources[0].get("content")
+                values = openai_ef.embed_documents(texts=[content])
 
-            vectorstore.add_documents(documents=documents, ids=ids)
+                print("test")
 
-            response = resources
+                index.update(
+                    id=id,
+                    values=values,
+                    set_metadata={"text": content, "updated_at": created_at},
+                )
+            else:
+                for i, resource in enumerate(resources):
+                    metadata = resource.get("metadata")
+                    metadata_snake_case = convert_keys_to_snake_case(metadata)
+                    metadata_snake_case.update(
+                        {
+                            "id": ids[i],
+                            "created_at": created_at,
+                            "updated_at": created_at,
+                        }
+                    )
+                    document = Document(
+                        metadata=metadata_snake_case, page_content=resource.get("content")
+                    )
+                    documents.append(document)
+
+                vectorstore.add_documents(documents=documents, ids=ids)
+
+                response = resources
 
             return jsonify(response), 200
 
@@ -101,6 +115,7 @@ def create_resource():
             return jsonify({"error": "Unsupported content type"}), 400
 
     except Exception as e:
+        print(e)
         return jsonify({"error": "An error occurred", "details": str(e)}), 500
 
 
