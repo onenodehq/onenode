@@ -71,46 +71,70 @@ def create_resource():
             if not data:
                 return jsonify({"error": "No JSON data provided"}), 400
 
-            id = data.get("resource_id")
             resources = data.get("resources")
 
             ids = [str(uuid.uuid4()) for _ in resources]
             created_at = datetime.datetime.now(datetime.UTC).isoformat()
             documents: List[Document] = []
 
-            if id:
+            for i, resource in enumerate(resources):
+                metadata = resource.get("metadata")
+                metadata_snake_case = convert_keys_to_snake_case(metadata)
+                metadata_snake_case.update(
+                    {
+                        "id": ids[i],
+                        "created_at": created_at,
+                        "updated_at": created_at,
+                    }
+                )
+                document = Document(
+                    metadata=metadata_snake_case,
+                    page_content=resource.get("content"),
+                )
+                documents.append(document)
+
+            vectorstore.add_documents(documents=documents, ids=ids)
+
+            response = resources
+
+            return jsonify(response), 200
+
+        else:
+            return jsonify({"error": "Unsupported content type"}), 400
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "An error occurred", "details": str(e)}), 500
+
+
+@v1_blueprint_resource.route("/", methods=["PUT"])
+@jwt_required
+def update_resources():
+    try:
+        content_type = request.content_type
+
+        # Handling JSON data
+        if content_type == "application/json":
+            data = request.get_json()
+            # Check for required fields
+            if not data:
+                return jsonify({"error": "No JSON data provided"}), 400
+
+            resources = data.get("resources")
+
+            updated_at = datetime.datetime.now(datetime.UTC).isoformat()
+
+            for resource in resources:
                 # Update
-                content = resources[0].get("content")
+                metadata = resource.get("metadata")
+                id = metadata.get("id")
+                content = resource.get("content")
                 values = openai_ef.embed_documents(texts=[content])
-
-                print("test")
-
-                index.update(
+                response = index.update(
                     id=id,
                     values=values,
-                    set_metadata={"text": content, "updated_at": created_at},
+                    set_metadata={"text": content, "updated_at": updated_at},
                 )
-            else:
-                for i, resource in enumerate(resources):
-                    metadata = resource.get("metadata")
-                    metadata_snake_case = convert_keys_to_snake_case(metadata)
-                    metadata_snake_case.update(
-                        {
-                            "id": ids[i],
-                            "created_at": created_at,
-                            "updated_at": created_at,
-                        }
-                    )
-                    document = Document(
-                        metadata=metadata_snake_case,
-                        page_content=resource.get("content"),
-                    )
-                    documents.append(document)
-
-                vectorstore.add_documents(documents=documents, ids=ids)
-
-                response = resources
-
             return jsonify(response), 200
 
         else:
