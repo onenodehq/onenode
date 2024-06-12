@@ -154,9 +154,8 @@ def delete_resource():
                 return jsonify({"error": "No JSON data provided"}), 400
 
             ids = data.get("resource_ids")
-            user_id = data.get("user_id")
 
-            if not ids or not user_id:
+            if not ids:
                 return jsonify({"error": "Resource IDs or User iD missing"}), 400
 
             vectorstore.delete(ids=ids)
