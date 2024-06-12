@@ -13,6 +13,7 @@ from blueprints.v1.utils.pinecone_setup import (
     index,
 )  # Import the initialized components
 from langchain.schema import Document
+import logging
 
 # Define a Blueprint for the '/v1/query' endpoint
 v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource")
@@ -101,7 +102,8 @@ def create_resource():
                         }
                     )
                     document = Document(
-                        metadata=metadata_snake_case, page_content=resource.get("content")
+                        metadata=metadata_snake_case,
+                        page_content=resource.get("content"),
                     )
                     documents.append(document)
 
@@ -117,14 +119,6 @@ def create_resource():
     except Exception as e:
         print(e)
         return jsonify({"error": "An error occurred", "details": str(e)}), 500
-
-
-def run_async_task(async_func, *args):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(async_func(*args))
-    loop.close()
-    return result
 
 
 def to_snake_case(s):
@@ -144,3 +138,34 @@ def convert_keys_to_snake_case(d):
         else:
             new_dict[new_key] = v
     return new_dict
+
+
+@v1_blueprint_resource.route("/", methods=["DELETE"])
+@jwt_required
+def delete_resource():
+    try:
+        content_type = request.content_type
+
+        # Handling JSON data
+        if content_type == "application/json":
+            data = request.get_json()
+            # Check for required fields
+            if not data:
+                return jsonify({"error": "No JSON data provided"}), 400
+
+            ids = data.get("resource_ids")
+            user_id = data.get("user_id")
+
+            if not ids or not user_id:
+                return jsonify({"error": "Resource IDs or User iD missing"}), 400
+
+            vectorstore.delete(ids=ids)
+
+            return jsonify({"message": "Resources deleted successfully"}), 200
+
+        else:
+            return jsonify({"error": "Unsupported content type"}), 400
+
+    except Exception as e:
+        logging.error(f"Error deleting resource: {e}")
+        return jsonify({"error": "An error occurred", "details": str(e)}), 500
