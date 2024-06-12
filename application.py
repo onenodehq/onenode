@@ -1,3 +1,5 @@
+import logging
+import os
 import chromadb
 from flask import Flask, jsonify
 from dotenv import load_dotenv
@@ -28,6 +30,14 @@ application.register_blueprint(v1_blueprint_question)
 application.register_blueprint(v1_blueprint_resource)
 
 check_and_migrate_db()
+
+# Get log level from environment variable or default to 'WARNING'
+log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
+numeric_level = getattr(logging, log_level, None)
+# Configure logging
+logging.basicConfig(
+    level=numeric_level, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 # Home route
