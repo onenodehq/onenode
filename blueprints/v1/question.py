@@ -1,5 +1,6 @@
 from hmac import new
 from http import client
+import os
 from typing import List, Set
 from chromadb import GetResult
 from flask import Blueprint, cli, request, Response, stream_with_context
@@ -50,7 +51,7 @@ def generate_response():
             )
 
             # Initialize OpenAI Chat model
-            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+            llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL", "gpt-4o"), temperature=0)
 
             contextualize_q_system_prompt = """Given a chat history and the latest user question \
             which might reference context in the chat history, formulate a standalone question \
