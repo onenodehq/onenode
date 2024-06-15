@@ -1,7 +1,9 @@
-import jwt, os
+import jwt
+import os
 from flask import request, jsonify
 from functools import wraps
-import requests, json
+import requests
+import json
 
 # Your AWS Cognito User Pool:
 COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
@@ -79,6 +81,11 @@ def jwt_required(f):
         decoded_token = verify_jwt(token)
         if decoded_token is None:
             return jsonify(message="Invalid or expired token"), 401
-        return f(*args, **kwargs)
+        # Extract custom user ID from the token
+        user_id = decoded_token.get("custom:userId")
+        if not user_id:
+            return jsonify(message="Custom user ID not found in token"), 400
+        # Pass the custom user ID to the decorated function
+        return f(user_id, *args, **kwargs)
 
     return decorated_function

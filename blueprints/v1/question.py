@@ -24,7 +24,7 @@ v1_blueprint_question = Blueprint("question", __name__, url_prefix="/v1/question
 
 @v1_blueprint_question.route("/", methods=["POST"])
 @jwt_required  # JWT token required for authorization
-def generate_response():
+def generate_response(user_id):
     # Function to generate the response stream
     def generate():
         try:

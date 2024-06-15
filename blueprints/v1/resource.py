@@ -4,6 +4,7 @@ import json
 import re
 from typing import Dict, List
 import uuid
+from dataclasses_json import dataclass_json
 from flask import Blueprint, jsonify, request
 from config import get_db_path
 from auth.auth import jwt_required
@@ -21,18 +22,22 @@ v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource
 
 @v1_blueprint_resource.route("/", methods=["GET"])
 @jwt_required
-def get_resource():
+def get_resource(user_id):
     try:
         id = request.args.get("resource_id", "")
         dummy_vector = [0] * 1536
 
         if id:
-            filter = {"id": {"$eq": id}}
+            filter = {"id": {"$eq": id}, "user_id": {"$eq": user_id}}
+            print("use id filter")
             data = index.query(
                 vector=dummy_vector, filter=filter, include_metadata=True, top_k=10
             )
         else:
-            data = index.query(vector=dummy_vector, include_metadata=True, top_k=1000)
+            filter = {"user_id": {"$eq": user_id}}
+            print("use id filter", user_id)
+            data = index.query(vector=dummy_vector, filter=filter, include_metadata=True, top_k=1000)
+            print("data", dataclass_json)
 
         if not data:
             return jsonify({"error": "No data found for the provided IDs"}), 404
@@ -60,7 +65,7 @@ def get_resource():
 
 @v1_blueprint_resource.route("/", methods=["POST"])
 @jwt_required
-def create_resource():
+def create_resource(user_id):
     try:
         content_type = request.content_type
 
@@ -109,7 +114,7 @@ def create_resource():
 
 @v1_blueprint_resource.route("/", methods=["PUT"])
 @jwt_required
-def update_resources():
+def update_resources(user_id):
     try:
         content_type = request.content_type
 
@@ -166,7 +171,7 @@ def convert_keys_to_snake_case(d):
 
 @v1_blueprint_resource.route("/", methods=["DELETE"])
 @jwt_required
-def delete_resource():
+def delete_resource(user_id):
     try:
         content_type = request.content_type
 
