@@ -36,7 +36,9 @@ def get_resource(user_id):
         else:
             filter = {"user_id": {"$eq": user_id}}
             print("use id filter", user_id)
-            data = index.query(vector=dummy_vector, filter=filter, include_metadata=True, top_k=1000)
+            data = index.query(
+                vector=dummy_vector, filter=filter, include_metadata=True, top_k=1000
+            )
             print("data", dataclass_json)
 
         if not data:
@@ -81,6 +83,7 @@ def create_resource(user_id):
             ids = [str(uuid.uuid4()) for _ in resources]
             created_at = datetime.datetime.now(datetime.UTC).isoformat()
             documents: List[Document] = []
+            response: List[dict] = []
 
             for i, resource in enumerate(resources):
                 metadata = resource.get("metadata")
@@ -92,15 +95,19 @@ def create_resource(user_id):
                         "updated_at": created_at,
                     }
                 )
+                content = resource.get("content")
                 document = Document(
                     metadata=metadata_snake_case,
-                    page_content=resource.get("content"),
+                    page_content=content,
                 )
                 documents.append(document)
 
-            vectorstore.add_documents(documents=documents, ids=ids)
+                response_item: dict = {}
+                response_item["content"] = content
+                response_item["metadata"] = metadata_snake_case
+                response.append(response_item)
 
-            response = resources
+            vectorstore.add_documents(documents=documents, ids=ids)
 
             return jsonify(response), 200
 
