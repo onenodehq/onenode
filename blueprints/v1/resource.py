@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import os
 import re
 from typing import Dict, List
 import uuid
@@ -29,6 +30,10 @@ def get_resource(user_id):
 
         if id:
             filter = {"id": {"$eq": id}, "user_id": {"$eq": user_id}}
+            if user_id in os.getenv("ADMIN_IDS"):
+                filter = {"id": {"$eq": id}}
+            else:
+                filter = {"id": {"$eq": id}, "user_id": {"$eq": user_id}}
             print("use id filter")
             data = index.query(
                 vector=dummy_vector, filter=filter, include_metadata=True, top_k=10
