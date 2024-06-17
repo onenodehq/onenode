@@ -1,11 +1,10 @@
-import asyncio
 import datetime
-import json
 import os
 import re
 from typing import Dict, List
 import uuid
 from dataclasses_json import dataclass_json
+from dotenv import load_dotenv
 from flask import Blueprint, jsonify, request
 from config import get_db_path
 from auth.auth import jwt_required
@@ -17,6 +16,8 @@ from blueprints.v1.utils.pinecone_setup import (
 from langchain.schema import Document
 import logging
 
+load_dotenv()
+
 # Define a Blueprint for the '/v1/query' endpoint
 v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource")
 
@@ -26,25 +27,28 @@ v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource
 def get_resource(user_id):
     try:
         id = request.args.get("resource_id", "")
+        is_admin = request.args.get("is_admin", "") == "True"
         dummy_vector = [0] * 1536
 
-        if id:
-            filter = {"id": {"$eq": id}, "user_id": {"$eq": user_id}}
-            if user_id in os.getenv("ADMIN_IDS"):
-                filter = {"id": {"$eq": id}}
+        if is_admin:
+            if user_id == os.getenv("ADMIN_ID"):
+                data = index.query(
+                    vector=dummy_vector,
+                    include_metadata=True,
+                    top_k=1000,
+                )
             else:
-                filter = {"id": {"$eq": id}, "user_id": {"$eq": user_id}}
-            print("use id filter")
+                return jsonify({"error": "Failed to authorize admin request"}), 400
+        elif id:
+            filter = {"id": {"$eq": id}, "user_id": {"$eq": user_id}}
             data = index.query(
                 vector=dummy_vector, filter=filter, include_metadata=True, top_k=10
             )
         else:
             filter = {"user_id": {"$eq": user_id}}
-            print("use id filter", user_id)
             data = index.query(
                 vector=dummy_vector, filter=filter, include_metadata=True, top_k=1000
             )
-            print("data", dataclass_json)
 
         if not data:
             return jsonify({"error": "No data found for the provided IDs"}), 404
