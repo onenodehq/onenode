@@ -144,6 +144,7 @@ def update_resources(user_id):
             resources = data.get("resources")
 
             updated_at = datetime.datetime.now(datetime.UTC).isoformat()
+            response = []
 
             for resource in resources:
                 # Update
@@ -151,11 +152,12 @@ def update_resources(user_id):
                 id = metadata.get("id")
                 content = resource.get("content")
                 values = openai_ef.embed_documents(texts=[content])
-                response = index.update(
+                response_item = index.update(
                     id=id,
                     values=values,
                     set_metadata={"text": content, "updated_at": updated_at},
                 )
+                response.append(response_item)
             return jsonify(response), 200
 
         else:
