@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 import re
@@ -6,6 +7,7 @@ import uuid
 from dataclasses_json import dataclass_json
 from dotenv import load_dotenv
 from flask import Blueprint, jsonify, request
+from api.openai.imageToText import imageToText
 from config import get_db_path
 from auth.auth import jwt_required
 from blueprints.v1.utils.pinecone_setup import (
@@ -88,6 +90,8 @@ def create_resource(user_id):
                 return jsonify({"error": "No JSON data provided"}), 400
 
             resources = data.get("resources")
+            if not resources:
+                return jsonify({"error": "No resources provided"}), 400
 
             ids = [str(uuid.uuid4()) for _ in resources]
             created_at = datetime.datetime.now(datetime.UTC).isoformat()
@@ -104,7 +108,12 @@ def create_resource(user_id):
                         "updated_at": created_at,
                     }
                 )
-                content = resource.get("content")
+
+                if metadata.get("type") == "image":
+                    base64_image = resource.get("content")
+                    content = asyncio.run(imageToText(base64_image))
+                else:
+                    content = resource.get("content")
                 document = Document(
                     metadata=metadata_snake_case,
                     page_content=content,
