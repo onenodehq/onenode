@@ -1,5 +1,4 @@
 from openai import OpenAI
-from typing import Dict
 
 from typeguard import typechecked
 
