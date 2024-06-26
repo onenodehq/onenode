@@ -62,9 +62,14 @@ def get_resource(user_id):
 
         response = []
         for item in matches:
+            metadata = item.get("metadata")
+            if metadata.get("type").startswith("image/"):
+                metadata.update(
+                     {"s3_key": generate_signed_url(metadata.get("s3_key"))}
+                )
             item_dict = {
-                "content": item.get("metadata").get("text"),
-                "metadata": item.get("metadata"),
+                "content": metadata.get("text"),
+                "metadata": metadata,
             }
             response.append(item_dict)
 
@@ -75,7 +80,7 @@ def get_resource(user_id):
 
         return jsonify(sorted_response), 200
     except Exception as e:
-
+        logging.error(f"Error fetching resource: {e}")
         return jsonify({"error": str(e)}), 500
 
 
