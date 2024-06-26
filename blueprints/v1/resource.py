@@ -133,16 +133,16 @@ def create_resource(user_id):
             )
             documents.append(document)
             response_metadata = metadata_snake_case.copy()
-            response_metadata.update(
-                {"s3_key": generate_signed_url(metadata_snake_case["s3_key"])}
-            )
+            if metadata_snake_case.get("s3_key"):
+                response_metadata.update(
+                    {"s3_key": generate_signed_url(metadata_snake_case["s3_key"])}
+                )
             response_item = {
                 "content": content,
                 "metadata": response_metadata,
             }
-            print("s3ke", metadata_snake_case["s3_key"])
+
             response.append(response_item)
-            print("response", response)
 
         vectorstore.add_documents(documents=documents, ids=ids)
         return jsonify(response), 200
