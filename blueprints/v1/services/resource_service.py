@@ -2,7 +2,7 @@ import datetime
 import os
 import uuid
 from typing import List
-from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef
+from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef, DIMENSIONS
 from langchain.schema import Document
 from blueprints.v1.utils.helpers import convert_keys_to_snake_case
 from blueprints.v1.utils.s3_operations import generate_signed_url, process_image_resources
@@ -11,7 +11,7 @@ def get_resource_service(request, user_id):
     try:
         id = request.args.get("resource_id", "")
         is_admin = request.args.get("is_admin", "") == "True"
-        dummy_vector = [0] * 1536
+        dummy_vector = [0] * DIMENSIONS
 
         if is_admin:
             if user_id == os.getenv("ADMIN_ID"):
@@ -151,6 +151,9 @@ def delete_resource_service(request):
         ids = data.get("resource_ids")
         if not ids:
             raise ValueError("Resource IDs or User ID missing")
+    
+        
+        
 
         vectorstore.delete(ids=ids)
         return {"message": "Resources deleted successfully"}

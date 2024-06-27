@@ -9,10 +9,13 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
 
+openai_ef = OpenAIEmbeddings(model="text-embedding-ada-002")
+DIMENSIONS = len(openai_ef.embed_query(""))
+
 if index_name not in existing_indexes:
     pc.create_index(
         name=index_name,
-        dimension=1536,
+        dimension=DIMENSIONS,
         metric="cosine",
         spec=ServerlessSpec(cloud="aws", region="us-east-1"),
     )
@@ -20,7 +23,5 @@ if index_name not in existing_indexes:
         time.sleep(1)
 
 index = pc.Index(index_name)
-
-openai_ef = OpenAIEmbeddings(model="text-embedding-ada-002")
 
 vectorstore = PineconeVectorStore(index_name=index_name, embedding=openai_ef)
