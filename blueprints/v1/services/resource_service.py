@@ -2,28 +2,31 @@ import datetime
 import os
 import uuid
 from typing import List
+from blueprints.v1.utils.pinecone_operations import (
+    query_all_resources,
+    query_resources_by_ids,
+    query_resources_by_user_id,
+)
 from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef, DIMENSIONS
 from langchain.schema import Document
 from blueprints.v1.utils.helpers import convert_keys_to_snake_case
-from blueprints.v1.utils.s3_operations import generate_signed_url, process_image_resources
+from blueprints.v1.utils.s3_operations import (
+    generate_signed_url,
+    process_image_resources,
+)
+
 
 def get_resource_service(request, user_id):
     try:
         id = request.args.get("resource_id", "")
         is_admin = request.args.get("is_admin", "") == "True"
-        dummy_vector = [0] * DIMENSIONS
 
         if is_admin:
-            if user_id == os.getenv("ADMIN_ID"):
-                data = index.query(vector=dummy_vector, include_metadata=True, top_k=1000)
-            else:
-                raise PermissionError("Failed to authorize admin request")
+            data = query_all_resources(user_id=user_id)
         elif id:
-            filter = {"id": {"$eq": id}, "user_id": {"$eq": user_id}}
-            data = index.query(vector=dummy_vector, filter=filter, include_metadata=True, top_k=10)
+            data = query_resources_by_ids(resource_id=id, user_id=user_id)
         else:
-            filter = {"user_id": {"$eq": user_id}}
-            data = index.query(vector=dummy_vector, filter=filter, include_metadata=True, top_k=1000)
+            data = query_resources_by_user_id(user_id=user_id)
 
         if not data:
             raise ValueError("No data found for the provided IDs")
@@ -41,7 +44,9 @@ def get_resource_service(request, user_id):
             }
             response.append(item_dict)
 
-        sorted_response = sorted(response, key=lambda x: x["metadata"]["updated_at"], reverse=True)
+        sorted_response = sorted(
+            response, key=lambda x: x["metadata"]["updated_at"], reverse=True
+        )
         return sorted_response
     except Exception as e:
         # Propagate the exception
@@ -90,7 +95,9 @@ def create_resource_service(request, user_id):
             documents.append(document)
             response_metadata = metadata_snake_case.copy()
             if metadata_snake_case.get("s3_key"):
-                response_metadata.update({"s3_key": generate_signed_url(metadata_snake_case["s3_key"])})
+                response_metadata.update(
+                    {"s3_key": generate_signed_url(metadata_snake_case["s3_key"])}
+                )
             response_item = {
                 "content": content,
                 "metadata": response_metadata,
@@ -137,7 +144,7 @@ def update_resource_service(request):
         raise e
 
 
-def delete_resource_service(request):
+def delete_resource_service(request, user_id):
     try:
         content_type = request.content_type
 
@@ -151,9 +158,6 @@ def delete_resource_service(request):
         ids = data.get("resource_ids")
         if not ids:
             raise ValueError("Resource IDs or User ID missing")
-    
-        
-        
 
         vectorstore.delete(ids=ids)
         return {"message": "Resources deleted successfully"}

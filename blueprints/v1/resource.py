@@ -48,7 +48,7 @@ def update_resources(user_id):
 @jwt_required
 def delete_resource(user_id):
     try:
-        response = delete_resource_service(request)
+        response = delete_resource_service(request, user_id)
         return jsonify(response), 200
     except Exception as e:
         logging.error(f"Error deleting resource: {e}")
