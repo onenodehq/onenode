@@ -6,7 +6,7 @@ from blueprints.v1.utils.pinecone_setup import DIMENSIONS, index
 dummy_vector = [0] * DIMENSIONS
 
 @typechecked
-def query_resources_by_ids(resource_id: str, user_id:str):
+def query_resources_by_id(resource_id: str, user_id:str):
     filter = {"id": {"$eq": resource_id}, "user_id": {"$eq": user_id}}
     data = index.query(vector=dummy_vector, filter=filter, include_metadata=True, top_k=1)
     return data

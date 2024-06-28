@@ -4,7 +4,7 @@ import uuid
 from typing import List
 from blueprints.v1.utils.pinecone_operations import (
     query_all_resources,
-    query_resources_by_ids,
+    query_resources_by_id,
     query_resources_by_user_id,
 )
 from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef, DIMENSIONS
@@ -24,7 +24,7 @@ def get_resource_service(request, user_id):
         if is_admin:
             data = query_all_resources(user_id=user_id)
         elif id:
-            data = query_resources_by_ids(resource_id=id, user_id=user_id)
+            data = query_resources_by_id(resource_id=id, user_id=user_id)
         else:
             data = query_resources_by_user_id(user_id=user_id)
 
