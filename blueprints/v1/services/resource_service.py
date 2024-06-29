@@ -1,7 +1,9 @@
 import datetime
 import os
 import uuid
-from typing import List
+from typing import Dict, List
+
+from typeguard import typechecked
 from blueprints.v1.utils.pinecone_operations import (
     query_all_resources,
     query_resources_by_id,
@@ -11,6 +13,7 @@ from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef, DI
 from langchain.schema import Document
 from blueprints.v1.utils.helpers import convert_keys_to_snake_case
 from blueprints.v1.utils.s3_operations import (
+    delete_s3_objects,
     generate_signed_url,
     process_image_resources,
 )
@@ -144,6 +147,7 @@ def update_resource_service(request):
         raise e
 
 
+@typechecked
 def delete_resource_service(request, user_id):
     try:
         content_type = request.content_type
@@ -158,6 +162,18 @@ def delete_resource_service(request, user_id):
         ids = data.get("resource_ids")
         if not ids:
             raise ValueError("Resource IDs or User ID missing")
+
+        # Assume len(ids) == 1 for now
+        matches: List = query_resources_by_id(ids[0], user_id).get("matches")
+        print("type", type(matches[0]))
+        data = matches[0]
+        metadata = data.get("metadata")
+        mime_type = metadata.get("type")
+        if mime_type.startswith("image/"):
+            s3_key = metadata.get("s3_key")
+            if not s3_key:
+                raise ValueError("No S3 key provided")
+            delete_s3_objects([s3_key])
 
         vectorstore.delete(ids=ids)
         return {"message": "Resources deleted successfully"}

@@ -72,6 +72,21 @@ def upload_to_s3(file_binary, filename, content_type):
     )
 
 
+def delete_s3_objects(object_keys: List[str]):
+    """Delete objects from an S3 bucket.
+
+    :param object_keys: List of keys of the objects to delete.
+    """
+    try:
+        objects = [{"Key": key} for key in object_keys]
+        response = s3.delete_objects(Bucket=S3_BUCKET_NAME, Delete={"Objects": objects})
+        print("response\n", response)
+        return response
+    except Exception as e:
+        logging.error(f"Failed to delete objects: {e}")
+        raise RuntimeError(f"Failed to delete objects from S3: {str(e)}")
+
+
 def generate_signed_url(object_key, expiration=3600):
     """
     Generate a signed URL for an S3 object.
