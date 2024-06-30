@@ -1,6 +1,5 @@
 import logging
 import os
-from flask import Flask
 from dotenv import load_dotenv
 from migrations.db_version_manager import check_and_migrate_db, read_db_version
 
@@ -11,12 +10,11 @@ from langchain_openai import ChatOpenAI
 from blueprints.v1.question import v1_blueprint_question
 from blueprints.v1.resource import v1_blueprint_resource
 from flask_cors import CORS
+from create_app import application
 
 
 llm = ChatOpenAI()
 
-# Flask application configuration
-application = Flask(__name__)
 CORS(application)
 
 # Register the Blueprint
@@ -38,7 +36,7 @@ logging.basicConfig(
 @application.route("/")
 def home():
     current_version = read_db_version()
-    return f"Hello, World!\nVersion: {current_version}"
+    return f"Hello, World!"
 
 
 # Only for development environment
