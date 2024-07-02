@@ -33,7 +33,6 @@ def generate_response(user_id):
             question = data.get("question")
             is_public = data.get("is_public")
             chat_history = data.get("chat_history", [])
-            user_id = data.get("user_id")
 
             # Check if required fields are present
             if not (question and is_public and user_id):
