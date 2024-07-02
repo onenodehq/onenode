@@ -1,7 +1,4 @@
 import datetime
-import json
-import os
-from urllib import response
 import uuid
 from typing import Dict, List
 
@@ -112,7 +109,9 @@ def create_resource_service(request, user_id):
             response.append(response_item)
 
         vectorstore.add_documents(documents=documents, ids=ids)
-        mongo_documents = [document.to_json().get("kwargs").get("metadata") for document in documents]
+        mongo_documents = [
+            document.to_json().get("kwargs").get("metadata") for document in documents
+        ]
         mongo_collection.insert_many(documents=mongo_documents)
         return response
     except Exception as e:
@@ -133,8 +132,7 @@ def update_resource_service(request):
 
         resources = data.get("resources")
         updated_at = datetime.datetime.now(datetime.UTC).isoformat()
-        ids: List[int] = []
-        updated_resources = []
+        response = []
 
         for resource in resources:
             metadata = resource.get("metadata")
@@ -146,9 +144,12 @@ def update_resource_service(request):
                 values=values,
                 set_metadata={"text": content, "updated_at": updated_at},
             )
-            updated_resources.append(response_item)
-            ids.append(id)
-        response = updated_resources
+            mongo_collection.update_one(
+                {"id": id}, {"$set": {"text": content, "updated_at": updated_at}}
+            )
+            response.append(response_item)
+
+        response = response
         return response
     except Exception as e:
         # Propagate the exception
