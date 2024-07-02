@@ -2,6 +2,7 @@ import datetime
 import uuid
 from typing import Dict, List
 
+import pymongo
 from typeguard import typechecked
 from blueprints.v1.utils.pinecone_operations import (
     query_all_resources,
@@ -25,32 +26,34 @@ def get_resource_service(request, user_id):
         is_admin = request.args.get("is_admin", "") == "True"
 
         if is_admin:
-            data = query_all_resources(user_id=user_id)
+            data = mongo_collection.find({}, {"_id": 0}).sort(
+                "created_at", pymongo.DESCENDING
+            )
         elif id:
-            data = query_resources_by_id(resource_id=id, user_id=user_id)
+            data = mongo_collection.find(
+                {"user_id": user_id, "_id": id}, {"_id": 0}
+            ).sort("created_at", pymongo.DESCENDING)
         else:
-            data = query_resources_by_user_id(user_id=user_id)
+            data = mongo_collection.find({"user_id": user_id}, {"_id": 0}).sort(
+                "created_at", pymongo.DESCENDING
+            )
 
         if not data:
             raise ValueError("No data found for the provided IDs")
 
-        matches: List = data.get("matches")
+        data: List = list(data)
         response = []
 
-        for item in matches:
-            metadata = item.get("metadata")
-            if metadata.get("type").startswith("image/"):
-                metadata.update({"s3_key": generate_signed_url(metadata.get("s3_key"))})
+        for item in data:
+            if item.get("type").startswith("image/"):
+                item.update({"s3_key": generate_signed_url(item.get("s3_key"))})
             item_dict = {
-                "content": metadata.get("text"),
-                "metadata": metadata,
+                "content": item.get("text"),
+                "metadata": item,
             }
             response.append(item_dict)
 
-        sorted_response = sorted(
-            response, key=lambda x: x["metadata"]["updated_at"], reverse=True
-        )
-        return sorted_response
+        return response
     except Exception as e:
         # Propagate the exception
         raise e
