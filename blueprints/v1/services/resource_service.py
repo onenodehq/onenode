@@ -1,5 +1,7 @@
 import datetime
+import json
 import os
+from urllib import response
 import uuid
 from typing import Dict, List
 
@@ -17,6 +19,7 @@ from blueprints.v1.utils.s3_operations import (
     generate_signed_url,
     process_image_resources,
 )
+from blueprints.v1.utils.mongo_setup import mongo_collection
 
 
 def get_resource_service(request, user_id):
@@ -109,6 +112,8 @@ def create_resource_service(request, user_id):
             response.append(response_item)
 
         vectorstore.add_documents(documents=documents, ids=ids)
+        mongo_documents = [document.to_json().get("kwargs").get("metadata") for document in documents]
+        mongo_collection.insert_many(documents=mongo_documents)
         return response
     except Exception as e:
         # Propagate the exception
@@ -128,7 +133,8 @@ def update_resource_service(request):
 
         resources = data.get("resources")
         updated_at = datetime.datetime.now(datetime.UTC).isoformat()
-        response = []
+        ids: List[int] = []
+        updated_resources = []
 
         for resource in resources:
             metadata = resource.get("metadata")
@@ -140,7 +146,9 @@ def update_resource_service(request):
                 values=values,
                 set_metadata={"text": content, "updated_at": updated_at},
             )
-            response.append(response_item)
+            updated_resources.append(response_item)
+            ids.append(id)
+        response = updated_resources
         return response
     except Exception as e:
         # Propagate the exception
@@ -176,6 +184,8 @@ def delete_resource_service(request, user_id):
             delete_s3_objects([s3_key])
 
         vectorstore.delete(ids=ids)
+        filter = {"id": {"$in": ids}}
+        mongo_collection.delete_many(filter)
         return {"message": "Resources deleted successfully"}
     except Exception as e:
         # Propagate the exception
