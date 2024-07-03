@@ -14,3 +14,19 @@ def docs_to_context(docs: list[dict]) -> str:
 
         formatted.append(f"Source ID: {doc_id}, Source Snippet: {doc_text}")
     return "\n\n" + "\n\n".join(formatted)
+
+
+def format_to_openai_messages(dict_list: list[dict]):
+    """
+    Formats a list of dictionaries into OpenAI's API message format.
+
+    Args:
+        dict_list (list): A list of dictionaries to be formatted.
+
+    Returns:
+        list: A list of dictionaries formatted for OpenAI's API.
+    """
+    return [
+        {"role": item.get("role", ""), "content": item.get("content", "")}
+        for item in dict_list
+    ]
