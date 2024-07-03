@@ -66,3 +66,26 @@ def image_to_text(image_url: str) -> str:
         'total_tokens': 873
     }
 } """
+
+
+@typechecked
+def contextualize_question(question: str, chat_history: list[dict[str, str]]):
+    system_prompt = """Given a chat history and the latest user question \
+        which might reference context in the chat history, formulate a standalone question \
+        which can be understood without the chat history. Do NOT answer the question, \
+        just reformulate it if needed and otherwise return it as is."""
+
+    client = OpenAI()
+
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            *chat_history,
+            {"role": "user", "content": question},
+        ],
+    )
+
+    result = completion.choices[0].message.content
+    return result
+
