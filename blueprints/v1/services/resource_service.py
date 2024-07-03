@@ -1,12 +1,9 @@
 import datetime
 import uuid
-from typing import Dict, List
+from typing import List
 
 import pymongo
 from typeguard import typechecked
-from blueprints.v1.utils.pinecone_operations import (
-    query_resources_by_id,
-)
 from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef, DIMENSIONS
 from langchain.schema import Document
 from blueprints.v1.utils.resource_helper import convert_keys_to_snake_case
@@ -173,17 +170,19 @@ def delete_resource_service(request, user_id):
         if not ids:
             raise ValueError("Resource IDs or User ID missing")
 
-        # Assume len(ids) == 1 for now
-        matches: List = query_resources_by_id(ids[0], user_id).get("matches")
-        print("type", type(matches[0]))
-        data = matches[0]
-        metadata = data.get("metadata")
-        mime_type = metadata.get("type")
-        if mime_type.startswith("image/"):
-            s3_key = metadata.get("s3_key")
-            if not s3_key:
-                raise ValueError("No S3 key provided")
-            delete_s3_objects([s3_key])
+        query = {"_id": {"$in": ids}, "user_id": user_id}
+        data: List = list(mongo_collection.find(query))
+        s3_keys = []
+        for item in data:
+            mime_type = item.get("type")
+            if mime_type.startswith("image/"):
+                s3_key = item.get("s3_key")
+                s3_keys.append(s3_key)
+                if not s3_key:
+                    raise ValueError("No S3 key provided")
+                
+        if s3_keys:
+            delete_s3_objects(s3_keys)
 
         vectorstore.delete(ids=ids)
         filter = {"id": {"$in": ids}}
