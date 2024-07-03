@@ -5,13 +5,11 @@ from typing import Dict, List
 import pymongo
 from typeguard import typechecked
 from blueprints.v1.utils.pinecone_operations import (
-    query_all_resources,
     query_resources_by_id,
-    query_resources_by_user_id,
 )
 from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef, DIMENSIONS
 from langchain.schema import Document
-from blueprints.v1.utils.helpers import convert_keys_to_snake_case
+from blueprints.v1.utils.resource_helper import convert_keys_to_snake_case
 from blueprints.v1.utils.s3_operations import (
     delete_s3_objects,
     generate_signed_url,
