@@ -21,15 +21,15 @@ def get_resource_service(request, user_id):
         is_admin = request.args.get("is_admin", "") == "True"
 
         if is_admin:
-            data = mongo_collection.find({}, {"_id": 0}).sort(
+            data = mongo_collection.find({}, projection={"_id": 0}).sort(
                 "created_at", pymongo.DESCENDING
             )
         elif id:
             data = mongo_collection.find(
-                {"user_id": user_id, "_id": id}, {"_id": 0}
+                {"user_id": user_id, "_id": id}, projection={"_id": 0}
             ).sort("created_at", pymongo.DESCENDING)
         else:
-            data = mongo_collection.find({"user_id": user_id}, {"_id": 0}).sort(
+            data = mongo_collection.find({"user_id": user_id}, projection={"_id": 0}).sort(
                 "created_at", pymongo.DESCENDING
             )
 
