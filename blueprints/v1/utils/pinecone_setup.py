@@ -22,6 +22,6 @@ if index_name not in existing_indexes:
     while not pc.describe_index(index_name).status["ready"]:
         time.sleep(1)
 
-index = pc.Index(index_name)
+pc_index = pc.Index(index_name)
 
 vectorstore = PineconeVectorStore(index_name=index_name, embedding=openai_ef)

@@ -4,7 +4,7 @@ from typing import List
 
 import pymongo
 from typeguard import typechecked
-from blueprints.v1.utils.pinecone_setup import vectorstore, index, openai_ef, DIMENSIONS
+from blueprints.v1.utils.pinecone_setup import vectorstore, pc_index, openai_ef, DIMENSIONS
 from langchain.schema import Document
 from blueprints.v1.utils.resource_helper import convert_keys_to_snake_case
 from blueprints.v1.utils.s3_operations import (
@@ -143,7 +143,7 @@ def update_resource_service(request):
             id = metadata.get("id")
             content = resource.get("content")
             values = openai_ef.embed_documents(texts=[content])
-            response_item = index.update(
+            response_item = pc_index.update(
                 id=id,
                 values=values,
                 set_metadata={"text": content, "updated_at": updated_at},
