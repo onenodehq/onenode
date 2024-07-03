@@ -47,7 +47,8 @@ def get_resource_service(request, user_id):
                 "metadata": item,
             }
             response.append(item_dict)
-
+        print("response, ", response)
+        print("id, ", id)
         return response
     except Exception as e:
         # Propagate the exception
@@ -107,10 +108,15 @@ def create_resource_service(request, user_id):
             response.append(response_item)
 
         vectorstore.add_documents(documents=documents, ids=ids)
-        mongo_documents = [
-            document.to_json().get("kwargs").get("metadata") for document in documents
-        ]
+
+        mongo_documents = []
+        for i, document in enumerate(documents):
+            document_dict = document.to_json()
+            metadata = document_dict.get("kwargs", {}).get("metadata", {})
+            metadata["_id"] = ids[i]
+            mongo_documents.append(metadata)
         mongo_collection.insert_many(documents=mongo_documents)
+
         return response
     except Exception as e:
         # Propagate the exception
@@ -180,7 +186,7 @@ def delete_resource_service(request, user_id):
                 s3_keys.append(s3_key)
                 if not s3_key:
                     raise ValueError("No S3 key provided")
-                
+
         if s3_keys:
             delete_s3_objects(s3_keys)
 
