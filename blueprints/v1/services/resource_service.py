@@ -6,7 +6,7 @@ import pymongo
 from typeguard import typechecked
 from blueprints.v1.utils.pinecone_setup import vectorstore, pc_index, openai_ef, DIMENSIONS
 from langchain.schema import Document
-from blueprints.v1.utils.resource_helper import convert_keys_to_snake_case
+from blueprints.v1.utils.resource_helper import convert_keys_to_snake_case, is_s3_url_expired
 from blueprints.v1.utils.s3_operations import (
     delete_s3_objects,
     generate_signed_url,
@@ -41,14 +41,20 @@ def get_resource_service(request, user_id):
 
         for item in data:
             if item.get("type").startswith("image/"):
-                item.update({"s3_key": generate_signed_url(item.get("s3_key"))})
+                signed_url = item.get("signed_url")
+                if not signed_url or is_s3_url_expired(signed_url=signed_url):
+                    # Generate signed URL if necessary
+                    new_signed_url = generate_signed_url(item.get("s3_key"))
+                    item.update({"signed_url": new_signed_url})
+                    filter = {"_id": item.get("id"), "user_id": user_id}
+                    update = {"$set": {"signed_url": new_signed_url}}
+                    mongo_collection.update_one(filter=filter, update=update)
+                    
             item_dict = {
                 "content": item.get("text"),
                 "metadata": item,
             }
             response.append(item_dict)
-        print("response, ", response)
-        print("id, ", id)
         return response
     except Exception as e:
         # Propagate the exception
