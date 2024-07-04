@@ -124,15 +124,6 @@ def get_contextual_response(question: str, chat_history: list[dict[str, str]], c
         stream=True,
     )
 
-    print(
-        "message",
-        [
-            {"role": "system", "content": system_prompt},
-            *chat_history,
-            {"role": "user", "content": question},
-        ],
-    )
-
     try:
         for message in stream:
             chunk_content = message.choices[0].delta.content

@@ -3,7 +3,12 @@ import io
 import logging
 from typing import Dict, List
 from blueprints.v1.utils.openai_operations import image_to_text
-from blueprints.v1.utils.s3_setup import EXTENSION_MAP, S3_BUCKET_NAME, s3
+from blueprints.v1.utils.s3_setup import (
+    EXTENSION_MAP,
+    S3_BUCKET_NAME,
+    SIGNED_URL_EXPIRATION,
+    s3,
+)
 from typeguard import typechecked
 
 
@@ -87,7 +92,8 @@ def delete_s3_objects(object_keys: List[str]):
         raise RuntimeError(f"Failed to delete objects from S3: {str(e)}")
 
 
-def generate_signed_url(object_key, expiration=3600):
+def generate_signed_url(object_key):
+    expiration = SIGNED_URL_EXPIRATION
     """
     Generate a signed URL for an S3 object.
 
