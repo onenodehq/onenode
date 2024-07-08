@@ -212,34 +212,58 @@ def delete_resource_service(request, user_id):
 
 
 @typechecked
-def update_resource_connection_service(user_id: str, request, main_id: str):
+def update_resource_context_service(user_id: str, request, context_id: str):
     try:
-
         data = request.get_json()
         if not data:
             raise ValueError("No JSON data provided")
 
-        sibling_ids: list[str] = data.get("sibling_ids")
+        target_ids: List[str] = data.get("target_ids", [])
         updated_at = datetime.datetime.now(datetime.UTC).isoformat()
 
+        update_data = {"$set": {"updated_at": updated_at, "target_ids": target_ids if target_ids else []}}
+        
         mongo_collection.update_one(
-            {"_id": main_id, "user_id": user_id},
-            {
-                "$addToSet": {"connections": {"$each": sibling_ids}},
-                "$set": {"updated_at": updated_at},
-            },
+            {"_id": context_id, "user_id": user_id}, update_data
         )
 
-        for sibling_id in sibling_ids:
-            mongo_collection.update_one(
-                {"_id": sibling_id, "user_id": user_id},
-                {
-                    "$addToSet": {"connections": main_id},
-                    "$set": {"updated_at": updated_at},
-                },
+        current_docs = mongo_collection.find({"user_id": user_id})
+        updates = []
+
+        # Update target_ids
+        for target_id in target_ids:
+            updates.append(
+                pymongo.UpdateOne(
+                    {"_id": target_id, "user_id": user_id},
+                    {
+                        "$addToSet": {"context_ids": context_id},
+                        "$set": {"updated_at": updated_at},
+                    },
+                )
             )
 
-        return {"message": "Connections updated"}
+        # Remove context_id from target_ids no longer associated
+        removed_target_ids = {
+            doc["_id"]
+            for doc in current_docs
+            if context_id in doc.get("context_ids", []) and doc["_id"] not in target_ids
+        }
+
+        for target_id in removed_target_ids:
+            updates.append(
+                pymongo.UpdateOne(
+                    {"_id": target_id, "user_id": user_id},
+                    {
+                        "$pull": {"context_ids": context_id},
+                        "$set": {"updated_at": updated_at},
+                    },
+                )
+            )
+
+        if updates:
+            mongo_collection.bulk_write(updates)
+
+        return {"message": "Connections updated successfully"}
     except Exception as e:
         # Propagate the exception
         raise e

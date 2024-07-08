@@ -7,7 +7,7 @@ from blueprints.v1.services.resource_service import (
     create_resource_service,
     delete_resource_service,
     get_resource_service,
-    update_resource_connection_service,
+    update_resource_context_service,
     update_resource_service,
 )
 
@@ -61,12 +61,12 @@ def delete_resource(user_id):
         return jsonify({"error": "An error occurred", "details": str(e)}), 500
 
 
-@v1_blueprint_resource.route("/<id>/connection", methods=["PUT"])
+@v1_blueprint_resource.route("/<id>/context", methods=["PUT"])
 @jwt_required
 def update_connections(user_id, id):
     try:
-        response = update_resource_connection_service(
-            user_id=user_id, request=request, main_id=id
+        response = update_resource_context_service(
+            user_id=user_id, request=request, context_id=id
         )
         return jsonify(response), 200
     except Exception as e:
