@@ -110,7 +110,7 @@ def create_resource_service(request, user_id):
             response_metadata = metadata_snake_case.copy()
             if metadata_snake_case.get("s3_key"):
                 response_metadata.update(
-                    {"s3_key": generate_signed_url(metadata_snake_case["s3_key"])}
+                    {"signed_url": generate_signed_url(metadata_snake_case["s3_key"])}
                 )
             response_item = {
                 "content": content,
