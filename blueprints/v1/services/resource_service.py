@@ -1,12 +1,18 @@
 import datetime
 import uuid
 from typing import List
-
 import pymongo
 from typeguard import typechecked
-from blueprints.v1.utils.pinecone_setup import vectorstore, pc_index, openai_ef, DIMENSIONS
+from blueprints.v1.utils.pinecone_setup import (
+    vectorstore,
+    pc_index,
+    openai_ef,
+)
 from langchain.schema import Document
-from blueprints.v1.utils.resource_helper import convert_keys_to_snake_case, is_s3_url_expired
+from blueprints.v1.utils.resource_helper import (
+    convert_keys_to_snake_case,
+    is_s3_url_expired,
+)
 from blueprints.v1.utils.s3_operations import (
     delete_s3_objects,
     generate_signed_url,
@@ -29,9 +35,9 @@ def get_resource_service(request, user_id):
                 {"user_id": user_id, "_id": id}, projection={"_id": 0}
             ).sort("created_at", pymongo.DESCENDING)
         else:
-            data = mongo_collection.find({"user_id": user_id}, projection={"_id": 0}).sort(
-                "created_at", pymongo.DESCENDING
-            )
+            data = mongo_collection.find(
+                {"user_id": user_id}, projection={"_id": 0}
+            ).sort("created_at", pymongo.DESCENDING)
 
         if not data:
             raise ValueError("No data found for the provided IDs")
@@ -49,7 +55,7 @@ def get_resource_service(request, user_id):
                     filter = {"_id": item.get("id"), "user_id": user_id}
                     update = {"$set": {"signed_url": new_signed_url}}
                     mongo_collection.update_one(filter=filter, update=update)
-                    
+
             item_dict = {
                 "content": item.get("text"),
                 "metadata": item,
@@ -200,6 +206,40 @@ def delete_resource_service(request, user_id):
         filter = {"id": {"$in": ids}}
         mongo_collection.delete_many(filter)
         return {"message": "Resources deleted successfully"}
+    except Exception as e:
+        # Propagate the exception
+        raise e
+
+
+@typechecked
+def update_resource_connection_service(user_id: str, request, main_id: str):
+    try:
+
+        data = request.get_json()
+        if not data:
+            raise ValueError("No JSON data provided")
+
+        sibling_ids: list[str] = data.get("sibling_ids")
+        updated_at = datetime.datetime.now(datetime.UTC).isoformat()
+
+        mongo_collection.update_one(
+            {"_id": main_id, "user_id": user_id},
+            {
+                "$addToSet": {"connections": {"$each": sibling_ids}},
+                "$set": {"updated_at": updated_at},
+            },
+        )
+
+        for sibling_id in sibling_ids:
+            mongo_collection.update_one(
+                {"_id": sibling_id, "user_id": user_id},
+                {
+                    "$addToSet": {"connections": main_id},
+                    "$set": {"updated_at": updated_at},
+                },
+            )
+
+        return {"message": "Connections updated"}
     except Exception as e:
         # Propagate the exception
         raise e
