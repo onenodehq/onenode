@@ -12,11 +12,10 @@ from blueprints.v1.utils.pinecone_setup import (
 from langchain.schema import Document
 from blueprints.v1.utils.resource_helper import (
     convert_keys_to_snake_case,
-    is_s3_url_expired,
+    is_signed_url_expired,
 )
 from blueprints.v1.utils.s3_operations import (
     delete_s3_objects,
-    generate_signed_url,
     process_image_resources,
 )
 from blueprints.v1.utils.mongo_setup import mongo_collection
@@ -49,7 +48,7 @@ def get_resource_service(request, user_id):
         for item in data:
             if item.get("type").startswith("image/"):
                 signed_url = item.get("signed_url")
-                if not signed_url or is_s3_url_expired(signed_url=signed_url):
+                if not signed_url or is_signed_url_expired(signed_url=signed_url):
                     # Generate signed URL if necessary
                     new_signed_url = generate_cloudfront_signed_url(item.get("s3_key"))
                     item.update({"signed_url": new_signed_url})
