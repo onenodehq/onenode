@@ -3,6 +3,7 @@ import uuid
 from typing import List
 import pymongo
 from typeguard import typechecked
+from blueprints.v1.utils.cloudfront_operations import generate_cloudfront_signed_url
 from blueprints.v1.utils.pinecone_setup import (
     vectorstore,
     pc_index,
@@ -48,9 +49,9 @@ def get_resource_service(request, user_id):
         for item in data:
             if item.get("type").startswith("image/"):
                 signed_url = item.get("signed_url")
-                if not signed_url or is_s3_url_expired(signed_url=signed_url):
+                if True:
                     # Generate signed URL if necessary
-                    new_signed_url = generate_signed_url(item.get("s3_key"))
+                    new_signed_url = generate_cloudfront_signed_url(item.get("s3_key"))
                     item.update({"signed_url": new_signed_url})
                     filter = {"_id": item.get("id"), "user_id": user_id}
                     update = {"$set": {"signed_url": new_signed_url}}
@@ -110,7 +111,7 @@ def create_resource_service(request, user_id):
             response_metadata = metadata_snake_case.copy()
             if metadata_snake_case.get("s3_key"):
                 response_metadata.update(
-                    {"signed_url": generate_signed_url(metadata_snake_case["s3_key"])}
+                    {"signed_url": generate_cloudfront_sing(metadata_snake_case["s3_key"])}
                 )
             response_item = {
                 "content": content,

@@ -7,7 +7,7 @@ import json
 
 # Your AWS Cognito User Pool:
 COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
-COGNITO_AWS_REGION = os.getenv("COGNITO_AWS_REGION")
+COGNITO_AWS_REGION = os.getenv("AWS_REGION")
 COGNITO_APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID")
 COGNITO_PUBLIC_KEYS = {}  # You need to fetch and cache the public keys from AWS
 
