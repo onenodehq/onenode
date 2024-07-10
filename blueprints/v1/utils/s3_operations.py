@@ -13,7 +13,7 @@ from typeguard import typechecked
 
 
 @typechecked
-def process_image_resources(resources: List[Dict], ids: List[str]) -> List[Dict]:
+def process_image_resources(resources: List[Dict], ids: List[str], user_id: str) -> List[Dict]:
     updated_resources = []
 
     for i, resource in enumerate(resources):
@@ -29,7 +29,7 @@ def process_image_resources(resources: List[Dict], ids: List[str]) -> List[Dict]
 
                 content = image_to_text(base64_image)
                 extension = EXTENSION_MAP.get(mime_type, "bin")
-                filename = f"{ids[i]}.{extension}"
+                filename = f"{user_id}/{ids[i]}.{extension}"
                 save_base64_image(base64_image=base64_image, filename=filename)
 
                 metadata["s3_key"] = filename

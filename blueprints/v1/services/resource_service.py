@@ -85,7 +85,9 @@ def create_resource_service(request, user_id):
         ids = [str(uuid.uuid4()) for _ in resources]
         created_at = datetime.datetime.now().isoformat()
 
-        resources = process_image_resources(resources=resources, ids=ids)
+        resources = process_image_resources(
+            resources=resources, ids=ids, user_id=user_id
+        )
         documents: List[Document] = []
         response: List[dict] = []
 
