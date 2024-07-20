@@ -160,6 +160,7 @@ def update_resource_service(request):
             metadata = resource.get("metadata")
             id = metadata.get("id")
             content = resource.get("content")
+            contexts = metadata.get("contexts")
             values = openai_ef.embed_documents(texts=[content])
             response_item = pc_index.update(
                 id=id,
@@ -167,7 +168,14 @@ def update_resource_service(request):
                 set_metadata={"text": content, "updated_at": updated_at},
             )
             mongo_collection.update_one(
-                {"id": id}, {"$set": {"text": content, "updated_at": updated_at}}
+                {"id": id},
+                {
+                    "$set": {
+                        "text": content,
+                        "contexts": contexts,
+                        "updated_at": updated_at,
+                    }
+                },
             )
             response.append(response_item)
 
