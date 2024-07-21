@@ -17,10 +17,10 @@ from blueprints.v1.utils.question_helper import (
 
 
 # Define a Blueprint for the '/v1/query' endpoint
-v1_blueprint_question = Blueprint("question", __name__, url_prefix="/private/v1/question")
+private_v1_blueprint_question = Blueprint("question", __name__, url_prefix="/private/v1/question")
 
 
-@v1_blueprint_question.route("", methods=["POST"])
+@private_v1_blueprint_question.route("", methods=["POST"])
 @jwt_required  # JWT token required for authorization
 @typechecked
 def generate_response(user_id: str):

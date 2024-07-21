@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from langchain_openai import ChatOpenAI
-from blueprints.v1.question import v1_blueprint_question
-from blueprints.v1.resource import v1_blueprint_resource
+from blueprints.private.v1.question import private_v1_blueprint_question
+from blueprints.private.v1.resource import private_v1_blueprint_resource
 from flask_cors import CORS
 from create_app import application
 
@@ -17,8 +17,8 @@ llm = ChatOpenAI()
 CORS(application)
 
 # Register the Blueprint
-application.register_blueprint(v1_blueprint_question)
-application.register_blueprint(v1_blueprint_resource)
+application.register_blueprint(private_v1_blueprint_question)
+application.register_blueprint(private_v1_blueprint_resource)
 
 # Get log level from environment variable or default to 'WARNING'
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
