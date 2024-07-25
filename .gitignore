@@ -177,3 +177,4 @@ test.py
 
 migrations/db_version.txt
 ssl
+.vscode
