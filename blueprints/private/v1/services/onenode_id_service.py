@@ -4,7 +4,7 @@ from flask import g
 from blueprints.v1.utils.mongo_setup import mongo_email_collection
 
 
-def get_or_create_user_id_service():
+def get_or_create_onenode_id_service():
     try:
         email = g.user.get("email")
 
