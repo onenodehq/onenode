@@ -1,7 +1,6 @@
 import logging
-from flask import Blueprint, g, jsonify
+from flask import Blueprint, g, jsonify, request
 from auth.auth_decorator import requires_auth
-from auth.api_key_decorator import require_api_key
 from blueprints.private.v1.services.api_key_service import (
     generate_api_key,
     hash_api_key,
@@ -15,12 +14,15 @@ private_v1_blueprint_api_key = Blueprint(
 
 
 @private_v1_blueprint_api_key.route("", methods=["POST"])
-@require_api_key
+@requires_auth
 def create_api_key():
     try:
+        data = request.get_json()
+        name = data.get("api_key", "")
         api_key = generate_api_key()
+        onenode_id = g.onenode_id
         hashed_api_key = hash_api_key(api_key=api_key)
-        save_api_key(hased_api_key=hashed_api_key, onenode_id="")
+        save_api_key(hased_api_key=hashed_api_key, onenode_id=onenode_id, name=name)
         return jsonify({"api_key": api_key}), 200
     except Exception as e:
         logging.error(f"Error saving resource: {e}")

@@ -26,10 +26,15 @@ def hash_api_key(api_key: str) -> str:
     return hashed_api_key
 
 
-def save_api_key(hased_api_key: str, onenode_id: str) -> str:
+def save_api_key(hased_api_key: str, onenode_id: str, name: str = "") -> str:
     try:
-        mongo_api_key_collection.insert_one(
-            {"_id": hased_api_key, "onenode_id": onenode_id}
-        )
+        if name:
+            mongo_api_key_collection.insert_one(
+                {"_id": hased_api_key, "onenode_id": onenode_id, "name": name}
+            )
+        else:
+            mongo_api_key_collection.insert_one(
+                {"_id": hased_api_key, "onenode_id": onenode_id}
+            )
     except Exception as e:
         raise e
