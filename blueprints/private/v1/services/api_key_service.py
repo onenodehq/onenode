@@ -38,3 +38,14 @@ def save_api_key(hased_api_key: str, onenode_id: str, name: str = "") -> str:
             )
     except Exception as e:
         raise e
+
+
+def get_api_key_metadata(onenode_id: str) -> list:
+    try:
+        cursor = mongo_api_key_collection.find(
+            {"onenode_id": {"$eq": onenode_id}}, {"_id": 0}
+        )
+        api_key_metadata = list(cursor)
+        return api_key_metadata
+    except Exception as e:
+        raise e
