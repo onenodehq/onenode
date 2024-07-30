@@ -1,6 +1,4 @@
-from uuid import uuid4
 from flask import g
-from blueprints.private.v1 import onenode_id
 from blueprints.v1.utils.mongo_setup import (
     mongo_org_collection,
     mongo_project_collection,
@@ -17,5 +15,42 @@ def get_or_create_org_and_project(onenode_id: str):
                 {"members": [onenode_id], "projects": [new_project_id]}
             )
             return
+    except Exception as e:
+        raise e
+
+
+def get_orgs_and_projects_from_db():
+    try:
+        onenode_id = g.onenode_id
+        orgs_cursor = mongo_org_collection.find(
+            {"members": {"$in": [onenode_id]}}, {"_id": 0}
+        )
+        orgs = list(orgs_cursor)
+
+        if not orgs:
+            raise ValueError("Organization not found for the given onenode_id")
+
+        result: list = []
+        for org in orgs:
+            if not org.get("name"):
+                org["name"] = "Default Organization"
+            project_ids = org.get("projects")
+            projects_cursor = mongo_project_collection.find(
+                {"_id": {"$in": project_ids}}, {"_id": 0}
+            )
+            projects = list(projects_cursor)
+
+            for project in projects:
+                if not project.get("name"):
+                    project["name"] = "Default Project"
+                    break
+
+            result.append(
+                {
+                    "name": org["name"],
+                    "projects": [{"name": project["name"]} for project in projects],
+                }
+            )
+        return result
     except Exception as e:
         raise e
