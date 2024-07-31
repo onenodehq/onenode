@@ -53,4 +53,4 @@ def get_orgs_and_projects_from_db():
             )
         return result
     except Exception as e:
-        raise e
+        return e

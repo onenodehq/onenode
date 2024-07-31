@@ -28,11 +28,6 @@ def get_or_create_org():
 
 @private_v1_blueprint_org.route("", methods=["GET"])
 @requires_auth
-@typechecked
 def get_orgs_and_projects():
-    try:
-        orgs_and_projects: list = get_orgs_and_projects_from_db()
-        return json_util.dumps(orgs_and_projects), 200
-    except Exception as e:
-        logging.error(f"Error creating org: {e}")
-        return jsonify({"error": "An error occurred", "details": str(e)}), 500
+    orgs_and_projects: list = get_orgs_and_projects_from_db()
+    return json_util.dumps(orgs_and_projects), 200
