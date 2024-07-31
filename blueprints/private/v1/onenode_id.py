@@ -14,11 +14,7 @@ private_v1_blueprint_onenode_id = Blueprint(
 @require_admin_api_key
 def get_create_user_id():
     # create new email (mongo generates _id which will be onenode_user_id in auth0)
-    try:
-        data = request.get_json()
-        email = data.get("email")
-        onenode_id = get_or_create_onenode_id_service(email=email)
-        return jsonify({"onenode_id": onenode_id}), 200
-    except Exception as e:
-        logging.error(f"Error saving getting onenode_id: {e}")
-        return jsonify({"error": "An error occurred"}), 500
+    data = request.get_json()
+    email = data.get("email")
+    onenode_id = get_or_create_onenode_id_service(email=email)
+    return jsonify({"onenode_id": onenode_id}), 200

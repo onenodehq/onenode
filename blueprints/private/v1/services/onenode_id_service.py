@@ -9,7 +9,6 @@ from blueprints.v1.utils.mongo_setup import mongo_email_collection
 def get_or_create_onenode_id_service(email: str):
     try:
         item = mongo_email_collection.find_one({"email": email})
-        print("mongo", item)
         if item:
             onenode_id = item.get("_id")
             return onenode_id

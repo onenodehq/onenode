@@ -27,25 +27,19 @@ def hash_api_key(api_key: str) -> str:
 
 
 def save_api_key(hased_api_key: str, onenode_id: str, name: str = "") -> str:
-    try:
-        if name:
-            mongo_api_key_collection.insert_one(
-                {"_id": hased_api_key, "onenode_id": onenode_id, "name": name}
-            )
-        else:
-            mongo_api_key_collection.insert_one(
-                {"_id": hased_api_key, "onenode_id": onenode_id}
-            )
-    except Exception as e:
-        raise e
+    if name:
+        mongo_api_key_collection.insert_one(
+            {"_id": hased_api_key, "onenode_id": onenode_id, "name": name}
+        )
+    else:
+        mongo_api_key_collection.insert_one(
+            {"_id": hased_api_key, "onenode_id": onenode_id}
+        )
 
 
 def get_api_key_metadata(onenode_id: str) -> list:
-    try:
-        cursor = mongo_api_key_collection.find(
-            {"onenode_id": {"$eq": onenode_id}}, {"_id": 0}
-        )
-        api_key_metadata = list(cursor)
-        return api_key_metadata
-    except Exception as e:
-        raise e
+    cursor = mongo_api_key_collection.find(
+        {"onenode_id": {"$eq": onenode_id}}, {"_id": 0}
+    )
+    api_key_metadata = list(cursor)
+    return api_key_metadata

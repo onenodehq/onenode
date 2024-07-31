@@ -20,12 +20,8 @@ v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/private/v1/
 @v1_blueprint_resource.route("", methods=["GET"])
 @jwt_required
 def get_resource(user_id):
-    try:
-        response = get_resource_service(request, user_id)
-        return jsonify(response), 200
-    except Exception as e:
-        logging.error(f"Error fetching resource: {e}")
-        return jsonify({"error": str(e)}), 500
+    response = get_resource_service(request, user_id)
+    return jsonify(response), 200
 
 
 @v1_blueprint_resource.route("", methods=["POST"])
@@ -42,33 +38,21 @@ def create_resource(user_id):
 @v1_blueprint_resource.route("", methods=["PUT"])
 @jwt_required
 def update_resources(user_id):
-    try:
-        response = update_resource_service(request)
-        return jsonify(response), 200
-    except Exception as e:
-        logging.error(f"Error updating resource: {e}")
-        return jsonify({"error": "An error occurred", "details": str(e)}), 500
+    response = update_resource_service(request)
+    return jsonify(response), 200
 
 
 @v1_blueprint_resource.route("", methods=["DELETE"])
 @jwt_required
 def delete_resource(user_id):
-    try:
-        response = delete_resource_service(request, user_id)
-        return jsonify(response), 200
-    except Exception as e:
-        logging.error(f"Error deleting resource: {e}")
-        return jsonify({"error": "An error occurred", "details": str(e)}), 500
+    response = delete_resource_service(request, user_id)
+    return jsonify(response), 200
 
 
 @v1_blueprint_resource.route("/<id>/context", methods=["PUT"])
 @jwt_required
 def update_connections(user_id, id):
-    try:
-        response = update_resource_context_service(
-            user_id=user_id, request=request, context_id=id
-        )
-        return jsonify(response), 200
-    except Exception as e:
-        logging.error(f"Error updating connections: {e}")
-        return jsonify({"error": "An error occurred", "details": str(e)}), 500
+    response = update_resource_context_service(
+        user_id=user_id, request=request, context_id=id
+    )
+    return jsonify(response), 200
