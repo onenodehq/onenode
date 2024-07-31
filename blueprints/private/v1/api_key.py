@@ -18,7 +18,7 @@ private_v1_blueprint_api_key = Blueprint(
 @requires_auth
 def create_api_key():
     data = request.get_json()
-    name = data.get("api_key", "")
+    name = data.get("key_name", "")
     api_key = generate_api_key()
     onenode_id = g.onenode_id
     hashed_api_key = hash_api_key(api_key=api_key)
