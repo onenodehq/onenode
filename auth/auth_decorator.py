@@ -2,6 +2,7 @@
 
 # Format error response and append status code
 from functools import wraps
+import logging
 import os
 from urllib.request import urlopen
 import certifi
@@ -26,6 +27,7 @@ def get_token_auth_header():
             401,
         )
 
+    logging.debug(f"Authorization header: {auth}")
     parts = auth.split()
 
     if parts[0].lower() != "bearer":
@@ -50,6 +52,7 @@ def get_token_auth_header():
         )
 
     token = parts[1]
+    logging.debug(f"Token: {token}")
     return token
 
 
@@ -106,7 +109,9 @@ def requires_auth(f):
                 )
 
             g.current_user = payload
-            g.onenode_id = payload.get(f"{NAMESPACE_FOR_AUTH0}/app_metadata").get("onenode_id")
+            g.onenode_id = payload.get(f"{NAMESPACE_FOR_AUTH0}/app_metadata").get(
+                "onenode_id"
+            )
             return f(*args, **kwargs)
         raise Exception(
             {"code": "invalid_header", "description": "Unable to find appropriate key"},
