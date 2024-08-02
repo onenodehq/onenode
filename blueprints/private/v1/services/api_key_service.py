@@ -37,7 +37,7 @@ def save_api_key(hased_api_key: str, onenode_id: str, name: str = "") -> str:
         )
 
 
-def get_api_key_metadata(onenode_id: str) -> list:
+def get_api_key_metadata_from_db(onenode_id: str) -> list:
     cursor = mongo_api_key_collection.find(
         {"onenode_id": {"$eq": onenode_id}}, {"_id": 0, "onenode_id": 0}
     )

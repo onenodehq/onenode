@@ -1,9 +1,8 @@
-import logging
 from flask import Blueprint, g, jsonify, request
 from auth.auth_decorator import requires_auth
 from blueprints.private.v1.services.api_key_service import (
     generate_api_key,
-    get_api_key_metadata,
+    get_api_key_metadata_from_db,
     hash_api_key,
     save_api_key,
 )
@@ -30,6 +29,7 @@ def create_api_key():
 @requires_auth
 def get_api_key_metadata():
     onenode_id = g.onenode_id
-    api_key_metadata = get_api_key_metadata(onenode_id=onenode_id)
+    print("onenode_id", onenode_id)
+    api_key_metadata = get_api_key_metadata_from_db(onenode_id=onenode_id)
     print("result\n\n\n", api_key_metadata)
     return jsonify(api_key_metadata), 200
