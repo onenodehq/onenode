@@ -39,7 +39,13 @@ def save_api_key(hased_api_key: str, onenode_id: str, name: str = "") -> str:
 
 def get_api_key_metadata_from_db(onenode_id: str) -> list:
     cursor = mongo_api_key_collection.find(
-        {"onenode_id": {"$eq": onenode_id}}, {"_id": 0, "onenode_id": 0}
+        {"onenode_id": {"$eq": onenode_id}}, {"onenode_id": 0}
     )
     api_key_metadata = list(cursor)
     return api_key_metadata
+
+
+def delete_api_key_from_db(onenode_id: str, hash_value: str) -> None:
+    mongo_api_key_collection.delete_many(
+        {"_id": {"$eq": hash_value}, "onenode_id": {"$eq": onenode_id}}
+    )
