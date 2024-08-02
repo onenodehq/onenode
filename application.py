@@ -34,20 +34,26 @@ numeric_level = getattr(logging, log_level, None)
 logging.basicConfig(
     level=numeric_level, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+logger = logging.getLogger(__name__)
+
 
 @application.errorhandler(AuthError)
 def handle_auth_error(ex):
+    logger.error(
+        f"Authentication error: {ex.error}, Status code: {ex.status_code}",
+        exc_info=True,
+    )
     response = jsonify(ex.error)
     response.status_code = ex.status_code
     return response
 
+
 @application.errorhandler(Exception)
 def handle_exception(e):
-    response = {
-        "error": "An unexpected error occurred",
-        "details": str(e)
-    }
+    logger.error(f"An unexpected error occurred: {e}", exc_info=True)
+    response = {"error": "An unexpected error occurred", "details": str(e)}
     return jsonify(response), 500
+
 
 # Home route
 @application.route("/")
