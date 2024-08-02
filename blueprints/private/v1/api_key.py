@@ -22,7 +22,7 @@ def create_api_key():
     onenode_id = g.onenode_id
     hashed_api_key = hash_api_key(api_key=api_key)
     save_api_key(hased_api_key=hashed_api_key, onenode_id=onenode_id, name=name)
-    return jsonify({"api_key": api_key}), 200
+    return jsonify({"name": name, "value": api_key}), 200
 
 
 @private_v1_blueprint_api_key.route("", methods=["GET"])
