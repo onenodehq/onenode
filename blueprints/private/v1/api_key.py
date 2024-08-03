@@ -39,7 +39,7 @@ def get_hashed_api_keys():
 @requires_auth
 def delete_api_key():
     onenode_id = g.onenode_id
-    data = request.get_data()
+    data = request.get_json()
     hash_value = data.get("hash_value", "")
     delete_api_key_from_db(onenode_id=onenode_id, hash_value=hash_value)
     return jsonify({"message": "API key deleted successfully"}), 200
