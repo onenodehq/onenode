@@ -3,7 +3,7 @@ from auth.auth_decorator import requires_auth
 from blueprints.private.v1.services.api_key_service import (
     delete_api_key_from_db,
     generate_api_key,
-    get_api_key_metadata_from_db,
+    get_hased_api_keys_from_db,
     hash_api_key,
     save_api_key,
 )
@@ -28,10 +28,11 @@ def create_api_key():
 
 @private_v1_blueprint_api_key.route("", methods=["GET"])
 @requires_auth
-def get_api_key_metadata():
+def get_hashed_api_keys():
     onenode_id = g.onenode_id
-    api_key_metadata = get_api_key_metadata_from_db(onenode_id=onenode_id)
-    return jsonify(api_key_metadata), 200
+    hashed_api_keys = get_hased_api_keys_from_db(onenode_id=onenode_id)
+    print('test', hashed_api_keys)
+    return jsonify(hashed_api_keys), 200
 
 
 @private_v1_blueprint_api_key.route("", methods=["DELETE"])
