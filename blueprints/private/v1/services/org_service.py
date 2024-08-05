@@ -18,9 +18,7 @@ def get_or_create_org_and_project(onenode_id: str):
 
 def get_orgs_and_projects_from_db():
     onenode_id = g.onenode_id
-    orgs_cursor = mongo_org_collection.find(
-        {"members": {"$in": [onenode_id]}}, {"_id": 0}
-    )
+    orgs_cursor = mongo_org_collection.find({"members": {"$in": [onenode_id]}})
     orgs = list(orgs_cursor)
 
     if not orgs:
@@ -43,6 +41,7 @@ def get_orgs_and_projects_from_db():
 
         result.append(
             {
+                "id": org["_id"],
                 "name": org["name"],
                 "projects": [{"name": project["name"]} for project in projects],
             }
