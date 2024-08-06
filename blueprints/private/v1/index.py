@@ -27,8 +27,25 @@ def get_or_create_index():
     if not is_member(onenode_id=onenode_id, org_id=org_id):
         return jsonify({"error": "User is not a member of the organization"}), 403
 
-    create_index(
-        project_id=project_id, index_name=index_name
-    )
+    create_index(project_id=project_id, index_name=index_name)
 
     return jsonify({"message": "Index created successfully"}), 200
+
+
+@private_v1_blueprint_index.route("", methods=["GET"])
+@requires_auth
+def get_indexes():
+    data = request.get_json()
+    org_id = data.get("org_id")
+    project_id = data.get("project_id")
+    onenode_id = g.onenode_id
+
+    if not all([org_id, project_id]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if not is_member(onenode_id=onenode_id, org_id=org_id):
+        return jsonify({"error": "User is not a member of the organization"}), 403
+
+    indexes = get_indexes(project_id=project_id)
+
+    return indexes, 200
