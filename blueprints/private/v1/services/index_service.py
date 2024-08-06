@@ -1,5 +1,6 @@
 from bson import ObjectId
 from flask import g
+from pymongo import CursorType
 from blueprints.v1.utils.mongo_setup import (
     mongo_project_collection,
     mongo_org_collection,
@@ -25,3 +26,14 @@ def is_member(onenode_id: str, org_id: str) -> bool:
     if org:
         return True
     return False
+
+
+def get_indexes(project_id: str):
+    project: CursorType = mongo_project_collection.find_one(
+        {"_id": {"$eq": ObjectId(project_id)}}
+    )
+    index_ids: list[ObjectId] = project.get("indexes")
+
+    indexes: list = list(mongo_index_collection.find({"_id": {"$in": [index_ids]}}))
+
+    return indexes
