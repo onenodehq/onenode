@@ -5,7 +5,7 @@ from blueprints.v1.utils.mongo_setup import (
 )
 
 
-def get_or_create_org_and_project(onenode_id: str):
+def create_default_org_and_project_service(onenode_id: str):
     org = mongo_org_collection.find_one({"members": {"$in": [onenode_id]}})
     if not org:
         new_project = mongo_project_collection.insert_one({"indexes": []})
@@ -16,7 +16,7 @@ def get_or_create_org_and_project(onenode_id: str):
         return
 
 
-def get_orgs_and_projects_from_db():
+def get_orgs_and_projects_servie():
     onenode_id = g.onenode_id
     orgs_cursor = mongo_org_collection.find({"members": {"$in": [onenode_id]}})
     orgs = list(orgs_cursor)

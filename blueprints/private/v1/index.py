@@ -1,7 +1,7 @@
 from flask import Blueprint, g, jsonify, request
 from auth.auth_decorator import requires_auth
 
-from blueprints.private.v1.services.collection_service import (
+from blueprints.private.v1.services.index_service import (
     is_member,
     create_index,
 )
