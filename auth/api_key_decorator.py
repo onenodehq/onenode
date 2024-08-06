@@ -1,6 +1,6 @@
 from functools import wraps
 from blueprints.private.v1.services.api_key_service import hash_api_key
-from blueprints.v1.utils.mongo_setup import mongo_api_key_collection
+from blueprints.v1.utils.mongo_setup import mongo_api_keys
 from flask import jsonify, request
 
 
@@ -16,7 +16,7 @@ def require_api_key(f):
 
         api_key = auth_header.split(" ")[1]
         hashed_api_key = hash_api_key(api_key=api_key)
-        stored_hash = mongo_api_key_collection.find_one(filter={"_id": hashed_api_key})
+        stored_hash = mongo_api_keys.find_one(filter={"_id": hashed_api_key})
 
         if not stored_hash:
             return jsonify({"error": "Unauthorized access"}), 401
@@ -38,7 +38,7 @@ def require_admin_api_key(f):
 
         api_key = auth_header.split(" ")[1]
         hashed_api_key = hash_api_key(api_key=api_key)
-        stored_hash = mongo_api_key_collection.find_one(filter={"_id": hashed_api_key})
+        stored_hash = mongo_api_keys.find_one(filter={"_id": hashed_api_key})
 
         if not stored_hash or stored_hash.get("status") != "admin":
             print(stored_hash, stored_hash.get("status"))

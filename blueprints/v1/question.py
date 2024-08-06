@@ -9,7 +9,7 @@ from blueprints.v1.utils.openai_operations import (
 from blueprints.v1.utils.pinecone_setup import (
     pc_index,
 )  # Import the initialized components
-from blueprints.v1.utils.mongo_setup import mongo_collection
+from blueprints.v1.utils.mongo_setup import mongo_contents
 from blueprints.v1.utils.question_helper import (
     docs_to_context,
     format_to_openai_messages,
@@ -60,7 +60,7 @@ def generate_response(user_id: str):
     ]
 
     mongo_filter = {"_id": {"$in": resource_ids}, "user_id": user_id}
-    mongo_docs = list(mongo_collection.find(filter=mongo_filter, projection={"_id": 0}))
+    mongo_docs = list(mongo_contents.find(filter=mongo_filter, projection={"_id": 0}))
 
     for i, context_doc in enumerate(mongo_docs):
         target_ids = context_doc.get("target_ids")
@@ -78,7 +78,7 @@ def generate_response(user_id: str):
 
         mongo_filter = {"_id": {"$in": missing_target_ids}, "user_id": user_id}
         sppl_mongo_docs = list(
-            mongo_collection.find(filter=mongo_filter, projection={"_id": 0})
+            mongo_contents.find(filter=mongo_filter, projection={"_id": 0})
         )
         target_docs.extend(sppl_mongo_docs)
 

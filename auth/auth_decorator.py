@@ -2,7 +2,6 @@
 
 # Format error response and append status code
 from functools import wraps
-import logging
 import os
 from urllib.request import urlopen
 import certifi

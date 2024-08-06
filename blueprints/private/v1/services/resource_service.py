@@ -18,7 +18,7 @@ from blueprints.v1.utils.s3_operations import (
     delete_s3_objects,
     process_image_resources,
 )
-from blueprints.v1.utils.mongo_setup import mongo_collection
+from blueprints.v1.utils.mongo_setup import mongo_contents
 
 
 def get_resource_service(request, user_id):
@@ -26,15 +26,15 @@ def get_resource_service(request, user_id):
     is_admin = request.args.get("is_admin", "") == "True"
 
     if is_admin:
-        data = mongo_collection.find({}, projection={"_id": 0}).sort(
+        data = mongo_contents.find({}, projection={"_id": 0}).sort(
             "created_at", pymongo.DESCENDING
         )
     elif id:
-        data = mongo_collection.find(
+        data = mongo_contents.find(
             {"user_id": user_id, "_id": id}, projection={"_id": 0}
         ).sort("created_at", pymongo.DESCENDING)
     else:
-        data = mongo_collection.find({"user_id": user_id}, projection={"_id": 0}).sort(
+        data = mongo_contents.find({"user_id": user_id}, projection={"_id": 0}).sort(
             "created_at", pymongo.DESCENDING
         )
 
@@ -53,7 +53,7 @@ def get_resource_service(request, user_id):
                 item.update({"signed_url": new_signed_url})
                 filter = {"_id": item.get("id"), "user_id": user_id}
                 update = {"$set": {"signed_url": new_signed_url}}
-                mongo_collection.update_one(filter=filter, update=update)
+                mongo_contents.update_one(filter=filter, update=update)
 
         item_dict = {
             "content": item.get("text"),
@@ -126,7 +126,7 @@ def create_resource_service(request, user_id):
         metadata = document_dict.get("kwargs", {}).get("metadata", {})
         metadata["_id"] = ids[i]
         mongo_documents.append(metadata)
-    mongo_collection.insert_many(documents=mongo_documents)
+    mongo_contents.insert_many(documents=mongo_documents)
 
     return response
 
@@ -156,7 +156,7 @@ def update_resource_service(request):
             values=values,
             set_metadata={"text": content, "updated_at": updated_at},
         )
-        mongo_collection.update_one(
+        mongo_contents.update_one(
             {"id": id},
             {
                 "$set": {
@@ -188,7 +188,7 @@ def delete_resource_service(request, user_id):
         raise ValueError("Resource IDs or User ID missing")
 
     query = {"_id": {"$in": ids}, "user_id": user_id}
-    data: List = list(mongo_collection.find(query))
+    data: List = list(mongo_contents.find(query))
     s3_keys = []
     for item in data:
         mime_type = item.get("type")
@@ -203,7 +203,7 @@ def delete_resource_service(request, user_id):
 
     vectorstore.delete(ids=ids)
     filter = {"id": {"$in": ids}}
-    mongo_collection.delete_many(filter)
+    mongo_contents.delete_many(filter)
     return {"message": "Resources deleted successfully"}
 
 
@@ -223,9 +223,9 @@ def update_resource_context_service(user_id: str, request, context_id: str):
         }
     }
 
-    mongo_collection.update_one({"_id": context_id, "user_id": user_id}, update_data)
+    mongo_contents.update_one({"_id": context_id, "user_id": user_id}, update_data)
 
-    current_docs = mongo_collection.find({"user_id": user_id})
+    current_docs = mongo_contents.find({"user_id": user_id})
     updates = []
 
     # Update target_ids
@@ -259,6 +259,6 @@ def update_resource_context_service(user_id: str, request, context_id: str):
         )
 
     if updates:
-        mongo_collection.bulk_write(updates)
+        mongo_contents.bulk_write(updates)
 
     return {"message": "Connections updated successfully"}
