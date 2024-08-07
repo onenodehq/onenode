@@ -28,14 +28,12 @@ def is_member(onenode_id: str, org_id: str) -> bool:
     return False
 
 
-def get_collections(project_id: str):
+def get_collections_service(project_id: str):
     project: CursorType = mongo_projects.find_one(
         {"_id": {"$eq": ObjectId(project_id)}}
     )
-    container_ids: list[ObjectId] = project.get("collections")
+    collection_ids: list[ObjectId] = project.get("collections")
 
-    collections: list = list(
-        mongo_collections.find({"_id": {"$in": [container_ids]}})
-    )
+    collections: list = list(mongo_collections.find({"_id": {"$in": collection_ids}}))
 
     return collections
