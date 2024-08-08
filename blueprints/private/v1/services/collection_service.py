@@ -5,6 +5,7 @@ from blueprints.v1.utils.mongo_setup import (
     mongo_projects,
     mongo_orgs,
     mongo_collections,
+    mongo_collection_db,
 )
 
 
@@ -37,3 +38,10 @@ def get_collections_service(project_id: str):
     collections: list = list(mongo_collections.find({"_id": {"$in": collection_ids}}))
 
     return collections
+
+
+def delete_collection_service(collection_id: str):
+    collection = mongo_collection_db.get_collection(name=collection_id)
+    collection.drop()
+
+    return

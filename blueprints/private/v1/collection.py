@@ -1,6 +1,7 @@
 from flask import Blueprint, g, jsonify, request
 from auth.auth_decorator import requires_auth
 from blueprints.private.v1.services.collection_service import (
+    delete_collection_service,
     get_collections_service,
     is_member,
     create_collection,
@@ -47,5 +48,23 @@ def get_collections():
         return jsonify({"error": "User is not a member of the organization"}), 403
 
     collections = get_collections_service(project_id=project_id)
+
+    return json_util.dumps(collections), 200
+
+
+@private_v1_blueprint_collection.route("", methods=["DELETE"])
+@requires_auth
+def delete_collection():
+    org_id = request.args.get("org_id")
+    collection_id = request.args.get("collection_id")
+    onenode_id = g.onenode_id
+
+    if not all([org_id, collection_id]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if not is_member(onenode_id=onenode_id, org_id=org_id):
+        return jsonify({"error": "User is not a member of the organization"}), 403
+
+    collections = delete_collection_service(collection_id=collection_id)
 
     return json_util.dumps(collections), 200
