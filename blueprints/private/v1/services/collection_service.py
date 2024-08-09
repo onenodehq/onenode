@@ -57,3 +57,10 @@ def delete_collection_document(collection_id: str):
 def delete_collection_service(collection_id: str):
     drop_database_collection(collection_id)
     delete_collection_document(collection_id)
+
+# Collection Items Retrieval Functions
+def get_collection_items_service(collection_id: str):
+    collection = mongo_collection_db.get_collection(name=collection_id)
+    items = list(collection.find({}))
+
+    return items

@@ -4,9 +4,10 @@ from blueprints.private.v1.services.collection_service import (
     create_collection_service,
     delete_collection_service,
     get_collections_service,
-    is_member,
 )
 from bson import json_util
+from blueprints.private.v1.services.permission_service import is_member
+from blueprints.private.v1.services.collection_service import get_collection_items_service
 
 
 private_v1_blueprint_collection = Blueprint(
@@ -37,14 +38,13 @@ def create_collection():
 @private_v1_blueprint_collection.route("", methods=["GET"])
 @requires_auth
 def get_collections():
-    org_id = request.args.get("org_id")
     project_id = request.args.get("project_id")
     onenode_id = g.onenode_id
 
-    if not all([org_id, project_id]):
+    if not all([project_id]):
         return jsonify({"error": "Missing required fields"}), 400
 
-    if not is_member(onenode_id=onenode_id, org_id=org_id):
+    if not is_member(onenode_id=onenode_id, project_id=project_id):
         return jsonify({"error": "User is not a member of the organization"}), 403
 
     collections = get_collections_service(project_id=project_id)
@@ -63,8 +63,26 @@ def delete_collection():
         return jsonify({"error": "Missing required fields"}), 400
 
     if not is_member(onenode_id=onenode_id, org_id=org_id):
-        return jsonify({"error": "User is not a member of the organization"}), 403
+        return jsonify({"error": "User is not a member of the project"}), 403
 
     collections = delete_collection_service(collection_id=collection_id)
 
     return json_util.dumps(collections), 200
+
+
+@private_v1_blueprint_collection.route(
+    "/<string:project_id>/<string:collection_id>/items", methods=["GET"]
+)
+@requires_auth
+def get_collection_items(project_id, collection_id):
+    onenode_id = g.onenode_id
+
+    if not all([project_id, collection_id]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if not is_member(onenode_id=onenode_id, project_id=project_id):
+        return jsonify({"error": "User is not a member of the project"}), 403
+
+    items = get_collection_items_service(collection_id=collection_id)
+
+    return json_util.dumps(items), 200
