@@ -3,7 +3,6 @@ from flask import g
 from pymongo import CursorType
 from blueprints.v1.utils.mongo_setup import (
     mongo_projects,
-    mongo_orgs,
     mongo_collections,
     mongo_collection_db,
 )
@@ -11,24 +10,27 @@ from blueprints.v1.utils.mongo_setup import (
 
 # Collection Insertion and Creation Functions
 def insert_collection(collection_name: str):
-    new_collection = mongo_collections.insert_one({"name": collection_name})
-    return new_collection.inserted_id
+    result = mongo_collections.insert_one({"name": collection_name})
+    new_collection = mongo_collections.find_one({"_id": result.inserted_id})
+    return new_collection
 
 
-def update_project_with_collection(project_id: str, collection_id: ObjectId):
+def update_project_with_collection(project_id: str, collection_name: str):
     filter = {"_id": ObjectId(project_id)}
-    update = {"$push": {"collections": collection_id}}
+    update = {"$push": {"collections": collection_name}}
     mongo_projects.update_one(filter=filter, update=update)
 
 
-def create_database_collection(collection_id: ObjectId):
-    mongo_collection_db.create_collection(name=str(collection_id))
+def create_database_collection(collection_name: str):
+    mongo_collection_db.create_collection(name=collection_name)
 
 
 def create_collection_service(project_id: str, collection_name: str):
-    collection_id = insert_collection(collection_name)
-    update_project_with_collection(project_id, collection_id)
-    create_database_collection(collection_id)
+    collection_name = project_id + "_" + collection_name
+    create_database_collection(collection_name=collection_name)
+    update_project_with_collection(project_id, collection_name)
+    new_collection = insert_collection(collection_name)
+    return new_collection
 
 
 # Collection Lsist Retrieval Functions
@@ -36,39 +38,53 @@ def get_collections_service(project_id: str):
     project: CursorType = mongo_projects.find_one(
         {"_id": {"$eq": ObjectId(project_id)}}
     )
-    collection_ids: list[ObjectId] = project.get("collections")
+    collection_names: list[str] = project.get("collections")
 
-    collections: list = list(mongo_collections.find({"_id": {"$in": collection_ids}}))
+    collections: list = list(
+        mongo_collections.find({"name": {"$in": collection_names}})
+    )
 
     return collections
 
 
 # Collection Retrieval Functions
-def get_collection_service(collection_id: str):
-    collection = mongo_collections.find_one({"_id": {"$eq": ObjectId(collection_id)}})
+def get_collection_service(project_id: str, collection_name: str):
+    collection_name = project_id + "_" + collection_name
+    collection = mongo_collections.find_one({"name": {"$eq": collection_name}})
 
     return collection
 
 
 # Collection Deletion Functions
-def drop_database_collection(collection_id: str):
-    collection = mongo_collection_db.get_collection(name=collection_id)
+def drop_database_collection(collection_name: str):
+    collection = mongo_collection_db.get_collection(name=collection_name)
     collection.drop()
 
 
-def delete_collection_document(collection_id: str):
-    filter = {"_id": ObjectId(collection_id)}
+def delete_collection_document(collection_name: str):
+    filter = {"name": collection_name}
     mongo_collections.delete_one(filter=filter)
 
 
-def delete_collection_service(collection_id: str):
-    drop_database_collection(collection_id)
-    delete_collection_document(collection_id)
+def delete_collection_from_project(project_id: str, collection_name: str):
+    mongo_projects.update_one(
+        {"_id": ObjectId(project_id)}, {"$pull": {"collections": collection_name}}
+    )
+
+
+def delete_collection_service(project_id: str, collection_name: str):
+    collection_name = project_id + "_" + collection_name
+    drop_database_collection(collection_name)
+    delete_collection_document(collection_name)
+    delete_collection_from_project(
+        project_id=project_id, collection_name=collection_name
+    )
 
 
 # Collection Items Retrieval Functions
-def get_collection_items_service(collection_id: str):
-    collection = mongo_collection_db.get_collection(name=collection_id)
+def get_collection_items_service(project_id: str, collection_name: str):
+    collection_name = project_id + "_" + collection_name
+    collection = mongo_collection_db.get_collection(name=collection_name)
     items = list(collection.find({}))
 
     return items
