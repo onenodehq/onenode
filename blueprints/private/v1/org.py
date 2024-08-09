@@ -8,7 +8,9 @@ from blueprints.private.v1.services.org_service import (
 from bson import json_util
 
 
-private_v1_blueprint_org = Blueprint("org", __name__, url_prefix="/private/v1/org")
+private_v1_blueprint_org = Blueprint(
+    "private_v1_org", __name__, url_prefix="/private/v1/org"
+)
 
 
 @private_v1_blueprint_org.route("/default", methods=["PUT"])

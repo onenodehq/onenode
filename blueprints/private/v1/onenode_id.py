@@ -7,7 +7,7 @@ from blueprints.private.v1.services.onenode_id_service import (
 
 
 private_v1_blueprint_onenode_id = Blueprint(
-    "onenode_id", __name__, url_prefix="/private/v1/onenode-id"
+    "private_v1_onenode_id", __name__, url_prefix="/private/v1/onenode-id"
 )
 
 @private_v1_blueprint_onenode_id.route("", methods=["PUT"])

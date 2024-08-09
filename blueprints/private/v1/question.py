@@ -17,7 +17,9 @@ from blueprints.v1.utils.question_helper import (
 
 
 # Define a Blueprint for the '/v1/query' endpoint
-private_v1_blueprint_question = Blueprint("question", __name__, url_prefix="/private/v1/question")
+private_v1_blueprint_question = Blueprint(
+    "private_v1_question", __name__, url_prefix="/private/v1/question"
+)
 
 
 @private_v1_blueprint_question.route("", methods=["POST"])
@@ -58,9 +60,7 @@ def generate_response(user_id: str):
     ]
 
     mongo_filter = {"_id": {"$in": resource_ids}, "user_id": user_id}
-    mongo_docs = list(
-        mongo_contents.find(filter=mongo_filter, projection={"_id": 0})
-    )
+    mongo_docs = list(mongo_contents.find(filter=mongo_filter, projection={"_id": 0}))
 
     for i, context_doc in enumerate(mongo_docs):
         target_ids = context_doc.get("target_ids")
@@ -76,7 +76,6 @@ def generate_response(user_id: str):
             else:
                 missing_target_ids.append(target_id)
 
-
         mongo_filter = {"_id": {"$in": missing_target_ids}, "user_id": user_id}
         sppl_mongo_docs = list(
             mongo_contents.find(filter=mongo_filter, projection={"_id": 0})
@@ -85,7 +84,6 @@ def generate_response(user_id: str):
 
         for target_doc in target_docs:
             target_doc["text"] += "\n" + context_doc["text"]
-
 
     context = docs_to_context(docs=mongo_docs)
 

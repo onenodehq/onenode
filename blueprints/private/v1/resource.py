@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 from flask import Blueprint, jsonify, request
 from auth.auth import jwt_required
-import logging
 
 from blueprints.v1.services.resource_service import (
     create_resource_service,
@@ -14,7 +13,9 @@ from blueprints.v1.services.resource_service import (
 load_dotenv()
 
 # Define a Blueprint for the '/v1/query' endpoint
-private_v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/private/v1/resource")
+private_v1_blueprint_resource = Blueprint(
+    "private_v1_resource", __name__, url_prefix="/private/v1/resource"
+)
 
 
 @private_v1_blueprint_resource.route("", methods=["GET"])

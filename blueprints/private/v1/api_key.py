@@ -10,7 +10,7 @@ from blueprints.private.v1.services.api_key_service import (
 
 
 private_v1_blueprint_api_key = Blueprint(
-    "api_key", __name__, url_prefix="/private/v1/api-key"
+    "private_v1_api_key", __name__, url_prefix="/private/v1/api-key"
 )
 
 

@@ -3,6 +3,7 @@ from auth.auth_decorator import requires_auth
 from blueprints.private.v1.services.collection_service import (
     create_collection_service,
     delete_collection_service,
+    get_collection_items_service,
     get_collections_service,
     is_member,
 )
@@ -10,7 +11,7 @@ from bson import json_util
 
 
 private_v1_blueprint_collection = Blueprint(
-    "collection", __name__, url_prefix="/private/v1/collection"
+    "private_v1_collection", __name__, url_prefix="/private/v1/collection"
 )
 
 
