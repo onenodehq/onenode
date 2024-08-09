@@ -3,7 +3,6 @@ from auth.auth_decorator import requires_auth
 from blueprints.private.v1.services.collection_service import (
     create_collection_service,
     delete_collection_service,
-    get_collection_items_service,
     get_collections_service,
     is_member,
 )

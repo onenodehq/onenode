@@ -2,6 +2,8 @@ import hashlib
 import os
 import secrets
 import string
+
+from bson import ObjectId
 from blueprints.v1.utils.mongo_setup import mongo_api_keys
 from dotenv import load_dotenv
 
@@ -26,21 +28,22 @@ def hash_api_key(api_key: str) -> str:
     return hashed_api_key
 
 
-def save_api_key(hased_api_key: str, onenode_id: str, name: str = "") -> str:
+def save_api_key(
+    hashed_api_key: str, onenode_id: str, project_id: str, name: str = ""
+) -> str:
+    doc = {
+        "_id": hashed_api_key,
+        "owner": onenode_id,
+        "permission": {"project_id": ObjectId(project_id), "role": "owner"},
+    }
     if name:
-        mongo_api_keys.insert_one(
-            {"_id": hased_api_key, "onenode_id": onenode_id, "name": name}
-        )
-    else:
-        mongo_api_keys.insert_one(
-            {"_id": hased_api_key, "onenode_id": onenode_id}
-        )
+        doc["name"] = name
+
+    mongo_api_keys.insert_one(doc)
 
 
-def get_hased_api_keys_from_db(onenode_id: str) -> list:
-    cursor = mongo_api_keys.find(
-        {"onenode_id": {"$eq": onenode_id}}, {"onenode_id": 0}
-    )
+def get_hashed_api_keys_from_db(onenode_id: str) -> list:
+    cursor = mongo_api_keys.find({"owner": {"$eq": onenode_id}}, {"owner": 0})
     hashed_keys = list(cursor)
     for hashed_key in hashed_keys:
         hashed_key["hash_value"] = hashed_key.pop("_id")
@@ -49,5 +52,5 @@ def get_hased_api_keys_from_db(onenode_id: str) -> list:
 
 def delete_api_key_from_db(onenode_id: str, hash_value: str) -> None:
     mongo_api_keys.delete_many(
-        {"_id": {"$eq": hash_value}, "onenode_id": {"$eq": onenode_id}}
+        {"_id": {"$eq": hash_value}, "owner": {"$eq": onenode_id}}
     )
