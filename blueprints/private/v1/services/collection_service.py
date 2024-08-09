@@ -31,7 +31,7 @@ def create_collection_service(project_id: str, collection_name: str):
     create_database_collection(collection_id)
 
 
-# Collection Retrieval Functions
+# Collection Lsist Retrieval Functions
 def get_collections_service(project_id: str):
     project: CursorType = mongo_projects.find_one(
         {"_id": {"$eq": ObjectId(project_id)}}
@@ -41,6 +41,13 @@ def get_collections_service(project_id: str):
     collections: list = list(mongo_collections.find({"_id": {"$in": collection_ids}}))
 
     return collections
+
+
+# Collection Retrieval Functions
+def get_collection_service(collection_id: str):
+    collection = mongo_collections.find_one({"_id": {"$eq": ObjectId(collection_id)}})
+
+    return collection
 
 
 # Collection Deletion Functions
@@ -57,6 +64,7 @@ def delete_collection_document(collection_id: str):
 def delete_collection_service(collection_id: str):
     drop_database_collection(collection_id)
     delete_collection_document(collection_id)
+
 
 # Collection Items Retrieval Functions
 def get_collection_items_service(collection_id: str):
