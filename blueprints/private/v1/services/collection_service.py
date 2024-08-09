@@ -31,16 +31,6 @@ def create_collection_service(project_id: str, collection_name: str):
     create_database_collection(collection_id)
 
 
-# Organization Functions
-def is_member(onenode_id: str, org_id: str) -> bool:
-    org = mongo_orgs.find_one(
-        {"_id": {"$eq": ObjectId(org_id)}, "members": {"$in": [onenode_id]}}
-    )
-    if org:
-        return True
-    return False
-
-
 # Collection Retrieval Functions
 def get_collections_service(project_id: str):
     project: CursorType = mongo_projects.find_one(
