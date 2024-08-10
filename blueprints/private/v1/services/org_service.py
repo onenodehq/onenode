@@ -9,10 +9,16 @@ def create_default_org_and_project_service(onenode_id: str):
     org = mongo_orgs.find_one({"members": {"$in": [onenode_id]}})
     if not org:
         new_project = mongo_projects.insert_one(
-            {"members": [onenode_id], "collections": []}
+            {"name": "Default Project", "members": [onenode_id], "collections": []}
         )
         new_project_id = new_project.inserted_id
-        mongo_orgs.insert_one({"members": [onenode_id], "projects": [new_project_id]})
+        mongo_orgs.insert_one(
+            {
+                "name": "Default Organization",
+                "members": [onenode_id],
+                "projects": [new_project_id],
+            }
+        )
         return
 
 

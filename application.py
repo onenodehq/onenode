@@ -13,6 +13,7 @@ from blueprints.private.v1.api_key import private_v1_blueprint_api_key
 from blueprints.private.v1.onenode_id import private_v1_blueprint_onenode_id
 from blueprints.private.v1.org import private_v1_blueprint_org
 from blueprints.private.v1.collection import private_v1_blueprint_collection
+from blueprints.private.v1.project import private_v1_blueprint_project
 from flask_cors import CORS
 from create_app import AuthError, application
 
@@ -28,6 +29,7 @@ application.register_blueprint(private_v1_blueprint_api_key)
 application.register_blueprint(private_v1_blueprint_onenode_id)
 application.register_blueprint(private_v1_blueprint_org)
 application.register_blueprint(private_v1_blueprint_collection)
+application.register_blueprint(private_v1_blueprint_project)
 
 # Get log level from environment variable or default to 'WARNING'
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
