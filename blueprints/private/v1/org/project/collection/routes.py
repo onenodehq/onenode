@@ -8,21 +8,23 @@ from blueprints.private.v1.services.collection_service import (
 )
 from bson import json_util
 from blueprints.private.v1.services.permission_service import is_member
-from blueprints.private.v1.services.collection_service import (
-    get_collection_items_service,
+from blueprints.private.v1.org.project.collection.item.routes import (
+    private_v1_blueprint_item,
 )
-
 
 private_v1_blueprint_collection = Blueprint(
-    "private_v1_collection", __name__, url_prefix="/private/v1/collection"
+    "private_v1_collection",
+    __name__,
+    url_prefix="/<string:project_id>/collection",
 )
+
+private_v1_blueprint_collection.register_blueprint(private_v1_blueprint_item)
 
 
 @private_v1_blueprint_collection.route("", methods=["PUT"])
 @requires_auth
-def create_collection():
+def create_collection(org_id, project_id):
     data = request.get_json()
-    project_id = data.get("project_id")
     collection_name = data.get("collection_name")
     onenode_id = g.onenode_id
 
@@ -41,8 +43,7 @@ def create_collection():
 
 @private_v1_blueprint_collection.route("", methods=["GET"])
 @requires_auth
-def get_collections():
-    project_id = request.args.get("project_id")
+def get_collections(org_id, project_id):
     onenode_id = g.onenode_id
 
     if not all([project_id]):
@@ -56,11 +57,9 @@ def get_collections():
     return json_util.dumps(collections), 200
 
 
-@private_v1_blueprint_collection.route("", methods=["DELETE"])
+@private_v1_blueprint_collection.route("/<string:collection_name>", methods=["DELETE"])
 @requires_auth
-def delete_collection():
-    project_id = request.args.get("project_id")
-    collection_name = request.args.get("collection_name")
+def delete_collection(org_id, project_id, collection_name):
     onenode_id = g.onenode_id
 
     if not all([project_id, collection_name]):
@@ -76,28 +75,9 @@ def delete_collection():
     return json_util.dumps(collections), 200
 
 
-@private_v1_blueprint_collection.route(
-    "/<string:project_id>/<string:collection_name>/items", methods=["GET"]
-)
+@private_v1_blueprint_collection.route("/<string:collection_name>", methods=["GET"])
 @requires_auth
-def get_collection_items(project_id, collection_name):
-    onenode_id = g.onenode_id
-
-    if not is_member(onenode_id=onenode_id, project_id=project_id):
-        return jsonify({"error": "User is not a member of the project"}), 403
-
-    items = get_collection_items_service(
-        project_id=project_id, collection_name=collection_name
-    )
-
-    return json_util.dumps(items), 200
-
-
-@private_v1_blueprint_collection.route(
-    "/<string:project_id>/<string:collection_name>", methods=["GET"]
-)
-@requires_auth
-def get_collection(project_id, collection_name):
+def get_collection(org_id, project_id, collection_name):
     onenode_id = g.onenode_id
 
     if not is_member(onenode_id=onenode_id, project_id=project_id):

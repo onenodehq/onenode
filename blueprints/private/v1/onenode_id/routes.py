@@ -1,4 +1,3 @@
-import logging
 from flask import Blueprint, jsonify, request
 from auth.api_key_decorator import require_admin_api_key
 from blueprints.private.v1.services.onenode_id_service import (

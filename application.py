@@ -9,11 +9,7 @@ from flask import jsonify
 from langchain_openai import ChatOpenAI
 from blueprints.private.v1.question import private_v1_blueprint_question
 from blueprints.private.v1.resource import private_v1_blueprint_resource
-from blueprints.private.v1.api_key import private_v1_blueprint_api_key
-from blueprints.private.v1.onenode_id import private_v1_blueprint_onenode_id
-from blueprints.private.v1.org import private_v1_blueprint_org
-from blueprints.private.v1.collection import private_v1_blueprint_collection
-from blueprints.private.v1.project import private_v1_blueprint_project
+from blueprints.private.v1.org.routes import private_v1_blueprint_org
 from flask_cors import CORS
 from create_app import AuthError, application
 
@@ -25,11 +21,7 @@ CORS(application)
 # Register the Blueprint
 application.register_blueprint(private_v1_blueprint_question)
 application.register_blueprint(private_v1_blueprint_resource)
-application.register_blueprint(private_v1_blueprint_api_key)
-application.register_blueprint(private_v1_blueprint_onenode_id)
 application.register_blueprint(private_v1_blueprint_org)
-application.register_blueprint(private_v1_blueprint_collection)
-application.register_blueprint(private_v1_blueprint_project)
 
 # Get log level from environment variable or default to 'WARNING'
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()

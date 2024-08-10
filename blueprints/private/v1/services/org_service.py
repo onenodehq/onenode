@@ -1,3 +1,4 @@
+from bson import ObjectId
 from flask import g
 from blueprints.v1.utils.mongo_setup import (
     mongo_orgs,
@@ -54,3 +55,8 @@ def get_orgs_and_projects_servie():
             }
         )
     return result
+
+
+def get_org_service(org_id: str):
+    org = mongo_orgs.find_one({"_id": ObjectId(org_id)})
+    return org
