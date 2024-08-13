@@ -4,7 +4,7 @@ from pymongo import CursorType
 from blueprints.v1.utils.mongo_setup import (
     mongo_projects,
     mongo_collections,
-    mongo_collection_db,
+    mongo_client_db,
 )
 
 
@@ -22,7 +22,7 @@ def update_project_with_collection(project_id: str, collection_name: str):
 
 
 def create_database_collection(collection_name: str):
-    mongo_collection_db.create_collection(name=collection_name)
+    mongo_client_db.create_collection(name=collection_name)
 
 
 def create_collection_service(project_id: str, collection_name: str):
@@ -57,7 +57,7 @@ def get_collection_service(project_id: str, collection_name: str):
 
 # Collection Deletion Functions
 def drop_database_collection(collection_name: str):
-    collection = mongo_collection_db.get_collection(name=collection_name)
+    collection = mongo_client_db.get_collection(name=collection_name)
     collection.drop()
 
 
@@ -84,7 +84,7 @@ def delete_collection_service(project_id: str, collection_name: str):
 # Collection Items Retrieval Functions
 def get_collection_items_service(project_id: str, collection_name: str):
     collection_name = project_id + "_" + collection_name
-    collection = mongo_collection_db.get_collection(name=collection_name)
+    collection = mongo_client_db.get_collection(name=collection_name)
     items = list(collection.find({}))
 
     return items

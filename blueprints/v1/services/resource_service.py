@@ -6,7 +6,7 @@ from typeguard import typechecked
 from blueprints.v1.utils.cloudfront_operations import generate_cloudfront_signed_url
 from blueprints.v1.utils.pinecone_setup import (
     vectorstore,
-    pc_index,
+    pc_admin_index,
     openai_ef,
 )
 from langchain.schema import Document
@@ -151,7 +151,7 @@ def update_resource_service(request):
         content = resource.get("content")
         contexts = metadata.get("contexts")
         values = openai_ef.embed_documents(texts=[content])
-        response_item = pc_index.update(
+        response_item = pc_admin_index.update(
             id=id,
             values=values,
             set_metadata={"text": content, "updated_at": updated_at},

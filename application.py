@@ -2,6 +2,8 @@ import logging
 import os
 from dotenv import load_dotenv
 
+from errors import PathNotFoundError
+
 # Load environment variables
 load_dotenv()
 
@@ -51,6 +53,12 @@ def handle_exception(e):
     logger.error(f"An unexpected error occurred: {e}", exc_info=True)
     response = {"error": "An unexpected error occurred", "details": str(e)}
     return jsonify(response), 500
+
+@application.errorhandler(PathNotFoundError)
+def handle_path_not_found_error(error):
+    response = jsonify({"error": error.message})
+    response.status_code = 400  # Bad Request
+    return response
 
 
 # Home route

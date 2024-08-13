@@ -7,7 +7,7 @@ from blueprints.v1.utils.openai_operations import (
     get_embedding,
 )
 from blueprints.v1.utils.pinecone_setup import (
-    pc_index,
+    pc_admin_index,
 )  # Import the initialized components
 from blueprints.v1.utils.mongo_setup import mongo_contents
 from blueprints.v1.utils.question_helper import (
@@ -54,7 +54,7 @@ def generate_response(user_id: str):
     pc_filter = {"user_id": user_id}
     resource_ids = [
         match["id"]
-        for match in pc_index.query(
+        for match in pc_admin_index.query(
             vector=query_vector, top_k=20, filter=pc_filter
         ).get("matches", [])
     ]
