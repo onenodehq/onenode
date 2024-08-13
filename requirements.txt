@@ -71,12 +71,12 @@ kubernetes==29.0.0
 langchain==0.2.1
 langchain-chroma==0.1.1
 langchain-community==0.2.1
-langchain-core==0.2.1
+langchain-core==0.2.30
 langchain-openai==0.1.7
 langchain-pinecone==0.1.1
-langchain-text-splitters==0.2.0
+langchain-text-splitters==0.2.2
 langchainhub==0.1.15
-langsmith==0.1.31
+langsmith==0.1.99
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 marshmallow==3.21.1
