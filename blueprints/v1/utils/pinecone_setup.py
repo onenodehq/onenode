@@ -34,5 +34,6 @@ if PINECONE_CLIENT_INDEX not in existing_indexes:
         time.sleep(1)
 
 pc_admin_index = pc.Index(PINECONE_ADMIN_INDEX)
+pc_client_index = pc.Index(PINECONE_CLIENT_INDEX)
 
 vectorstore = PineconeVectorStore(index_name=PINECONE_ADMIN_INDEX, embedding=openai_ef)

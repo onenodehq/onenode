@@ -136,3 +136,12 @@ def get_contextual_response(question: str, chat_history: list[dict[str, str]], c
                 break
     except Exception as e:
         raise e
+
+
+@typechecked
+def embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> list:
+    embeddings = []
+    for text in texts:
+        response = openai_client.embeddings.create(input=text, model=model)
+        embeddings.append(response.data[0].embedding)
+    return embeddings
