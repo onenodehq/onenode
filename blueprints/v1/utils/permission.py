@@ -1,3 +1,6 @@
+from bson import ObjectId
+
+
 def has_permission(permissions, project_id, role):
     """
     Checks if the given project_id and role are in the permissions list.
@@ -11,7 +14,7 @@ def has_permission(permissions, project_id, role):
         bool: True if the project_id and role are in the permissions list, False otherwise.
     """
     return any(
-        permission["project_id"] == project_id and permission["role"] == role
+        permission["project_id"] == ObjectId(project_id) and permission["role"] == role
         for permission in permissions
     )
 

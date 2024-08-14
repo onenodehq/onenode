@@ -34,7 +34,7 @@ def save_api_key(
     doc = {
         "_id": hashed_api_key,
         "owner": onenode_id,
-        "permission": {"project_id": ObjectId(project_id), "role": "owner"},
+        "permissions": [{"project_id": ObjectId(project_id), "role": "owner"}],
     }
     if name:
         doc["name"] = name
