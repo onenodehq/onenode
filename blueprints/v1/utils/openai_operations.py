@@ -104,6 +104,18 @@ def get_embedding(text: str):
 
 
 @typechecked
+def embed_texts(texts: list[str]) -> list:
+    response = openai_client.embeddings.create(
+        model="text-embedding-ada-002",
+        input=texts,
+        encoding_format="float",
+    )
+
+    embeddings: list = [data.embedding for data in response.data]
+    return embeddings
+
+
+@typechecked
 def get_contextual_response(question: str, chat_history: list[dict[str, str]], context):
     system_prompt = f"""You are a large language AI assistant built by OneNode. You are given a user question, and please write clean, concise and accurate answer to the question. You will be given a set of related/unrelated contexts to the question, each starting with a reference number like [xxxx], where x is a number. Please use the context and cite the context at the end of each sentence if applicable.
         Your answer must be correct, accurate and written by an expert using an unbiased and professional tone. Do not give any information that is not related to the question, and do not repeat. Say "information is missing on" followed by the related topic, if the given context do not provide sufficient information. Do not give information that doesn't appear in any given context.

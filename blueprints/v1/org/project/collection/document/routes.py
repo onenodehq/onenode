@@ -1,11 +1,10 @@
-from flask import Blueprint, abort, jsonify, request
+from flask import Blueprint, abort, request
 
 from auth.api_key_decorator import require_api_key
 from blueprints.v1.org.project.collection.document.services import (
     delete_documents_service,
     process_document,
 )
-from blueprints.v1.org.project.collection.services import find_collection
 from blueprints.v1.utils.permission import can_edit
 from bson import json_util
 
@@ -17,24 +16,23 @@ v1_blueprint_document = Blueprint(
 
 @v1_blueprint_document.route("", methods=["POST"])
 @require_api_key
-def create_item(permissions, org_id, project_id, collection_name):
+def create_items(permissions, org_id, project_id, collection_name):
     if not can_edit(permissions=permissions, project_id=project_id):
         abort(403, description="You do not have permission.")
 
-    collection = find_collection(project_id=project_id, collection_name=collection_name)
-
-    if collection is None:
-        abort(404, description=f"Collection '{collection_name}' not found")
+    namespace = project_id + "_" + collection_name
 
     data = request.get_json()
-    document = data.get("document")
+    documents: list[dict] = data.get("documents")
 
-    saved_document = process_document(document=document, monogo_collection=collection)
+    saved_documents: list[dict] = process_document(
+        documents=documents, namespace=namespace
+    )
 
     response = {
         "status": "success",
         "message": "Request was successful.",
-        "data": saved_document,
+        "data": saved_documents,
     }
 
     return json_util.dumps(response), 200
@@ -51,3 +49,4 @@ def delete_documents(permissions, org_id, project_id, collection_name):
     filter = data.get("filter")
 
     delete_documents_service(filter=filter, namespace=namespace)
+    return {"message": "Documents deleted successfully."}, 200

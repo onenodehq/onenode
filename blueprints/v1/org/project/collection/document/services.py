@@ -1,61 +1,71 @@
 from uuid import uuid4
+from bson import ObjectId
 from flask import abort
-from openai import embeddings
+from typeguard import typechecked
 from blueprints.v1.utils.openai_operations import embed_texts
 from errors import PathNotFoundError
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from pymongo.collection import Collection
 from blueprints.v1.utils.pinecone_setup import pc_client_index
 from blueprints.v1.utils.mongo_setup import mongo_client_db
 
 
-def process_document(document: dict, monogo_collection: Collection) -> dict:
-    targets: list = document.get("_targets", [])
+@typechecked
+def process_document(documents: list[dict], namespace: str) -> list[dict]:
+    mongo_collection = mongo_client_db.get_collection(name=namespace)
+    if mongo_collection is None:
+        abort(404, description=f"Collection '{namespace}' not found")
 
-    all_vectors = []
-    for target in targets:
-        vectors = process_target(document, target)
-        all_vectors.extend(vectors)
+    all_chunks: list[str] = []
+    all_metadatas: list[dict] = []
+    document_ids: list[ObjectId] = []
 
-    insert_result = monogo_collection.insert_one(document=document)
-    document_id = str(insert_result.inserted_id)
+    for document in documents:
+        targets: list = document.get("_targets", [])
+        document_ids.append(ObjectId())
 
-    if all_vectors:
-        for vector in all_vectors:
-            vector["metadata"]["document_id"] = document_id
-            vector["id"] = str(uuid4())
+        for target in targets:
+            data, final_key = get_target(document=document, target=target)
+            text = data[final_key]
+            chunks = chunk(text=text)
+            replacement = {"text": text, "chunks": chunks}
+            data[final_key] = replacement
+            metadatas = create_metadata(
+                document_id=str(document_ids[-1]), target=target, length=len(chunks)
+            )
+            all_chunks.extend(chunks)
+            all_metadatas.extend(metadatas)
 
-        pc_client_index.upsert(vectors=vectors)
+    embeddings = embed_texts(texts=all_chunks)
+    vectors = []
+    for i, embedding in enumerate(embeddings):
+        vector = {"id": str(uuid4()), "values": embedding, "metadata": all_metadatas[i]}
+        vectors.append(vector)
 
-    document["_id"] = insert_result.inserted_id
-    result = document
+    mongo_collection.insert_many(documents=documents)
+    pc_client_index.upsert(vectors=vectors, namespace=namespace)
+
+    result = documents
 
     return result
 
 
-def process_target(document: dict, field_path: str) -> list[dict]:
-    keys = field_path.split(".")  # filed_path example) some.filed.to.embed
+def get_target(document: dict, target: str):
+    keys = target.split(".")
     data = document
-    for key in keys[:-1]:
-        if key in data:
+
+    for key in keys[:-1]:  # Traverse until the second last key
+        if key in data and isinstance(
+            data[key], dict
+        ):  # Ensure the path is valid and the value is a dict
             data = data[key]
         else:
-            raise PathNotFoundError(field_path)
+            raise PathNotFoundError(target)
 
-    if keys[-1] in data:
-        text = data[keys[-1]]
-        chunks = chunk(text)
-        data[keys[-1]] = {
-            "text": text,
-            "chunks": chunks,
-        }
-        embeddings = embed_texts(chunks)
-        metadatas = create_metadata(field_path=field_path, length=len(chunks))
-        vectors = combine_embs_and_metadata(embeddings=embeddings, metadatas=metadatas)
-
-        return vectors
+    final_key = keys[-1]  # The target key
+    if final_key in data:
+        return data, final_key
     else:
-        raise PathNotFoundError(field_path)
+        raise PathNotFoundError(target)
 
 
 def chunk(text: str) -> list[str]:
@@ -71,18 +81,10 @@ def chunk(text: str) -> list[str]:
     return texts
 
 
-def combine_embs_and_metadata(embeddings: list[list[int]], metadatas: list[dict]):
-    vectors: list[dict] = []
-    for i in range(len(embeddings)):
-        vectors.append({"values": embeddings[i], "metadata": metadatas[i]})
-
-    return vectors
-
-
-def create_metadata(field_path: str, length: int) -> list[dict]:
+def create_metadata(document_id: str, target: str, length: int) -> list[dict]:
     metadatas = []
     for i in range(length):
-        metadata = {"field_path": field_path, "seq": i}
+        metadata = {"document_id": document_id, "target": target, "seq": i}
         metadatas.append(metadata)
     return metadatas
 
