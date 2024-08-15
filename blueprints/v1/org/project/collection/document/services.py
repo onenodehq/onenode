@@ -1,10 +1,12 @@
 from uuid import uuid4
+from flask import abort
 from openai import embeddings
 from blueprints.v1.utils.openai_operations import embed_texts
 from errors import PathNotFoundError
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pymongo.collection import Collection
 from blueprints.v1.utils.pinecone_setup import pc_client_index
+from blueprints.v1.utils.mongo_setup import mongo_client_db
 
 
 def process_document(document: dict, monogo_collection: Collection) -> dict:
@@ -83,3 +85,18 @@ def create_metadata(field_path: str, length: int) -> list[dict]:
         metadata = {"field_path": field_path, "seq": i}
         metadatas.append(metadata)
     return metadatas
+
+
+def delete_documents_service(filter: dict, namespace: str):
+    mongo_collection = mongo_client_db.get_collection(name=namespace)
+    if mongo_collection is None:
+        abort(404, description=f"Collection not found")
+
+    documents_to_delete = mongo_collection.find(filter=filter, projection={"_id": 1})
+    ids_to_delete = [doc["_id"] for doc in documents_to_delete]
+
+    mongo_collection.delete_many(filter=filter)
+
+    pc_filter = {"document_id": {"$in": ids_to_delete}}
+    pc_client_index.delete(filter=pc_filter, namespace=namespace)
+    return

@@ -6,6 +6,7 @@ from blueprints.v1.utils.mongo_setup import (
     mongo_collections,
     mongo_client_db,
 )
+from blueprints.v1.utils.pinecone_setup import pc_client_index
 
 
 # Collection Insertion and Creation Functions
@@ -59,6 +60,7 @@ def get_collection_service(project_id: str, collection_name: str):
 def drop_database_collection(collection_name: str):
     collection = mongo_client_db.get_collection(name=collection_name)
     collection.drop()
+    pc_client_index.delete(delete_all=True, namespace=collection_name)
 
 
 def delete_collection_document(collection_name: str):
