@@ -74,3 +74,7 @@ def pc_client_delete_with_prefixes(prefixes: list[str], namespace: str):
         # If there are any IDs to delete, perform the deletion
         if ids_to_delete:
             pc_client_index.delete(ids=ids_to_delete, namespace=namespace)
+
+
+def pc_client_delete_namespace(namespace: str):
+    pc_client_index.delete(delete_all=True, namespace=namespace)

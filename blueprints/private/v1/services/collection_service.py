@@ -6,6 +6,7 @@ from blueprints.v1.utils.mongo_setup import (
     mongo_collections,
     mongo_client_db,
 )
+from blueprints.v1.utils.pinecone_operations import pc_client_delete_namespace
 from blueprints.v1.utils.pinecone_setup import pc_client_index
 
 
@@ -39,54 +40,51 @@ def get_collections_service(project_id: str):
     project: CursorType = mongo_projects.find_one(
         {"_id": {"$eq": ObjectId(project_id)}}
     )
-    collection_names: list[str] = project.get("collections")
+    namespace: list[str] = project.get("collections")
 
-    collections: list = list(
-        mongo_collections.find({"name": {"$in": collection_names}})
-    )
+    collections: list = list(mongo_collections.find({"name": {"$in": namespace}}))
 
     return collections
 
 
 # Collection Retrieval Functions
 def get_collection_service(project_id: str, collection_name: str):
-    collection_name = project_id + "_" + collection_name
-    collection = mongo_collections.find_one({"name": {"$eq": collection_name}})
+    namespace = project_id + "_" + collection_name
+    collection = mongo_collections.find_one({"name": {"$eq": namespace}})
 
     return collection
 
 
 # Collection Deletion Functions
-def drop_database_collection(collection_name: str):
-    collection = mongo_client_db.get_collection(name=collection_name)
+def drop_collection_from_client_db(namespace: str):
+    collection = mongo_client_db.get_collection(name=namespace)
     collection.drop()
-    pc_client_index.delete(delete_all=True, namespace=collection_name)
+    pc_client_index.delete(delete_all=True, namespace=namespace)
 
 
-def delete_collection_document(collection_name: str):
-    filter = {"name": collection_name}
+def delete_collection(namespace: str):
+    filter = {"name": namespace}
     mongo_collections.delete_one(filter=filter)
 
 
-def delete_collection_from_project(project_id: str, collection_name: str):
+def delete_collection_from_project(project_id: str, namespace: str):
     mongo_projects.update_one(
-        {"_id": ObjectId(project_id)}, {"$pull": {"collections": collection_name}}
+        {"_id": ObjectId(project_id)}, {"$pull": {"collections": namespace}}
     )
 
 
 def delete_collection_service(project_id: str, collection_name: str):
-    collection_name = project_id + "_" + collection_name
-    drop_database_collection(collection_name)
-    delete_collection_document(collection_name)
-    delete_collection_from_project(
-        project_id=project_id, collection_name=collection_name
-    )
+    namespace = project_id + "_" + collection_name
+    drop_collection_from_client_db(namespace)
+    delete_collection(namespace)
+    delete_collection_from_project(project_id=project_id, namespace=namespace)
+    pc_client_delete_namespace(namespace=collection_name)
 
 
 # Collection Items Retrieval Functions
 def get_collection_items_service(project_id: str, collection_name: str):
-    collection_name = project_id + "_" + collection_name
-    collection = mongo_client_db.get_collection(name=collection_name)
+    namespace = project_id + "_" + collection_name
+    collection = mongo_client_db.get_collection(name=namespace)
     items = list(collection.find({}))
 
     return items
