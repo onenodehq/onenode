@@ -1,11 +1,11 @@
-import json
-from xml.dom.minidom import Document
 from flask import Blueprint, abort, request
-
 from auth.api_key_decorator import require_api_key
+from blueprints.v1.org.project.collection.document.helper import (
+    validate_json_content_type,
+)
 from blueprints.v1.org.project.collection.document.services import (
+    create_documents_service,
     delete_documents_service,
-    process_document,
     update_documents_service,
 )
 from blueprints.v1.utils.permission import can_edit
@@ -19,16 +19,21 @@ v1_blueprint_document = Blueprint(
 
 @v1_blueprint_document.route("", methods=["POST"])
 @require_api_key
-def create_documents(permissions, org_id, project_id, collection_name):
+def create_documents(
+    permissions: list[dict], org_id: str, project_id: str, collection_name: str
+):
+    validate_json_content_type()
     if not can_edit(permissions=permissions, project_id=project_id):
         abort(403, description="You do not have permission.")
 
     namespace = project_id + "_" + collection_name
 
-    data = request.get_json()
-    documents: list[dict] = json_util.loads(json.dumps(data.get("documents")))
+    data = json_util.loads(request.get_data(as_text=True))
+    documents: list[dict] = data.get("documents")
+    if not documents:
+        abort(400, description="Missing 'documents' field.")
 
-    saved_documents: list[dict] = process_document(
+    saved_documents: list[dict] = create_documents_service(
         documents=documents, namespace=namespace
     )
 
@@ -43,7 +48,10 @@ def create_documents(permissions, org_id, project_id, collection_name):
 
 @v1_blueprint_document.route("", methods=["PUT"])
 @require_api_key
-def update_documents(permissions, org_id, project_id, collection_name):
+def update_documents(
+    permissions: list[dict], org_id: str, project_id: str, collection_name: str
+):
+    validate_json_content_type()
     if not can_edit(permissions=permissions, project_id=project_id):
         abort(403, description="You do not have permission.")
 
@@ -52,20 +60,31 @@ def update_documents(permissions, org_id, project_id, collection_name):
     filter = data.get("filter")
     update = data.get("update")
 
+    if not filter:
+        abort(400, description="Missing 'filter' field in the request data.")
+    if not update:
+        abort(400, description="Missing 'update' field in the request data.")
+
     update_documents_service(filter=filter, update=update, namespace=namespace)
 
-    return {"message": "Documents updated successfully."}, 200
+    return {"message": "documents updated successfully."}, 200
 
 
 @v1_blueprint_document.route("", methods=["DELETE"])
 @require_api_key
-def delete_documents(permissions, org_id, project_id, collection_name):
+def delete_documents(
+    permissions: list[dict], org_id: str, project_id: str, collection_name: str
+):
+    validate_json_content_type()
     if not can_edit(permissions=permissions, project_id=project_id):
         abort(403, description="You do not have permission.")
 
     namespace = project_id + "_" + collection_name
-    data = request.get_json()
+    data = json_util.loads(request.get_data(as_text=True))
     filter = data.get("filter")
 
+    if not filter:
+        abort(400, description="Missing 'filter' field in the request data.")
+
     delete_documents_service(filter=filter, namespace=namespace)
-    return {"message": "Documents deleted successfully."}, 200
+    return {"message": "documents deleted successfully."}, 200

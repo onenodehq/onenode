@@ -1,7 +1,9 @@
 from bson import ObjectId
+from typeguard import typechecked
 
 
-def has_permission(permissions, project_id, role):
+@typechecked
+def has_permission(permissions: list[dict], project_id: str, role: str):
     """
     Checks if the given project_id and role are in the permissions list.
 
@@ -19,7 +21,8 @@ def has_permission(permissions, project_id, role):
     )
 
 
-def can_edit(permissions, project_id):
+@typechecked
+def can_edit(permissions: list[dict], project_id: str):
     """
     Checks if edit is allowed for the specified project_id.
 
@@ -35,7 +38,8 @@ def can_edit(permissions, project_id):
     )
 
 
-def can_read(permissions, project_id):
+@typechecked
+def can_read(permissions: list[dict], project_id: str):
     """
     Checks if read is allowed for the specified project_id.
 
