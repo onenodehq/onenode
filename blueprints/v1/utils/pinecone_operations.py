@@ -63,17 +63,19 @@ def pc_client_delete_with_prefixes(prefixes: list[str], namespace: str):
     """
     Delete items from a Pinecone index based on a list of ID prefixes.
 
-    :param index: Pinecone index object.
     :param prefixes: List of ID prefixes to match for deletion.
     :param namespace: The namespace in which the items exist.
     """
     for prefix in prefixes:
-        # List all IDs with the given prefix
-        ids_to_delete = pc_client_index.list(prefix=prefix, namespace=namespace)
+        ids_to_delete = []
+        for ids in pc_client_index.list(prefix=prefix, namespace=namespace):
+            ids_to_delete.extend(ids)
 
         # If there are any IDs to delete, perform the deletion
         if ids_to_delete:
+            print("delete")
             pc_client_index.delete(ids=ids_to_delete, namespace=namespace)
+            print("comp")
 
 
 def pc_client_delete_namespace(namespace: str):

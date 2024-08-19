@@ -25,7 +25,7 @@ def create_documents_service(documents: list[dict], namespace: str) -> list[dict
             document["_id"] = ObjectId()
         document_id = str(document["_id"])
         process_document_fields(
-            document=document,
+            data=document,
             document_id=document_id,
             all_chunks=all_chunks,
             all_pc_ids=all_pc_ids,
@@ -54,8 +54,8 @@ def update_documents_service(filter: dict, update: dict, namespace: str):
         return
 
     all_chunks: list[str] = []
-    all_metadatas: list[dict] = []
-    emb_paths: list[str] = []
+    emb_paths: list[dict] = []
+    non_emb_paths: list[str] = []
     for operator, fields in update.items():
         if not isinstance(fields, dict):  # Check if fields is not a dictionary
             abort(
@@ -67,17 +67,18 @@ def update_documents_service(filter: dict, update: dict, namespace: str):
             fields=fields,
             all_chunks=all_chunks,
             emb_paths=emb_paths,
+            non_emb_paths=non_emb_paths,
         )
 
     mongo_collection.update_many(filter=filter, update=update)
 
-    if emb_paths:
-        update_pc(
-            document_ids=document_ids,
-            all_chunks=all_chunks,
-            all_metadatas=all_metadatas,
-            emb_paths=emb_paths,
-        )
+    update_pc(
+        document_ids=document_ids,
+        all_chunks=all_chunks,
+        emb_paths=emb_paths,
+        non_emb_paths=non_emb_paths,
+        namespace=namespace,
+    )
 
     return
 
@@ -92,7 +93,7 @@ def delete_documents_service(filter: dict, namespace: str):
 
     if not document_ids:
         return
-    
+
     mongo_collection.delete_many(filter=filter)
     pc_client_delete_with_prefixes(prefixes=document_ids)
     return

@@ -78,7 +78,7 @@ def delete_collection_service(project_id: str, collection_name: str):
     drop_collection_from_client_db(namespace)
     delete_collection(namespace)
     delete_collection_from_project(project_id=project_id, namespace=namespace)
-    pc_client_delete_namespace(namespace=collection_name)
+    pc_client_delete_namespace(namespace=namespace)
 
 
 # Collection Items Retrieval Functions
