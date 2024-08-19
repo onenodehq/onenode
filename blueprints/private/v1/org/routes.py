@@ -36,6 +36,5 @@ def get_orgs_and_projects():
 @private_v1_blueprint_org.route("/<string:org_id>", methods=["GET"])
 @requires_auth
 def get_org(org_id):
-    print("\n\n\n\n", "test")
     org = get_org_service(org_id=org_id)
     return json_util.dumps(org), 200
