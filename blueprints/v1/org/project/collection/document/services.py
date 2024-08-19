@@ -98,5 +98,5 @@ def delete_documents_service(filter: dict, namespace: str):
         return
 
     mongo_collection.delete_many(filter=filter)
-    pc_client_delete_with_prefixes(prefixes=document_ids)
+    pc_client_delete_with_prefixes(prefixes=document_ids, namespace=namespace)
     return
