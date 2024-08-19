@@ -1,7 +1,7 @@
 from flask import abort, request
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from blueprints.v1.models.emb_text import EmbText
-from blueprints.v1.utils.pinecone_operations import pc_client_delete_with_prefixes
+from blueprints.v1.utils.pinecone_operations import pc_client_delete_with_prefixes, pc_client_upsert
 from blueprints.v1.utils.pinecone_setup import pc_client_index
 from blueprints.v1.utils.openai_operations import embed_texts
 
@@ -130,7 +130,7 @@ def update_pc(
     if delete_id_prefixes:
         pc_client_delete_with_prefixes(prefixes=delete_id_prefixes, namespace=namespace)
     if emb_paths:
-        pc_client_index.upsert(vectors=all_vectors, namespace=namespace)
+        pc_client_upsert(vectors=all_vectors, namespace=namespace)
 
 
 def create_pc_ids(document_id: str, path: str, length: int) -> list[str]:

@@ -4,6 +4,7 @@ from blueprints.v1.utils.pinecone_setup import (
     pc_admin_index,
     pc_client_index,
 )
+from pinecone.core.client.models import UpsertResponse
 
 
 dummy_vector = [0] * DIMENSIONS
@@ -73,9 +74,13 @@ def pc_client_delete_with_prefixes(prefixes: list[str], namespace: str):
 
         # If there are any IDs to delete, perform the deletion
         if ids_to_delete:
-            print("delete")
             pc_client_index.delete(ids=ids_to_delete, namespace=namespace)
-            print("comp")
+
+
+def pc_client_upsert(vectors: list[dict], namespace: str) -> UpsertResponse:
+    # To prevent upserting without namespace
+    result = pc_client_index.upsert(vectors=vectors, namespace=namespace)
+    return result
 
 
 def pc_client_delete_namespace(namespace: str):

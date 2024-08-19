@@ -7,7 +7,10 @@ from blueprints.v1.org.project.collection.document.helper import (
     update_pc,
 )
 from blueprints.v1.utils.openai_operations import embed_texts
-from blueprints.v1.utils.pinecone_operations import pc_client_delete_with_prefixes
+from blueprints.v1.utils.pinecone_operations import (
+    pc_client_delete_with_prefixes,
+    pc_client_upsert,
+)
 from blueprints.v1.utils.pinecone_setup import pc_client_index
 from blueprints.v1.utils.mongo_setup import mongo_client_db
 
@@ -36,7 +39,7 @@ def create_documents_service(documents: list[dict], namespace: str) -> list[dict
     if all_chunks:
         embeddings = embed_texts(texts=all_chunks)
         vectors = create_vectors(embeddings=embeddings, pc_ids=all_pc_ids)
-        pc_client_index.upsert(vectors=vectors, namespace=namespace)
+        pc_client_upsert(vectors=vectors, namespace=namespace)
 
     result = documents
 
