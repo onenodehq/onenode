@@ -10,8 +10,8 @@ class EmbContent:
         if not isinstance(content_data, dict):
             return False
 
-        status = content_data.get("status")
-        if status == "unprocessed":
+        status = content_data.get("status", "")
+        if status == "":
             # Ensure 'data' and 'mimeType' fields exist and are strings
             return isinstance(content_data.get("data"), str) and isinstance(
                 content_data.get("mimeType"), str
