@@ -173,7 +173,7 @@ cython_debug/
 index/
 virt/
 db/
-test.py
+test
 
 migrations/db_version.txt
 ssl
