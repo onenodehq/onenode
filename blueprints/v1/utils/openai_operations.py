@@ -5,16 +5,9 @@ from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 
 @typechecked
-def image_to_text(image_url: str) -> str:
-    """
-    Analyze a list of image URLs and return the OpenAI API response.
-
-    Args:
-        image_urls (List[str]): A list of image URLs to be analyzed.
-
-    Returns:
-        Dict: The response from the OpenAI API.
-    """
+def image_to_text(
+    base64_image: str, mime_type: str, model: str = "gpt-4o-mini", max_tokens: int = 300
+) -> str:
     messages = [
         {
             "role": "user",
@@ -23,8 +16,7 @@ def image_to_text(image_url: str) -> str:
                 {
                     "type": "image_url",
                     "image_url": {
-                        "url": image_url,
-                        "detail": "high",
+                        "url": f"data:{mime_type};base64,{base64_image}",
                     },
                 },
             ],
@@ -32,12 +24,10 @@ def image_to_text(image_url: str) -> str:
     ]
 
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
+        model=model,
         messages=messages,
-        max_tokens=300,
+        max_tokens=max_tokens,
     )
-
-    print(response)
 
     return response.choices[0].message.content
 
