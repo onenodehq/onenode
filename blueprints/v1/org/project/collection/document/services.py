@@ -57,7 +57,7 @@ def update_documents_service(filter: dict, update: dict, namespace: str):
         return
 
     all_chunks: list[str] = []
-    emb_paths: list[dict] = []
+    all_pc_id_suffixes: list[dict] = []
     non_emb_paths: list[str] = []
     for operator, fields in update.items():
         if not isinstance(fields, dict):  # Check if fields is not a dictionary
@@ -69,7 +69,7 @@ def update_documents_service(filter: dict, update: dict, namespace: str):
             operator=operator,
             fields=fields,
             all_chunks=all_chunks,
-            emb_paths=emb_paths,
+            all_pc_id_suffixes=all_pc_id_suffixes,
             non_emb_paths=non_emb_paths,
         )
 
@@ -78,7 +78,7 @@ def update_documents_service(filter: dict, update: dict, namespace: str):
     update_pc(
         document_ids=document_ids,
         all_chunks=all_chunks,
-        emb_paths=emb_paths,
+        all_pc_id_suffixes=all_pc_id_suffixes,
         non_emb_paths=non_emb_paths,
         namespace=namespace,
     )
