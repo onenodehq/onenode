@@ -8,6 +8,7 @@ from blueprints.v1.utils.pinecone_operations import (
 )
 from blueprints.v1.utils.pinecone_setup import pc_client_index
 from blueprints.v1.utils.openai_operations import embed_texts, image_to_text
+from blueprints.v1.utils.s3_operations import upload_to_s3
 
 
 # Recursively check each field for the '@' prefix
@@ -47,10 +48,10 @@ def process_document_fields(
             value: dict
 
             mime_type: str = value.get("mimeType")
-            content_data: str = value.pop("data")
+            base64_image: str = value.pop("data")
 
             if mime_type.startswith("image/"):
-                text = image_to_text(base64_image=content_data, mime_type=mime_type)
+                text = image_to_text(base64_image=base64_image, mime_type=mime_type)
                 chunks = chunk(text=text)
                 value["chunks"] = chunks
                 value["text"] = text

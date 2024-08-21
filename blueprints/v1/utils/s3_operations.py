@@ -13,7 +13,9 @@ from typeguard import typechecked
 
 
 @typechecked
-def process_image_resources(resources: List[Dict], ids: List[str], user_id: str) -> List[Dict]:
+def process_image_resources(
+    resources: List[Dict], ids: List[str], user_id: str
+) -> List[Dict]:
     updated_resources = []
 
     for i, resource in enumerate(resources):
@@ -30,7 +32,7 @@ def process_image_resources(resources: List[Dict], ids: List[str], user_id: str)
                 content = image_to_text(base64_image)
                 extension = EXTENSION_MAP.get(mime_type, "bin")
                 filename = f"{user_id}/{ids[i]}.{extension}"
-                save_base64_image(base64_image=base64_image, filename=filename)
+                save_base64_image_legacy(base64_image=base64_image, filename=filename)
 
                 metadata["s3_key"] = filename
                 resource["metadata"] = metadata
@@ -45,7 +47,7 @@ def process_image_resources(resources: List[Dict], ids: List[str], user_id: str)
     return updated_resources
 
 
-def save_base64_image(base64_image, filename):
+def save_base64_image_legacy(base64_image, filename):
     try:
         # Check if the base64 string has metadata and extract content type if available
         if base64_image.startswith("data:"):
@@ -61,7 +63,7 @@ def save_base64_image(base64_image, filename):
         file_binary = io.BytesIO(binary_image)
 
         # Upload to S3
-        upload_to_s3(file_binary, filename, content_type)
+        upload_to_s3_legacy(file_binary, filename, content_type)
 
     except (base64.binascii.Error, ValueError) as e:
         logging.error(f"Failed to process base64 image: {e}")
@@ -71,9 +73,18 @@ def save_base64_image(base64_image, filename):
         raise RuntimeError(f"Failed to save image to S3: {str(e)}")
 
 
-def upload_to_s3(file_binary, filename, content_type):
+def upload_to_s3_legacy(file_binary, filename, content_type):
     s3.upload_fileobj(
         file_binary, S3_BUCKET_NAME, filename, ExtraArgs={"ContentType": content_type}
+    )
+
+
+def upload_to_s3(base64_image: str, mime_type: str, filename: str, namespace: str):
+    keyname = namespace + "/" + filename
+    binary_image = base64.b64decode(base64_image)
+    file_binary = io.BytesIO(binary_image)
+    s3.upload_fileobj(
+        file_binary, S3_BUCKET_NAME, keyname, ExtraArgs={"ContentType": mime_type}
     )
 
 
