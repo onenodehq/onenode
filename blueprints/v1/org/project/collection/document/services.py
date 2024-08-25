@@ -6,12 +6,12 @@ from blueprints.v1.org.project.collection.document.helper import (
     process_document_fields,
     update_pc,
 )
+from celery_tasks import example_task
 from blueprints.v1.utils.openai_operations import embed_texts
 from blueprints.v1.utils.pinecone_operations import (
     pc_client_delete_with_prefixes,
     pc_client_upsert,
 )
-from blueprints.v1.utils.pinecone_setup import pc_client_index
 from blueprints.v1.utils.mongo_setup import mongo_client_db
 
 
@@ -19,6 +19,8 @@ def create_documents_service(documents: list[dict], namespace: str) -> list[dict
     mongo_collection = mongo_client_db.get_collection(name=namespace)
     if mongo_collection is None:
         abort(404, description=f"Collection '{namespace}' not found")
+
+    example_task.delay()
 
     all_chunks: list[str] = []
     all_pc_ids: list[str] = []

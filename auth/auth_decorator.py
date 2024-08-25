@@ -8,7 +8,7 @@ import certifi
 from flask import json, request, g
 from jose import jwt
 
-from create_app import AuthError
+from errors import AuthError
 
 AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 API_AUDIENCE = os.getenv("API_AUDIENCE")

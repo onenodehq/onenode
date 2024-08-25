@@ -42,7 +42,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-east-2"
         run: |
-          eb init -p python-3.11 OneNodeBrain --region $AWS_REGION
+          eb init -p python-3.11 OneNodeCelery --region $AWS_REGION
           eb use OneNodeCelery-env
           eb deploy
 
@@ -64,6 +64,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-east-2"
         run: |
-          eb init -p python-3.11 OneNodeBrain --region $AWS_REGION
-          eb use OneNodeCelery-dev-env
+          eb init -p python-3.11 OneNodeCelery --region $AWS_REGION
+          eb use OneNodeCelery-env-dev
           eb deploy

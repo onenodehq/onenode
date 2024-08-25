@@ -2,7 +2,7 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from errors import PathNotFoundError
+from errors import AuthError, PathNotFoundError
 
 # Load environment variables
 load_dotenv()
@@ -14,7 +14,7 @@ from blueprints.private.v1.resource import private_v1_blueprint_resource
 from blueprints.private.v1.org.routes import private_v1_blueprint_org
 from blueprints.v1.org.routes import v1_blueprint_org
 from flask_cors import CORS
-from create_app import AuthError, application
+from create_app import application
 
 
 llm = ChatOpenAI()
@@ -53,6 +53,7 @@ def handle_exception(e):
     logger.error(f"An unexpected error occurred: {e}", exc_info=True)
     response = {"error": "An unexpected error occurred", "details": str(e)}
     return jsonify(response), 500
+
 
 @application.errorhandler(PathNotFoundError)
 def handle_path_not_found_error(error):
