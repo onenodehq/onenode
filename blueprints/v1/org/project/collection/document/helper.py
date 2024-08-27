@@ -6,9 +6,7 @@ from blueprints.v1.utils.pinecone_operations import (
     pc_client_delete_with_prefixes,
     pc_client_upsert,
 )
-from blueprints.v1.utils.pinecone_setup import pc_client_index
 from blueprints.v1.utils.openai_operations import embed_texts, image_to_text
-from blueprints.v1.utils.s3_operations import upload_to_s3
 
 
 # Recursively check each field for the '@' prefix
@@ -21,9 +19,9 @@ def process_document_fields(
 ):
     for key, value in data.items():
         if parent_path:
-            full_path = f"{parent_path}.{key}"
+            current_path = f"{parent_path}.{key}"
         else:
-            full_path = f"{key}"
+            current_path = f"{key}"
 
         if not isinstance(key, str):
             abort(400, description=f"Key name must be a string - {key}")
@@ -68,7 +66,7 @@ def process_document_fields(
                 document_id=document_id,
                 all_chunks=all_chunks,
                 all_pc_ids=all_pc_ids,
-                parent_path=full_path,
+                parent_path=current_path,
             )
     return
 

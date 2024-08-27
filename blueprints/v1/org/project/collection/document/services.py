@@ -20,18 +20,19 @@ def create_documents_service(documents: list[dict], namespace: str) -> list[dict
     if mongo_collection is None:
         abort(404, description=f"Collection '{namespace}' not found")
 
-    example_task.delay()
-
     all_chunks: list[str] = []
     all_pc_ids: list[str] = []
 
     for document in documents:
         if not document.get("_id"):
             document["_id"] = ObjectId()
-        document_id = str(document["_id"])
+
+    mongo_collection.insert_many(documents=documents)
+
+    for document in documents:
         process_document_fields(
             data=document,
-            document_id=document_id,
+            document_id=document["_id"],
             all_chunks=all_chunks,
             all_pc_ids=all_pc_ids,
         )
