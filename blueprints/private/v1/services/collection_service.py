@@ -59,7 +59,6 @@ def get_collection_service(project_id: str, collection_name: str):
 def drop_collection_from_client_db(namespace: str):
     collection = mongo_client_db.get_collection(name=namespace)
     collection.drop()
-    pc_client_index.delete(delete_all=True, namespace=namespace)
 
 
 def delete_collection(namespace: str):
@@ -78,7 +77,9 @@ def delete_collection_service(project_id: str, collection_name: str):
     drop_collection_from_client_db(namespace)
     delete_collection(namespace)
     delete_collection_from_project(project_id=project_id, namespace=namespace)
-    pc_client_delete_namespace(namespace=namespace)
+    namespaces = pc_client_index.describe_index_stats().get("namespaces", {}).keys()
+    if namespace in namespaces:
+        pc_client_delete_namespace(namespace=namespace)
 
 
 # Collection Items Retrieval Functions
