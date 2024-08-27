@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, request
+from flask import Blueprint, abort, jsonify, request
 from auth.api_key_decorator import require_api_key
 from blueprints.v1.org.project.collection.document.helper import (
     validate_json_content_type,
@@ -33,17 +33,15 @@ def create_documents(
     if not documents:
         abort(400, description="Missing 'documents' field.")
 
-    saved_documents: list[dict] = create_documents_service(
-        documents=documents, namespace=namespace
-    )
+    task_id: str = create_documents_service(documents=documents, namespace=namespace)
 
     response = {
         "status": "success",
         "message": "Request was successful.",
-        "data": saved_documents,
+        "taskId": task_id,
     }
 
-    return json_util.dumps(response), 200
+    return jsonify(response), 200
 
 
 @v1_blueprint_document.route("", methods=["PUT"])

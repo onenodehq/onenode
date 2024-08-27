@@ -6,13 +6,13 @@ from blueprints.v1.org.project.collection.document.helper import (
     process_document_fields,
     update_pc,
 )
-from celery_tasks import example_task
 from blueprints.v1.utils.openai_operations import embed_texts
 from blueprints.v1.utils.pinecone_operations import (
     pc_client_delete_with_prefixes,
     pc_client_upsert,
 )
 from blueprints.v1.utils.mongo_setup import mongo_client_db
+from celery_tasks import create_documents_task
 
 
 def create_documents_service(documents: list[dict], namespace: str) -> list[dict]:
@@ -20,31 +20,8 @@ def create_documents_service(documents: list[dict], namespace: str) -> list[dict
     if mongo_collection is None:
         abort(404, description=f"Collection '{namespace}' not found")
 
-    all_chunks: list[str] = []
-    all_pc_ids: list[str] = []
-
-    for document in documents:
-        if not document.get("_id"):
-            document["_id"] = ObjectId()
-
-    mongo_collection.insert_many(documents=documents)
-
-    for document in documents:
-        process_document_fields(
-            data=document,
-            document_id=document["_id"],
-            all_chunks=all_chunks,
-            all_pc_ids=all_pc_ids,
-        )
-    # documents, all_chunks, and all_pc_ids will be modified after process_doc()
-    mongo_collection.insert_many(documents=documents)
-
-    if all_chunks:
-        embeddings = embed_texts(texts=all_chunks)
-        vectors = create_vectors(embeddings=embeddings, pc_ids=all_pc_ids)
-        pc_client_upsert(vectors=vectors, namespace=namespace)
-
-    result = documents
+    task = create_documents_task.delay(documents=documents, namespace=namespace)
+    result = task.id
 
     return result
 
