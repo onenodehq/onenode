@@ -36,7 +36,6 @@ def create_documents(
     task_id: str = create_documents_service(documents=documents, namespace=namespace)
 
     response = {
-        "status": "success",
         "message": "Request was successful.",
         "taskId": task_id,
     }
@@ -63,9 +62,13 @@ def update_documents(
     if not update:
         abort(400, description="Missing 'update' field in the request data.")
 
-    update_documents_service(filter=filter, update=update, namespace=namespace)
+    task_id = update_documents_service(
+        filter=filter, update=update, namespace=namespace
+    )
 
-    return {"message": "documents updated successfully."}, 200
+    response = {"message": "documents updated successfully.", "taskId": task_id}
+
+    return jsonify(response), 200
 
 
 @v1_blueprint_document.route("", methods=["DELETE"])

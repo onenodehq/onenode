@@ -1,18 +1,7 @@
-from bson import ObjectId
 from flask import abort
-from blueprints.v1.org.project.collection.document.helper import (
-    create_vectors,
-    prepare_update_fields,
-    process_document_fields,
-    update_pc,
-)
-from blueprints.v1.utils.openai_operations import embed_texts
-from blueprints.v1.utils.pinecone_operations import (
-    pc_client_delete_with_prefixes,
-    pc_client_upsert,
-)
+from blueprints.v1.utils.pinecone_operations import pc_client_delete_with_prefixes
 from blueprints.v1.utils.mongo_setup import mongo_client_db
-from celery_tasks import create_documents_task
+from celery_tasks import create_documents_task, update_documents_task
 
 
 def create_documents_service(documents: list[dict], namespace: str) -> list[dict]:
@@ -36,34 +25,12 @@ def update_documents_service(filter: dict, update: dict, namespace: str):
     if not document_ids:
         return
 
-    all_chunks: list[str] = []
-    all_pc_id_suffixes: list[dict] = []
-    non_emb_paths: list[str] = []
-    for operator, fields in update.items():
-        if not isinstance(fields, dict):  # Check if fields is not a dictionary
-            abort(
-                400,
-                description=f"Expected dictionary for {operator}, but got {type(fields).__name__} instead.",
-            )
-        prepare_update_fields(
-            operator=operator,
-            fields=fields,
-            all_chunks=all_chunks,
-            all_pc_id_suffixes=all_pc_id_suffixes,
-            non_emb_paths=non_emb_paths,
-        )
-
-    mongo_collection.update_many(filter=filter, update=update)
-
-    update_pc(
-        document_ids=document_ids,
-        all_chunks=all_chunks,
-        all_pc_id_suffixes=all_pc_id_suffixes,
-        non_emb_paths=non_emb_paths,
-        namespace=namespace,
+    task = update_documents_task.delay(
+        document_ids=document_ids, filter=filter, update=update, namespace=namespace
     )
+    result = task.id
 
-    return
+    return result
 
 
 def delete_documents_service(filter: dict, namespace: str):
