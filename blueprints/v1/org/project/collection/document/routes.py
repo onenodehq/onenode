@@ -1,8 +1,5 @@
 from flask import Blueprint, abort, jsonify, request
 from auth.api_key_decorator import require_api_key
-from blueprints.v1.org.project.collection.document.helper import (
-    validate_json_content_type,
-)
 from blueprints.v1.org.project.collection.document.services import (
     create_documents_service,
     delete_documents_service,
@@ -10,6 +7,7 @@ from blueprints.v1.org.project.collection.document.services import (
 )
 from blueprints.v1.utils.permission import can_edit
 from bson import json_util
+from blueprints.v1.utils.validations import validate_json_content_type
 
 
 v1_blueprint_document = Blueprint(
