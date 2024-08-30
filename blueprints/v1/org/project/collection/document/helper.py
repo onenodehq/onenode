@@ -1,4 +1,4 @@
-from flask import abort, request
+from flask import abort
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from blueprints.v1.models.emb_content import EmbContent
 from blueprints.v1.models.emb_text import EmbText
@@ -89,9 +89,11 @@ def create_vectors(embeddings: list, pc_ids: list[str]) -> list:
         abort(500, description="Internal server error - 1002")
     vectors = []
     for i, embedding in enumerate(embeddings):
+        pc_id = pc_ids[i]
         vector = {
-            "id": pc_ids[i],
+            "id": pc_id,
             "values": embedding,
+            "metadata": {"_id": pc_id.split("#")[0]},  # document_id
         }
         vectors.append(vector)
     return vectors
@@ -180,28 +182,23 @@ def update_pc(
 
 def create_pc_ids(document_id: str, path: str, length: int) -> list[str]:
     pc_ids = []
-    path = path.replace(".", "-")
+    path = path.replace(".", "#")
     for i in range(length):
-        pc_id = document_id + "-" + path + "#" + str(i)
+        pc_id = document_id + "#" + path + "#" + str(i)
         pc_ids.append(pc_id)
     return pc_ids
 
 
 def create_pc_id_prefixes(document_id: str, path: str) -> list:
-    path = path.replace(".", "-")
-    pc_id_prefix = document_id + "-" + path + "#"
+    path = path.replace(".", "#")
+    pc_id_prefix = document_id + "#" + path + "#"
     return pc_id_prefix
 
 
 def create_pc_id_suffixes(path: str, length: int) -> list[str]:
     pc_id_suffixes = []
-    path = path.replace(".", "-")
+    path = path.replace(".", "#")
     for i in range(length):
-        pc_id_suffix = "-" + path + "#" + str(i)
+        pc_id_suffix = "#" + path + "#" + str(i)
         pc_id_suffixes.append(pc_id_suffix)
     return pc_id_suffixes
-
-
-def validate_json_content_type():
-    if request.content_type != "application/json":
-        abort(400, description="Invalid content type. Expected 'application/json'.")
