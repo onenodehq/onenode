@@ -6,24 +6,15 @@ from blueprints.v1.org.project.collection.document.helper import (
     process_document_fields,
     update_pc,
 )
+from blueprints.v1.utils.mongo_operations import get_collection_or_abort
 from blueprints.v1.utils.openai_operations import embed_texts
 from blueprints.v1.utils.pinecone_operations import pc_client_upsert
 from celery_setup import celery
-from blueprints.v1.utils.mongo_setup import mongo_client_db
-
-
-@celery.task
-def example_task():
-    # Process your task here
-    collection = mongo_client_db.get_collection("index")
-    collection.insert_one(document={"key1": "Celery test 02"})
-    return
-
 
 @celery.task(bind=True)
 def create_documents_task(self, documents: list[dict], namespace: str):
     try:
-        mongo_collection = mongo_client_db.get_collection(name=namespace)
+        mongo_collection = get_collection_or_abort(namespace=namespace)
         self.update_state(state="PROGRESS")
 
         all_chunks: list[str] = []
@@ -60,7 +51,7 @@ def update_documents_task(
     self, document_ids: list[str], filter: dict, update: dict, namespace: str
 ):
     self.update_state(state="PROGRESS")
-    mongo_collection = mongo_client_db.get_collection(name=namespace)
+    mongo_collection = get_collection_or_abort(namespace=namespace)
 
     all_chunks: list[str] = []
     all_pc_id_suffixes: list[dict] = []

@@ -5,9 +5,10 @@ from pymongo.collection import Collection
 
 def get_collection_or_abort(namespace: str) -> Collection:
     # Abort when collection not found
-    mongo_collection = mongo_client_db.get_collection(name=namespace)
-    if mongo_collection is None:
+    if namespace not in mongo_client_db.list_collection_names():
         abort(404, description=f"Collection '{namespace}' not found")
+
+    mongo_collection = mongo_client_db.get_collection(name=namespace)
     return mongo_collection
 
 
