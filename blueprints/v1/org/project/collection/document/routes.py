@@ -7,12 +7,17 @@ from blueprints.v1.org.project.collection.document.services import (
 )
 from blueprints.v1.utils.permission import can_edit
 from bson import json_util
+from blueprints.v1.org.project.collection.document.query.routes import (
+    v1_blueprint_query,
+)
 from blueprints.v1.utils.validations import validate_json_content_type
 
 
 v1_blueprint_document = Blueprint(
     "v1_document", __name__, url_prefix="/<string:collection_name>/document"
 )
+
+v1_blueprint_document.register_blueprint(v1_blueprint_query)
 
 
 @v1_blueprint_document.route("", methods=["POST"])

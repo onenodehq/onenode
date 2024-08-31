@@ -4,7 +4,7 @@ from blueprints.v1.utils.pinecone_setup import (
     pc_admin_index,
     pc_client_index,
 )
-from pinecone.core.client.models import UpsertResponse
+from pinecone.core.client.models import UpsertResponse, QueryResponse
 
 
 dummy_vector = [0] * DIMENSIONS
@@ -85,3 +85,40 @@ def pc_client_upsert(vectors: list[dict], namespace: str) -> UpsertResponse:
 
 def pc_client_delete_namespace(namespace: str):
     pc_client_index.delete(delete_all=True, namespace=namespace)
+
+
+def pc_client_query(
+    vector: list[float],
+    namespace: str,
+    top_k: int,
+    include_values: bool,
+    filter: dict = None,
+) -> QueryResponse:
+    if filter:
+        result = pc_client_index.query(
+            vector=vector,
+            namespace=namespace,
+            top_k=top_k,
+            include_values=include_values,
+            include_metadata=True,
+            filter=filter,
+        )
+    else:
+        result = pc_client_index.query(
+            vector=vector,
+            namespace=namespace,
+            top_k=top_k,
+            include_values=include_values,
+            include_metadata=True,
+        )
+
+    return result
+
+
+def pc_client_get_ids_by_prefixes(prefixes: list[str], namespace):
+    document_ids = []
+    for prefix in prefixes:
+        for ids in pc_client_index.list(prefix=prefix, namespace=namespace):
+            document_ids.extend(ids)
+
+    return document_ids
