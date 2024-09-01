@@ -2,7 +2,6 @@ from bson import ObjectId
 from pymongo import ASCENDING
 from blueprints.v1.org.project.collection.document.query.helper import (
     compose_query_data,
-    get_chunk_by_path,
 )
 from blueprints.v1.utils.mongo_operations import (
     get_collection_or_abort,
@@ -20,7 +19,7 @@ def query_chunks_service(
     text: str,
     namespace: str,
     filter: dict = None,
-    top_k: int = 10,
+    top_k: int | None = 10,
     include_values: bool = False,
 ) -> list[dict]:
     mongo_collection = get_collection_or_abort(namespace=namespace)

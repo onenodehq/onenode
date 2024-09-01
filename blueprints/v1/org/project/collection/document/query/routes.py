@@ -20,12 +20,13 @@ def query_chunks(
         abort(403, description="You do not have permission.")
 
     text = request.args.get("text")
+    top_k = int(request.args.get("top_k", "10"))
     if not text:
         return jsonify({"error": "Please provide a text query parameter."}), 400
 
     namespace = project_id + "_" + collection_name
 
-    data = query_chunks_service(text=text, namespace=namespace)
+    data = query_chunks_service(text=text, namespace=namespace, top_k=top_k)
 
     response = {
         "message": "Request was successful.",
