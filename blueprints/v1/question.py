@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, Response
 from typeguard import typechecked
-from auth.auth import jwt_required
+from auth.auth_decorator import requires_auth
 from blueprints.v1.utils.openai_operations import (
     contextualize_question,
     get_contextual_response,
@@ -23,7 +23,7 @@ v1_blueprint_question = Blueprint(
 
 
 @v1_blueprint_question.route("", methods=["POST"])
-@jwt_required  # JWT token required for authorization
+@requires_auth  # JWT token required for authorization
 @typechecked
 def generate_response(user_id: str):
     data = request.get_json()
