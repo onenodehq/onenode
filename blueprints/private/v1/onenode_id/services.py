@@ -2,7 +2,7 @@ from uuid import uuid4
 from blueprints.v1.utils.mongo_setup import mongo_users
 
 
-def create_onenode_account_service(
+def create_user_service(
     email: str, given_name: str, family_name: str, picture
 ):
     try:
@@ -23,8 +23,13 @@ def create_onenode_account_service(
         raise e
 
 
-def get_onenode_account_service(email: str):
+def get_user_by_email_service(email: str):
     filter = {"email": {"$eq": email}}
     user: dict = mongo_users.find_one(filter)
+    return user
 
+
+def get_user_by_access_token_service(onenode_id):
+    filter = {"_id": {"$eq": onenode_id}}
+    user: dict = mongo_users.find_one(filter)
     return user
