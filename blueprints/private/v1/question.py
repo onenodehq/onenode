@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, g, jsonify, request, Response
 from typeguard import typechecked
 from auth.auth_decorator import requires_auth
 from blueprints.v1.utils.openai_operations import (
@@ -18,14 +18,15 @@ from blueprints.v1.utils.question_helper import (
 
 # Define a Blueprint for the '/v1/query' endpoint
 private_v1_blueprint_question = Blueprint(
-    "private_v1_question", __name__, url_prefix="/private/v1/question"
+    "question", __name__, url_prefix="/private/v1/question"
 )
 
 
 @private_v1_blueprint_question.route("", methods=["POST"])
 @requires_auth  # JWT token required for authorization
 @typechecked
-def generate_response(user_id: str):
+def generate_response():
+    user_id = g.onenode_id
     data = request.get_json()
     if not data:
         return jsonify({"message": "Request body must be JSON"}), 400
