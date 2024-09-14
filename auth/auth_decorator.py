@@ -1,138 +1,49 @@
-# https://auth0.com/docs/quickstart/backend/python/01-authorization
-
-# Format error response and append status code
-from functools import wraps
+from flask import g, request, jsonify
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import hashes
+from jose import jwe
+import json
 import os
-from urllib.request import urlopen
-import certifi
-from flask import json, request, g
-from jose import jwt
-
-from errors import AuthError
-
-AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
-API_AUDIENCE = os.getenv("API_AUDIENCE")
-ALGORITHMS = ["RS256"]
-NAMESPACE_FOR_AUTH0 = os.getenv("NAMESPACE_FOR_AUTH0")
+from functools import wraps
 
 
-def get_token_auth_header():
-    """Obtains the Access Token from the Authorization Header"""
-    auth = request.headers.get("Authorization", None)
-    if not auth:
-        raise AuthError(
-            {
-                "code": "authorization_header_missing",
-                "description": "Authorization header is expected",
-            },
-            401,
-        )
+# Helper function to decode the NextAuth session
+def decode_nextauth_session(token):
+    hkdf = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=b"",
+        info=b"NextAuth.js Generated Encryption Key",
+    )
 
-    parts = auth.split()
-
-    if parts[0].lower() != "bearer":
-        raise AuthError(
-            {
-                "code": "invalid_header",
-                "description": "Authorization header must start with" " Bearer",
-            },
-            401,
-        )
-    elif len(parts) == 1:
-        raise AuthError(
-            {"code": "invalid_header", "description": "Token not found"}, 401
-        )
-    elif len(parts) > 2:
-        raise AuthError(
-            {
-                "code": "invalid_header",
-                "description": "Authorization header must be" " Bearer token",
-            },
-            401,
-        )
-
-    token = parts[1]
-    return token
+    key = hkdf.derive(os.environ.get("NEXTAUTH_SECRET", "").encode("utf-8"))
+    data = jwe.decrypt(token, key)
+    token_data = json.loads(data.decode("utf-8"))
+    return token_data
 
 
+# JWT Validation Decorator
 def requires_auth(f):
-    """Determines if the Access Token is valid"""
-
     @wraps(f)
-    def decorated(*args, **kwargs):
-        token = get_token_auth_header()
-        jsonurl = urlopen(
-            "https://" + AUTH0_DOMAIN + "/.well-known/jwks.json", cafile=certifi.where()
-        )
-        jwks = json.loads(jsonurl.read())
-        unverified_header = jwt.get_unverified_header(token)
-        rsa_key = {}
-        for key in jwks["keys"]:
-            if key["kid"] == unverified_header["kid"]:
-                rsa_key = {
-                    "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
-                    "n": key["n"],
-                    "e": key["e"],
-                }
-        if rsa_key:
-            try:
-                payload = jwt.decode(
-                    token,
-                    rsa_key,
-                    algorithms=ALGORITHMS,
-                    audience=API_AUDIENCE,
-                    issuer="https://" + AUTH0_DOMAIN + "/",
-                )
-            except jwt.ExpiredSignatureError:
-                raise AuthError(
-                    {"code": "token_expired", "description": "token is expired"}, 401
-                )
-            except jwt.JWTClaimsError:
-                raise AuthError(
-                    {
-                        "code": "invalid_claims",
-                        "description": "incorrect claims,"
-                        "please check the audience and issuer",
-                    },
-                    401,
-                )
-            except Exception:
-                raise AuthError(
-                    {
-                        "code": "invalid_header",
-                        "description": "Unable to parse authentication" " token.",
-                    },
-                    401,
-                )
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
 
-            g.current_user = payload
-            g.onenode_id = payload.get(f"{NAMESPACE_FOR_AUTH0}/app_metadata").get(
-                "onenode_id"
-            )
-            return f(*args, **kwargs)
-        raise AuthError(
-            {"code": "invalid_header", "description": "Unable to find appropriate key"},
-            401,
-        )
+        if not auth_header:
+            return jsonify({"message": "Token is missing!"}), 401
 
-    return decorated
+        try:
+            # Assuming the token is passed as 'Bearer <token>'
+            token = auth_header.split(" ")[1]
+            decoded_token = decode_nextauth_session(token)
+            g.onenode_id = decoded_token["user"]["_id"]
+        except Exception as e:
+            print(f"Error decoding token: {e}")
+            return jsonify({"message": "Token is invalid or expired!"}), 401
+
+        # If the token is valid, proceed to the next function
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 
-# /server.py
-
-
-def requires_scope(required_scope):
-    """Determines if the required scope is present in the Access Token
-    Args:
-        required_scope (str): The scope required to access the resource
-    """
-    token = get_token_auth_header()
-    unverified_claims = jwt.get_unverified_claims(token)
-    if unverified_claims.get("scope"):
-        token_scopes = unverified_claims["scope"].split()
-        for token_scope in token_scopes:
-            if token_scope == required_scope:
-                return True
-    return False
+# source (modified): https://www.reddit.com/r/nextjs/comments/1dq537p/handling_authjs_jwts_on_external_server/
