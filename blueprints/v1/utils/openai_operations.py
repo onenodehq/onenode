@@ -121,7 +121,6 @@ def get_contextual_response(question: str, chat_history: list[dict[str, str]], c
         messages=[
             {"role": "system", "content": system_prompt},
             *chat_history,
-            {"role": "user", "content": question},
         ],
         stream=True,
     )
