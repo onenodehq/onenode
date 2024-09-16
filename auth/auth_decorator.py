@@ -11,9 +11,9 @@ from functools import wraps
 def decode_nextauth_session(token):
     hkdf = HKDF(
         algorithm=hashes.SHA256(),
-        length=32,
-        salt=b"",
-        info=b"NextAuth.js Generated Encryption Key",
+        length=64,
+        salt=b"__Secure-authjs.session-token",
+        info=b"Auth.js Generated Encryption Key (__Secure-authjs.session-token)",
     )
 
     key = hkdf.derive(os.environ.get("NEXTAUTH_SECRET", "").encode("utf-8"))
