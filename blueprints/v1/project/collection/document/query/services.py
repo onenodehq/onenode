@@ -1,6 +1,6 @@
 from bson import ObjectId
 from pymongo import ASCENDING
-from blueprints.v1.org.project.collection.document.query.helper import (
+from blueprints.v1.project.collection.document.query.helper import (
     compose_query_data,
 )
 from blueprints.v1.utils.mongo_operations import (

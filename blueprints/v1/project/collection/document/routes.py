@@ -1,13 +1,13 @@
 from flask import Blueprint, abort, jsonify, request
 from auth.api_key_decorator import require_api_key
-from blueprints.v1.org.project.collection.document.services import (
+from blueprints.v1.project.collection.document.services import (
     create_documents_service,
     delete_documents_service,
     update_documents_service,
 )
 from blueprints.v1.utils.permission import can_edit
 from bson import json_util
-from blueprints.v1.org.project.collection.document.query.routes import (
+from blueprints.v1.project.collection.document.query.routes import (
     v1_blueprint_query,
 )
 from blueprints.v1.utils.validations import validate_json_content_type
@@ -23,7 +23,7 @@ v1_blueprint_document.register_blueprint(v1_blueprint_query)
 @v1_blueprint_document.route("", methods=["POST"])
 @require_api_key
 def create_documents(
-    permissions: list[dict], org_id: str, project_id: str, collection_name: str
+    permissions: list[dict], project_id: str, collection_name: str
 ):
     validate_json_content_type()
     if not can_edit(permissions=permissions, project_id=project_id):
@@ -49,7 +49,7 @@ def create_documents(
 @v1_blueprint_document.route("", methods=["PUT"])
 @require_api_key
 def update_documents(
-    permissions: list[dict], org_id: str, project_id: str, collection_name: str
+    permissions: list[dict], project_id: str, collection_name: str
 ):
     validate_json_content_type()
     if not can_edit(permissions=permissions, project_id=project_id):
@@ -77,7 +77,7 @@ def update_documents(
 @v1_blueprint_document.route("", methods=["DELETE"])
 @require_api_key
 def delete_documents(
-    permissions: list[dict], org_id: str, project_id: str, collection_name: str
+    permissions: list[dict], project_id: str, collection_name: str
 ):
     validate_json_content_type()
     if not can_edit(permissions=permissions, project_id=project_id):

@@ -1,6 +1,6 @@
 from bson import ObjectId
 from flask import abort
-from blueprints.v1.org.project.collection.document.helper import (
+from blueprints.v1.project.collection.document.helper import (
     create_vectors,
     prepare_update_fields,
     process_document_fields,

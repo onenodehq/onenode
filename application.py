@@ -12,8 +12,8 @@ from langchain_openai import ChatOpenAI
 from blueprints.private.v1.question import private_v1_blueprint_question
 from blueprints.private.v1.resource import private_v1_blueprint_resource
 from blueprints.private.v1.org.routes import private_v1_blueprint_org
-from blueprints.v1.org.routes import v1_blueprint_org
 from blueprints.private.v1.onenode_id.routes import private_v1_blueprint_user
+from blueprints.v1.routes import v1_blueprint_root
 from flask_cors import CORS
 from create_app import application
 
@@ -27,7 +27,8 @@ application.register_blueprint(private_v1_blueprint_question)
 application.register_blueprint(private_v1_blueprint_resource)
 application.register_blueprint(private_v1_blueprint_org)
 application.register_blueprint(private_v1_blueprint_user)
-application.register_blueprint(v1_blueprint_org)
+application.register_blueprint(v1_blueprint_root)
+
 
 # Get log level from environment variable or default to 'WARNING'
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
