@@ -1,12 +1,12 @@
-class EmbContent:
+class EmbImage:
     @staticmethod
     def is_valid_data(data: dict) -> bool:
         """Checks if a dictionary has the correct structure to be an EmbContent instance."""
-        # Ensure the dictionary only has one key: "@embContent"
-        if not isinstance(data, dict) or list(data.keys()) != ["@embContent"]:
+        # Ensure the dictionary only has one key: "@embImage"
+        if not isinstance(data, dict) or list(data.keys()) != ["@embImage"]:
             return False
 
-        content_data = data["@embContent"]
+        content_data = data["@embImage"]
         if not isinstance(content_data, dict):
             return False
 

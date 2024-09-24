@@ -1,10 +1,8 @@
-from openai import OpenAI, Stream
-from typeguard import typechecked
+from openai import Stream
 from blueprints.v1.utils.openai_setup import openai_client
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 
-@typechecked
 def image_to_text(
     base64_image: str, mime_type: str, model: str = "gpt-4o-mini", max_tokens: int = 300
 ) -> str:
@@ -59,7 +57,6 @@ def image_to_text(
 } """
 
 
-@typechecked
 def contextualize_question(question: str, chat_history: list[dict[str, str]]):
     system_prompt = """Given a chat history and the latest user question \
         which might reference context in the chat history, formulate a standalone question \
@@ -80,32 +77,6 @@ def contextualize_question(question: str, chat_history: list[dict[str, str]]):
     result = completion.choices[0].message.content
     return result
 
-
-@typechecked
-def get_embedding(text: str):
-    response = openai_client.embeddings.create(
-        model="text-embedding-ada-002",
-        input=text,
-        encoding_format="float",
-    )
-
-    result = response.data[0].embedding
-    return result
-
-
-@typechecked
-def embed_texts(texts: list[str]) -> list:
-    response = openai_client.embeddings.create(
-        model="text-embedding-ada-002",
-        input=texts,
-        encoding_format="float",
-    )
-
-    embeddings: list = [data.embedding for data in response.data]
-    return embeddings
-
-
-@typechecked
 def get_contextual_response(question: str, chat_history: list[dict[str, str]], context):
     system_prompt = f"""You are a large language AI assistant built by OneNode. You are given a user question, and please write clean, concise and accurate answer to the question. You will be given a set of related/unrelated contexts to the question, each starting with a reference number like [xxxx], where x is a number. Please use the context and cite the context at the end of each sentence if applicable.
         Your answer must be correct, accurate and written by an expert using an unbiased and professional tone. Do not give any information that is not related to the question, and do not repeat. Say "information is missing on" followed by the related topic, if the given context do not provide sufficient information. Do not give information that doesn't appear in any given context.
@@ -140,10 +111,7 @@ def get_contextual_response(question: str, chat_history: list[dict[str, str]], c
         raise e
 
 
-@typechecked
-def embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> list:
-    embeddings = []
-    for text in texts:
-        response = openai_client.embeddings.create(input=text, model=model)
-        embeddings.append(response.data[0].embedding)
-    return embeddings
+def embed_text(text: str, model: str = "text-embedding-3-small") -> list:
+    response = openai_client.embeddings.create(input=text, model=model)
+    embedding = response.data[0].embedding
+    return embedding

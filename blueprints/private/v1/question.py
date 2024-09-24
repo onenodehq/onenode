@@ -1,11 +1,10 @@
-from flask import Blueprint, g, jsonify, request, Response
+from flask import Blueprint, jsonify, request, Response
 from typeguard import typechecked
 from auth.api_key_decorator import require_admin_api_key
-from auth.auth_decorator import requires_auth
 from blueprints.v1.utils.openai_operations import (
     contextualize_question,
+    embed_text,
     get_contextual_response,
-    get_embedding,
 )
 from blueprints.v1.utils.pinecone_setup import (
     pc_admin_index,
@@ -52,7 +51,7 @@ def generate_response():
     contextualized_q = contextualize_question(
         question=question, chat_history=chat_history
     )
-    query_vector = get_embedding(text=contextualized_q)
+    query_vector = embed_text(text=contextualized_q)
 
     pc_filter = {"user_id": user_id}
     resource_ids = [

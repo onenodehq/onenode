@@ -1,18 +1,51 @@
 from flask import abort
-from blueprints.v1.utils.mongo_setup import mongo_client_db
+from blueprints.v1.utils.mongo_setup import mongo_client_cluster
 from pymongo.collection import Collection
+from pymongo.database import Database
 
 
-def get_collection_or_abort(namespace: str) -> Collection:
-    # Abort when collection not found
-    if namespace not in mongo_client_db.list_collection_names():
-        abort(404, description=f"Collection '{namespace}' not found")
-
-    mongo_collection = mongo_client_db.get_collection(name=namespace)
-    return mongo_collection
+def get_client_db(client_db_id: str) -> Database:
+    database = mongo_client_cluster.get_database(name=client_db_id)
+    return database
 
 
-def get_document_ids_by_filter(mongo_collection: Collection, filter: dict) -> list[str]:
-    documents = mongo_collection.find(filter=filter, projection={"_id": 1})
+def generate_client_db_id(project_id: str, db_name: str):
+    return project_id + "_" + db_name
+
+
+def split_db_id(db_id: str):
+    try:
+        # Attempt to split the input string
+        project_id, db_name = db_id.split("_", 1)
+    except ValueError:
+        # Return a 400 Bad Request error with a custom message
+        abort(
+            400,
+            description=f"Invalid db_id format: '{db_id}'. Expected format: 'project_id_db_name'.",
+        )
+
+    return project_id, db_name
+
+
+def get_client_collection(
+    project_id: str, db_name: str, collection_name: str, must_exist: bool = True
+) -> Collection:
+    db_id = generate_client_db_id(project_id, db_name)
+    if must_exist and db_id not in mongo_client_cluster.list_databases():
+        abort(404, description=f"Database `{db_id}` not found")
+    db = mongo_client_cluster.get_database(db_id)
+
+    if must_exist and collection_name not in db.list_collection_names():
+        abort(404, description=f"Collection '{collection_name}' not found")
+    collection = db.get_collection(name=collection_name)
+
+    return collection
+
+
+def get_doc_ids_by_filter(
+    filter: dict, project_id: str, db_name: str, collection_name: str
+) -> list[str]:
+    collection = get_client_collection(project_id, db_name, collection_name)
+    documents = collection.find(filter=filter, projection={"_id": 1})
     document_ids: list[str] = [str(document["_id"]) for document in documents]
     return document_ids

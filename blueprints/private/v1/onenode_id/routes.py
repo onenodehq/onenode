@@ -6,9 +6,7 @@ from blueprints.private.v1.onenode_id.services import (
     get_user_by_access_token_service,
     get_user_by_email_service,
 )
-from blueprints.private.v1.services.org_service import (
-    create_default_org_and_project_service,
-)
+from blueprints.private.v1.org.services import create_default_org_service
 
 
 private_v1_blueprint_user = Blueprint(
@@ -28,7 +26,7 @@ def create_user():
     onenode_id = create_user_service(
         email=email, given_name=given_name, family_name=family_name, picture=picture
     )
-    create_default_org_and_project_service(onenode_id=onenode_id)
+    create_default_org_service(onenode_id)
     return jsonify(onenode_id), 200
 
 

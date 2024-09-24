@@ -35,65 +35,101 @@ def query_all_resources(user_id: str):
     else:
         raise PermissionError("Failed to authorize admin request")
 
-
-# Returns:
-# {
-#     "matches": [
-#         {
-#             "id": "C",
-#             "score": -1.76717265e-07,
-#             "values": [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3],
-#         },
-#         {
-#             "id": "B",
-#             "score": 0.080000028,
-#             "values": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
-#         },
-#         {
-#             "id": "D",
-#             "score": 0.0800001323,
-#             "values": [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4],
-#         },
-#     ],
-#     "namespace": "example-namespace",
-#     "usage": {"readUnits": 5}
-# }
-
-
-def pc_client_delete_with_prefixes(prefixes: list[str], namespace: str):
-    """
-    Delete items from a Pinecone index based on a list of ID prefixes.
-
-    :param prefixes: List of ID prefixes to match for deletion.
-    :param namespace: The namespace in which the items exist.
-    """
-    for prefix in prefixes:
+def pc_delete_with_doc_ids(
+    project_id: str, db_name: str, collection_name: str, doc_ids: list[str]
+):
+    for doc_id in doc_ids:
+        prefix = generate_pc_id_prefix(project_id, db_name, collection_name, doc_id)
         ids_to_delete = []
-        for ids in pc_client_index.list(prefix=prefix, namespace=namespace):
+        for ids in pc_client_index.list(prefix=prefix):
             ids_to_delete.extend(ids)
 
         # If there are any IDs to delete, perform the deletion
         if ids_to_delete:
-            pc_client_index.delete(ids=ids_to_delete, namespace=namespace)
+            pc_client_index.delete(ids=ids_to_delete)
 
 
-def pc_client_upsert(vectors: list[dict], namespace: str) -> UpsertResponse:
-    # To prevent upserting without namespace
-    result = pc_client_index.upsert(vectors=vectors, namespace=namespace)
+def create_vector_bases(
+    chunks: list[str],
+    metadata: dict,
+    project_id: str,
+    db_name: str,
+    collection_name: str,
+    doc_id: list[str],
+    path: str,
+) -> list:
+    vector_bases = []
+    for i, chunk in enumerate(chunks):
+        vector_basis = {
+            "id": generate_pc_id(
+                project_id,
+                db_name,
+                collection_name,
+                doc_id,
+                path,
+                i,
+            ),
+            "values": chunk,
+            "metadata": metadata.update({"doc_id": doc_id}),
+        }
+        vector_bases.append(vector_basis)
+    return vector_bases
+
+
+def pc_upsert(vectors: list) -> UpsertResponse:
+    result = pc_client_index.upsert(vectors=vectors)
     return result
 
 
-def pc_client_delete_namespace(namespace: str):
-    pc_client_index.delete(delete_all=True, namespace=namespace)
+def pc_client_delete_collection(project_id: str, db_name: str, collection_name: str):
+    collection_prefix = generate_pc_id_prefix(project_id, db_name, collection_name)
+    ids = pc_client_index.list(prefix=collection_prefix)
+    pc_client_index.delete(ids=ids)
+
+
+def generate_pc_id_prefix(
+    project_id: str,
+    db_name: str,
+    collections_name: str,
+    doc_id: str = None,
+    path: str = None,
+) -> list:
+    path = path.replace(".", "#")
+    if doc_id:
+        if path:
+            pc_id_prefix = (
+                project_id
+                + "#"
+                + db_name
+                + "#"
+                + collections_name
+                + "#"
+                + doc_id
+                + "#"
+                + path
+                + "#"
+            )
+        else:
+            pc_id_prefix = (
+                project_id + "#" + db_name + "#" + collections_name + "#" + doc_id + "#"
+            )
+
+    else:
+        pc_id_prefix = project_id + "#" + db_name + "#" + collections_name + "#"
+
+    return pc_id_prefix
 
 
 def pc_client_query(
     vector: list[float],
-    namespace: str,
+    project_id: str,
+    collection_name: str,
     top_k: int,
     include_values: bool,
     filter: dict = None,
 ) -> QueryResponse:
+    namespace = project_id + "_" + collection_name
+
     if filter:
         result = pc_client_index.query(
             vector=vector,
@@ -115,10 +151,36 @@ def pc_client_query(
     return result
 
 
-def pc_client_get_ids_by_prefixes(prefixes: list[str], namespace):
-    document_ids = []
-    for prefix in prefixes:
-        for ids in pc_client_index.list(prefix=prefix, namespace=namespace):
-            document_ids.extend(ids)
+def get_pc_ids_by_doc_ids(
+    project_id: str, db_name: str, collection_name: str, doc_ids: list[str]
+):
+    pc_ids = []
+    for doc_id in doc_ids:
+        prefix = generate_pc_id_prefix(project_id, db_name, collection_name, doc_id)
+        for ids in pc_client_index.list(prefix=prefix):
+            pc_ids.extend(ids)
 
-    return document_ids
+    return pc_ids
+
+
+def generate_pc_id(
+    project_id: str,
+    db_name: str,
+    collection_name: str,
+    document_id: str,
+    path: str,
+    chunk_n: int,
+) -> list[str]:
+    return (
+        project_id
+        + "#"
+        + db_name
+        + "#"
+        + collection_name
+        + "#"
+        + document_id
+        + "#"
+        + path
+        + "#"
+        + str(chunk_n)
+    )
