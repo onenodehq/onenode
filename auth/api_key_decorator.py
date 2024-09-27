@@ -43,7 +43,6 @@ def require_admin_api_key(f):
         stored_hash = mongo_api_keys.find_one(filter={"_id": hashed_api_key})
 
         if not stored_hash or stored_hash.get("status") != "admin":
-            print(stored_hash, stored_hash.get("status"))
             return jsonify({"error": "Unauthorized access"}), 401
 
         return f(*args, **kwargs)

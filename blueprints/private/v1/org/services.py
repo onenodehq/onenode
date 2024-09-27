@@ -7,61 +7,41 @@ def create_default_org_service(onenode_id: str):
     new_org_name = "Default Organization"
     new_project_name = "Default Project"
     new_project_id = ObjectId()
-    insert_result = mongo_orgs.insert_one(
+
+    existing_org = mongo_orgs.find_one({"owners": onenode_id})
+    if existing_org:
+        abort(
+            400,
+            description="An organization with this onenode_id in owners already exists.",
+        )
+
+    mongo_orgs.insert_one(
         {
             "name": new_org_name,
+            "owners": [onenode_id],
+            "readers": [],
             "projects": [
                 {
                     "_id": new_project_id,
                     "name": new_project_name,
+                    "owners": [onenode_id],
+                    "readers": [],
                     "collections": [],
                 }
             ],
         }
     )
 
-    new_org_id: ObjectId = insert_result.inserted_id
-    mongo_users.update_one(
-        {"_id": onenode_id},
-        {
-            "$push": {
-                "permissions": {
-                    "orgs": [
-                        {
-                            "_id": new_org_id,
-                            "name": new_org_name,
-                            "role": "owner",
-                            "projects": [
-                                {
-                                    "_id": new_project_id,
-                                    "name": new_project_name,
-                                    "role": "reader",
-                                }
-                            ],
-                        },
-                    ]
-                }
-            }
-        },
-    )
-
     return
 
 
 def list_orgs_service(onenode_id: str):
-    user: dict = mongo_users.find_one({"_id": onenode_id})
+    # Query to find organizations with `onenode_id` in either `owners` or `readers` list
+    query = {"$or": [{"owners": onenode_id}, {"readers": onenode_id}]}
 
-    if not user or not user.get("permissions", {}).get("orgs"):
-        abort(404, description="User not found or permissions not available")
+    orgs = list(mongo_orgs.find(query))
 
-    org_ids = [orgs.get("_id") for orgs in user["permissions"]["orgs"]]
-
-    if not org_ids:
-        return []
-
-    orgs = mongo_orgs.find({"_id": {"$in": org_ids}})
-
-    return list(orgs)
+    return orgs
 
 
 def get_org_service(org_id: str):

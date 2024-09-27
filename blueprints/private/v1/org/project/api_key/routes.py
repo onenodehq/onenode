@@ -31,7 +31,6 @@ def create_api_key(org_id, project_id):
     save_api_key(
         onenode_id,
         hashed_api_key,
-        org_id,
         project_id,
         key_name,
     )
@@ -43,7 +42,7 @@ def create_api_key(org_id, project_id):
 
 @private_v1_blueprint_api_key.route("", methods=["GET"])
 @requires_auth
-def list_hashed_api_keys(org_id, project_id):
+def list_api_keys(org_id, project_id):
     onenode_id = g.onenode_id
     check_project_permission(onenode_id, org_id, project_id)
 
@@ -59,5 +58,5 @@ def delete_api_key(org_id, project_id):
 
     data = request.get_json()
     hash_value = data.get("hash_value", "")
-    delete_api_key_from_db(hash_value, org_id, project_id)
+    delete_api_key_from_db(hash_value, project_id)
     return jsonify({"message": "API key deleted successfully"}), 200

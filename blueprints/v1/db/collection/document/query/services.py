@@ -1,8 +1,6 @@
 from bson import ObjectId
 from pymongo import ASCENDING
-from blueprints.v1.db.collection.document.query.helper import (
-    compose_query_data,
-)
+from blueprints.v1.db.collection.document.query.helper import compose_query_response
 from blueprints.v1.utils.mongo_operations import (
     get_client_collection,
     get_doc_ids_by_filter,
@@ -35,49 +33,45 @@ def query_chunks_service(
             project_id, db_name, collection_name, document_ids_to_filter
         )
 
-        pc_filter = {"_id": {"$in": pc_ids}}
-
+        # Collection + document filter
         query_res = pc_client_query(
-            vector=vector,
-            project_id=project_id,
-            collection_name=collection_name,
-            filter=pc_filter,
-            top_k=top_k,
-            include_values=include_values,
+            vector,
+            project_id,
+            db_name,
+            collection_name,
+            top_k,
+            include_values,
+            pc_ids,
         )
     else:
+        # Collection filter
         query_res = pc_client_query(
-            vector=vector,
-            project_id=project_id,
-            collection_name=collection_name,
-            top_k=top_k,
-            include_values=include_values,
+            vector,
+            project_id,
+            db_name,
+            collection_name,
+            top_k,
+            include_values,
         )
 
+
     matches = query_res["matches"]
-    sorted_matches = sorted(
-        matches,
-        key=lambda x: ObjectId(
-            x.get("metadata", {}).get("_id", "000000000000000000000000")
-        ),
-    )
 
-    unique_doc_ids: list[ObjectId] = list(
-        {
-            ObjectId(item.get("metadata", {}).get("_id"))
-            for item in sorted_matches
-            if "_id" in item.get("metadata", {})
-        }
-    )
+    unique_doc_ids: list[ObjectId] = list({
+        ObjectId(item["metadata"]["doc_id"])
+        for item in matches
+        if "metadata" in item and "doc_id" in item["metadata"]
+    })
 
-    sorted_documents = list(
+
+    sorted_docs = list(
         mongo_collection.find({"_id": {"$in": unique_doc_ids}}).sort("_id", ASCENDING)
     )
 
-    data = compose_query_data(
-        matches=matches,
-        sorted_documents=sorted_documents,
-        include_values=include_values,
+    data = compose_query_response(
+        matches,
+        sorted_docs,
+        include_values,
     )
 
     return data

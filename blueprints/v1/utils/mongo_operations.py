@@ -4,8 +4,9 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 
 
-def get_client_db(client_db_id: str) -> Database:
-    database = mongo_client_cluster.get_database(name=client_db_id)
+def get_client_db(project_id: str, db_name: str) -> Database:
+    db_id = generate_client_db_id(project_id, db_name)
+    database = mongo_client_cluster.get_database(db_id)
     return database
 
 
@@ -31,7 +32,7 @@ def get_client_collection(
     project_id: str, db_name: str, collection_name: str, must_exist: bool = True
 ) -> Collection:
     db_id = generate_client_db_id(project_id, db_name)
-    if must_exist and db_id not in mongo_client_cluster.list_databases():
+    if must_exist and db_id not in mongo_client_cluster.list_database_names():
         abort(404, description=f"Database `{db_id}` not found")
     db = mongo_client_cluster.get_database(db_id)
 
@@ -46,6 +47,6 @@ def get_doc_ids_by_filter(
     filter: dict, project_id: str, db_name: str, collection_name: str
 ) -> list[str]:
     collection = get_client_collection(project_id, db_name, collection_name)
-    documents = collection.find(filter=filter, projection={"_id": 1})
-    document_ids: list[str] = [str(document["_id"]) for document in documents]
-    return document_ids
+    docs = collection.find(filter=filter, projection={"_id": 1})
+    doc_ids: list[str] = [str(doc["_id"]) for doc in docs]
+    return doc_ids

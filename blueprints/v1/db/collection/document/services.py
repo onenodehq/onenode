@@ -14,10 +14,11 @@ from celery_tasks import save_vectors_task
 
 def create_docs_service(
     documents: list[dict], project_id: str, db_name: str, collection_name: str
-) -> list[dict]:
+):
 
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
 
+    all_vector_bases = []
     for document in documents:
         if not document.get("_id"):
             document["_id"] = ObjectId()
@@ -29,13 +30,15 @@ def create_docs_service(
             collection_name,
             doc_id,
         )
+        all_vector_bases.extend(vector_bases)
     # documents, all_chunks, and all_pc_ids will be modified after process_doc()
     mongo_collection.insert_many(documents=documents)
 
-    if vector_bases:
-        task = save_vectors_task.delay(vector_bases)
+    if all_vector_bases:
+        task = save_vectors_task.delay(all_vector_bases)
+        return task.id
 
-    return task.id
+    return
 
 
 def update_docs_service(
@@ -60,7 +63,8 @@ def update_docs_service(
             doc_ids,
             non_emb_paths,
         )
-        all_vector_bases.append(vector_bases)
+        if vector_bases:
+            all_vector_bases.extend(vector_bases)
 
     mongo_collection.update_many(filter=filter, update=update)
 
@@ -72,10 +76,11 @@ def update_docs_service(
         collection_name,
     )
 
-    task = save_vectors_task.delay(vector_bases)
-    result = task.id
+    if all_vector_bases:
+        task = save_vectors_task.delay(all_vector_bases)
+        return task.id
 
-    return result
+    return
 
 
 def delete_docs_service(
@@ -96,9 +101,9 @@ def delete_docs_service(
     collection.delete_many(filter=filter)
 
     pc_delete_with_doc_ids(
-        doc_ids,
         project_id,
         db_name,
         collection_name,
+        doc_ids,
     )
     return

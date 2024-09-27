@@ -4,10 +4,12 @@ from celery_setup import celery
 
 
 @celery.task(bind=True)
-def save_vectors_task(vector_bases: list):
+def save_vectors_task(self, vector_bases: list):
     vectors = []
     for vector_basis in vector_bases:
         embedding = embed_text(vector_basis["values"])
-        vector_basis.update("values", embedding)
+        vector_basis.update({"values": embedding})
         vectors.append(vector_basis)
     pc_upsert(vectors)
+
+    return

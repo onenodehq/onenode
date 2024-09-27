@@ -32,7 +32,7 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     if not docs:
         abort(400, description="Missing 'documents' field.")
 
-    task_id: str = create_docs_service(
+    task_id: str | None = create_docs_service(
         docs,
         project_id,
         db_name,
@@ -41,8 +41,10 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
 
     response = {
         "message": "Request was successful.",
-        "taskId": task_id,
     }
+
+    if task_id:
+        response.update({"task_id": task_id})
 
     return jsonify(response), 200
 
@@ -71,7 +73,9 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
         collection_name,
     )
 
-    response = {"message": "documents updated successfully.", "taskId": task_id}
+    response = {"message": "documents updated successfully."}
+    if task_id:
+        response.update({"task_id": task_id})
 
     return jsonify(response), 200
 

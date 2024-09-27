@@ -35,6 +35,7 @@ def query_all_resources(user_id: str):
     else:
         raise PermissionError("Failed to authorize admin request")
 
+
 def pc_delete_with_doc_ids(
     project_id: str, db_name: str, collection_name: str, doc_ids: list[str]
 ):
@@ -55,7 +56,7 @@ def create_vector_bases(
     project_id: str,
     db_name: str,
     collection_name: str,
-    doc_id: list[str],
+    doc_id: str,
     path: str,
 ) -> list:
     vector_bases = []
@@ -70,7 +71,7 @@ def create_vector_bases(
                 i,
             ),
             "values": chunk,
-            "metadata": metadata.update({"doc_id": doc_id}),
+            "metadata": metadata,
         }
         vector_bases.append(vector_basis)
     return vector_bases
@@ -83,8 +84,31 @@ def pc_upsert(vectors: list) -> UpsertResponse:
 
 def pc_client_delete_collection(project_id: str, db_name: str, collection_name: str):
     collection_prefix = generate_pc_id_prefix(project_id, db_name, collection_name)
-    ids = pc_client_index.list(prefix=collection_prefix)
-    pc_client_index.delete(ids=ids)
+    ids_to_delete = []
+    for ids in pc_client_index.list(prefix=collection_prefix):
+        ids_to_delete.extend(ids)
+
+    pc_client_index.delete(ids=ids_to_delete)
+
+
+def generate_pc_metadata(
+    project_id: str,
+    db_name: str,
+    collection_name: str,
+    doc_id: str,
+    path: str,
+    type: str = "text",
+):
+    metadata = {
+        "project_id": project_id,
+        "db_name": db_name,
+        "collection_name": collection_name,
+        "doc_id": doc_id,
+        "path": path,
+        "type": type,
+    }
+
+    return metadata
 
 
 def generate_pc_id_prefix(
@@ -93,8 +117,9 @@ def generate_pc_id_prefix(
     collections_name: str,
     doc_id: str = None,
     path: str = None,
-) -> list:
-    path = path.replace(".", "#")
+) -> str:
+    if path:
+        path = path.replace(".", "#")
     if doc_id:
         if path:
             pc_id_prefix = (
@@ -123,30 +148,28 @@ def generate_pc_id_prefix(
 def pc_client_query(
     vector: list[float],
     project_id: str,
+    db_name: str,
     collection_name: str,
     top_k: int,
     include_values: bool,
-    filter: dict = None,
+    doc_ids: list[str] = None,
 ) -> QueryResponse:
-    namespace = project_id + "_" + collection_name
 
-    if filter:
-        result = pc_client_index.query(
-            vector=vector,
-            namespace=namespace,
-            top_k=top_k,
-            include_values=include_values,
-            include_metadata=True,
-            filter=filter,
-        )
-    else:
-        result = pc_client_index.query(
-            vector=vector,
-            namespace=namespace,
-            top_k=top_k,
-            include_values=include_values,
-            include_metadata=True,
-        )
+    filter_criteria = {
+        "project_id": {"$eq": project_id},
+        "db_name": {"$eq": db_name},
+        "collection_name": {"$eq": collection_name},
+    }
+    if doc_ids:
+        filter_criteria.update({"doc_id": {"$in": doc_ids}})
+
+    result = pc_client_index.query(
+        vector=vector,
+        filter=filter_criteria,
+        top_k=top_k,
+        include_values=include_values,
+        include_metadata=True,
+    )
 
     return result
 

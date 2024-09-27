@@ -39,7 +39,6 @@ def requires_auth(f):
         except Exception as e:
             print(f"Error decoding token: {e}")
             return jsonify({"message": "Token is invalid or expired!"}), 401
-
         # If the token is valid, proceed to the next function
         return f(*args, **kwargs)
 

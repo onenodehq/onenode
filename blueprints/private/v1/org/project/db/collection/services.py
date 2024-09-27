@@ -1,7 +1,6 @@
 from bson import ObjectId
 from flask import abort
 from blueprints.v1.utils.mongo_operations import (
-    generate_client_db_id,
     get_client_collection,
     get_client_db,
 )
@@ -16,15 +15,14 @@ def register_collection(
         "name": collection_name,
         "db_name": db_name,
     }
-    mongo_orgs.updateOne(
-        {"_id": org_id, "projects._id": project_id},
+    mongo_orgs.update_one(
+        {"_id": ObjectId(org_id), "projects._id": ObjectId(project_id)},
         {"$push": {"projects.$.collections": new_collection}},
     )
 
 
 def create_client_collection(project_id: str, db_name: str, collection_name: str):
-    db_id = generate_client_db_id(project_id, db_name)
-    db = get_client_db(db_id=db_id)
+    db = get_client_db(project_id, db_name)
     db.create_collection(name=collection_name)
 
 
@@ -51,7 +49,7 @@ def get_collection_service(
         {  # return value filter
             "projects": {
                 "$elemMatch": {
-                    "_id": project_id,
+                    "_id": ObjectId(project_id),
                     "collections": {
                         "$elemMatch": {
                             "name": collection_name,
@@ -88,8 +86,8 @@ def drop_client_collection(project_id: str, db_name: str, collection_name: str):
 def unregister_collection(
     org_id: str, project_id: str, db_name: str, collection_name: str
 ):
-    mongo_orgs.updateOne(
-        {"_id": org_id, "projects._id": project_id},
+    mongo_orgs.update_one(
+        {"_id": ObjectId(org_id), "projects._id": ObjectId(project_id)},
         {
             "$pull": {
                 "projects.$.collections": {"name": collection_name, "db_name": db_name}
@@ -101,6 +99,6 @@ def unregister_collection(
 def delete_collection_service(
     org_id: str, project_id: str, db_name: str, collection_name: str
 ):
-    drop_client_collection(org_id, project_id, db_name, collection_name)
+    drop_client_collection(project_id, db_name, collection_name)
     unregister_collection(org_id, project_id, db_name, collection_name)
     pc_client_delete_collection(project_id, db_name, collection_name)

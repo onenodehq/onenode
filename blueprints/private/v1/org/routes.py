@@ -1,4 +1,4 @@
-from flask import Blueprint, g, request
+from flask import Blueprint, g, jsonify, request
 from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from blueprints.private.v1.org.services import (
@@ -23,10 +23,10 @@ def create_default_org():
     data = request.get_json()
     onenode_id = data.get("onenode_id")
     create_default_org_service(onenode_id)
-    return 200
+    return jsonify({"message": "Default organization created successfully"}), 200
 
 
-@private_v1_blueprint_org.route("/list", methods=["GET"])
+@private_v1_blueprint_org.route("", methods=["GET"])
 @requires_auth
 def list_orgs():
     onenode_id = g.onenode_id

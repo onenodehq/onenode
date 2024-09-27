@@ -1,4 +1,5 @@
-from flask import Blueprint, g, jsonify, request
+import re
+from flask import Blueprint, abort, g, jsonify, request
 from auth.auth_decorator import requires_auth
 from blueprints.private.v1.org.project.db.collection.services import (
     create_collection_service,
@@ -24,9 +25,16 @@ private_v1_blueprint_collection.register_blueprint(private_v1_blueprint_document
 @requires_auth
 def create_collection(org_id, project_id, db_name):
     data = request.get_json()
-    collection_name = data.get("collection_name")
-    onenode_id = g.onenode_id
+    collection_name = data.get("name")
+    if re.search(r"[^a-zA-Z0-9_]", collection_name) or re.search(
+        r"[^a-zA-Z0-9_]", db_name
+    ):
+        abort(
+            400,
+            description="Database name or collection name cannot contain spaces or special characters.",
+        )
 
+    onenode_id = g.onenode_id
     check_project_permission(onenode_id, org_id, project_id)
 
     create_collection_service(

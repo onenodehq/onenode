@@ -9,23 +9,30 @@ from blueprints.v1.utils.mongo_operations import split_db_id
 v1_blueprint_query = Blueprint("v1_query", __name__, url_prefix="/query")
 
 
-@v1_blueprint_query.route("", methods=["GET"])
+@v1_blueprint_query.route("", methods=["POST"])
 @require_api_key
 def query_chunks(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
     check_api_key_permissions(permissions, project_id)
 
-    text = request.args.get("text")
-    top_k = int(request.args.get("top_k", "10"))
+    data = json_util.loads(request.get_data(as_text=True))
+    text = data.get("text")
+    top_k = int(data.get("top_k", "10"))
+    filter = data.get("filter")
+
     if not text:
         return jsonify({"error": "Please provide a text query parameter."}), 400
 
     data = query_chunks_service(
-        text=text, project_id=project_id, collection_name=collection_name, top_k=top_k
+        text,
+        project_id,
+        db_name,
+        collection_name,
+        filter,
+        top_k,
     )
 
     response = {
-        "message": "Request was successful.",
         "data": data,
     }
 

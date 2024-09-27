@@ -1,12 +1,12 @@
 from bson import ObjectId
 
 
-def get_chunk_by_path(document: dict, path: str, index: int) -> str | None:
+def get_chunk_by_path(doc: dict, path: str, chunk_n: int) -> str | None:
     # Step 1: Split the path by '#'
-    path_segments = path.split("#")[1:]
+    path_segments = path.split("#")
 
     # Step 2: Traverse the dictionary based on path segments
-    current_dict = document
+    current_dict = doc
     for segment in path_segments:
         current_dict = current_dict.get(segment, {})
 
@@ -16,57 +16,63 @@ def get_chunk_by_path(document: dict, path: str, index: int) -> str | None:
     # Step 4: Access the 'chunks' list
     chunks_list = emb_dict.get("chunks") if emb_dict else []
 
-    # Step 5: Retrieve the value at the specified index
-    if 0 <= index < len(chunks_list):
-        result = chunks_list[index]
+    # Step 5: Retrieve the value at the specified chunk_n
+    if 0 <= chunk_n < len(chunks_list):
+        result = chunks_list[chunk_n]
     else:
         result = None
 
     return result
 
 
-def compose_query_data(
-    matches: list, sorted_documents: list[dict], include_values: bool
+def compose_query_response(
+    matches: list, sorted_docs: list[dict], include_values: bool
 ) -> list[dict]:
     data: list[dict] = []
     i, j = 0, 0
-    while i < len(matches) and j < len(sorted_documents):
+    while i < len(matches) and j < len(sorted_docs):
         match = matches[i]
         reference_id = ObjectId(
-            match.get("metadata", {}).get("_id", "000000000000000000000000")
+            match.get("metadata", {}).get("doc_id", "000000000000000000000000")
         )
 
-        document = sorted_documents[j]
-        document_id: ObjectId = document["_id"]
+        document = sorted_docs[j]
+        doc_id: ObjectId = document["_id"]
 
-        if reference_id == document_id:
+        if reference_id == doc_id:
             pc_id: str = match["id"]
-            path: str = pc_id.rsplit("#", 1)[0]
-            index = int(pc_id.rsplit("#", 1)[1])
+
+            substrings = pc_id.split("#")
+            path: str = substrings[4]
+            chunk_n = int(substrings[5])
             score: float = match["score"]
             values: list[float] = match.get("values", [])
-            chunk = get_chunk_by_path(document=document, path=path, index=index)
+            chunk = get_chunk_by_path(
+                document,
+                path,
+                chunk_n,
+            )
 
             if include_values:
                 data_item = {
-                    "document_id": document_id,
-                    "chunk": chunk,
+                    "document_id": doc_id,
                     "path": path,
-                    "index": index,
-                    "score": score,
-                }
-            else:
-                data_item = {
-                    "document_id": document_id,
                     "chunk": chunk,
-                    "path": path,
-                    "index": index,
+                    "chunk_n": chunk_n,
                     "score": score,
                     "values": values,
                 }
+            else:
+                data_item = {
+                    "document_id": doc_id,
+                    "path": path,
+                    "chunk": chunk,
+                    "chunk_n": chunk_n,
+                    "score": score,
+                }
             data.append(data_item)
             i += 1
-        elif reference_id < document_id:
+        elif reference_id < doc_id:
             # this case shouldn't happen
             i += 1
         else:

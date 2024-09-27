@@ -5,6 +5,7 @@ from blueprints.v1.models.emb_text import EmbText
 from blueprints.v1.utils.pinecone_operations import (
     create_vector_bases,
     generate_pc_id_prefix,
+    generate_pc_metadata,
     pc_delete_with_doc_ids,
 )
 from blueprints.v1.utils.openai_operations import image_to_text
@@ -38,14 +39,14 @@ def process_document_fields(
                 text = value.get("text")
                 chunks = chunk(text=text)
                 value["chunks"] = chunks
-                metadata = {
-                    "project_id": project_id,
-                    "db_name": db_name,
-                    "collection_name": collection_name,
-                    "doc_id": doc_id,
-                    "path": parent_path,
-                    "type": "text",
-                }
+                metadata = generate_pc_metadata(
+                    project_id,
+                    db_name,
+                    collection_name,
+                    doc_id,
+                    parent_path,
+                    "text",
+                )
 
                 vector_bases = create_vector_bases(
                     chunks,
@@ -71,14 +72,14 @@ def process_document_fields(
                     chunks = chunk(text=text)
                     value["chunks"] = chunks
                     value["text"] = text
-                    metadata = {
-                        "project_id": project_id,
-                        "db_name": db_name,
-                        "collection_name": collection_name,
-                        "doc_id": doc_id,
-                        "path": parent_path,
-                        "type": "image",
-                    }
+                    metadata = generate_pc_metadata(
+                        project_id,
+                        db_name,
+                        collection_name,
+                        doc_id,
+                        parent_path,
+                        "image",
+                    )
 
                     vector_bases = create_vector_bases(
                         chunks,
@@ -92,7 +93,7 @@ def process_document_fields(
                     all_vector_bases.extend(vector_bases)
 
             elif isinstance(value, dict):
-                process_document_fields(
+                vector_bases = process_document_fields(
                     data=value,
                     project_id=project_id,
                     db_name=db_name,
@@ -100,9 +101,10 @@ def process_document_fields(
                     doc_id=doc_id,
                     parent_path=current_path,
                 )
+                all_vector_bases.extend(vector_bases)
     elif isinstance(data, list):
         for item in data:
-            process_document_fields(
+            vector_bases = process_document_fields(
                 data=item,
                 project_id=project_id,
                 db_name=db_name,
@@ -110,6 +112,8 @@ def process_document_fields(
                 doc_id=doc_id,
                 parent_path=current_path,
             )
+            all_vector_bases.extend(vector_bases)
+
     return all_vector_bases
 
 
@@ -145,7 +149,7 @@ def prepare_update_fields(
         if not isinstance(path, str):
             abort(400, description=f"Path must be a string - {path}")
 
-        if new_value.get("@embText"):
+        if new_value == "@embText":
             if not EmbText.is_valid_data(data=new_value):
                 abort(400, description=f"Field value is invalid - {new_value}")
 
@@ -158,15 +162,11 @@ def prepare_update_fields(
             text = new_value["embText"]["text"]
             chunks = chunk(text=text)
             new_value["embText"]["chunks"] = chunks
-            metadata = {
-                "project_id": project_id,
-                "db_name": db_name,
-                "collection_name": collection_name,
-                "path": path,
-                "type": "text",
-            }
 
             for doc_id in doc_ids:
+                metadata = generate_pc_metadata(
+                    project_id, db_name, collection_name, doc_id, path, "text"
+                )
                 vector_bases = create_vector_bases(
                     chunks,
                     metadata,
@@ -178,7 +178,7 @@ def prepare_update_fields(
                 )
                 all_vector_bases.extend(vector_bases)
 
-        elif new_value.get("@embImage"):
+        elif new_value == "@embImage":
             if not EmbImage.is_valid_data(data=new_value):
                 abort(400, description=f"Field value is invalid - {new_value}")
 
@@ -196,14 +196,11 @@ def prepare_update_fields(
                 chunks = chunk(text=text)
                 new_value["@embImage"]["chunks"] = chunks
                 new_value["@embImage"]["text"] = text
-                metadata = {
-                    "project_id": project_id,
-                    "db_name": db_name,
-                    "collection_name": collection_name,
-                    "path": path,
-                    "type": "image",
-                }
+
                 for doc_id in doc_ids:
+                    metadata = generate_pc_metadata(
+                        project_id, db_name, collection_name, doc_id, path, "image"
+                    )
                     vector_bases = create_vector_bases(
                         chunks,
                         metadata,
