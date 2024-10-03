@@ -2,23 +2,20 @@ from uuid import uuid4
 from blueprints.v1.utils.mongo_setup import mongo_users
 
 
-def create_user_service(
-    email: str, given_name: str, family_name: str, picture
-):
+def create_user_service(email: str, given_name: str, family_name: str, picture) -> dict:
     try:
-        item = mongo_users.find_one({"email": email})
-        if not item:
-            new_item = mongo_users.insert_one(
-                {
-                    "_id": str(uuid4()),
-                    "email": email,
-                    "given_name": given_name,
-                    "family_name": family_name,
-                    "picture": picture,
-                }
-            )
-            onenode_id = new_item.inserted_id
-            return onenode_id
+        user = mongo_users.find_one({"email": email})
+        if not user:
+            new_user = {
+                "_id": str(uuid4()),
+                "email": email,
+                "given_name": given_name,
+                "family_name": family_name,
+                "picture": picture,
+            }
+            mongo_users.insert_one(new_user)
+
+            return new_user
     except Exception as e:
         raise e
 

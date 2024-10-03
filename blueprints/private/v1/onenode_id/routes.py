@@ -23,11 +23,17 @@ def create_user():
     given_name = data.get("given_name")
     family_name = data.get("family_name")
     picture = data.get("picture")
-    onenode_id = create_user_service(
+
+    if not email or not given_name or not family_name or not picture:
+        abort(
+            400,
+            description="Missing required parameters: 'email', 'given_name', 'family_name', or 'picture'",
+        )
+
+    new_user = create_user_service(
         email=email, given_name=given_name, family_name=family_name, picture=picture
     )
-    create_default_org_service(onenode_id)
-    return jsonify(onenode_id), 200
+    return jsonify(new_user), 200
 
 
 @private_v1_blueprint_user.route("/email", methods=["GET"])
