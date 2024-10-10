@@ -14,7 +14,7 @@ from blueprints.v1.services.resource_service import (
 load_dotenv()
 
 # Define a Blueprint for the '/v1/query' endpoint
-private_v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/private/v1/resource")
+private_v1_blueprint_resource = Blueprint("resource", __name__, url_prefix="/v1/resource")
 
 
 @private_v1_blueprint_resource.route("", methods=["GET"])

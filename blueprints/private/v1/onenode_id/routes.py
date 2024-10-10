@@ -9,7 +9,7 @@ from blueprints.private.v1.onenode_id.services import (
 
 
 private_v1_blueprint_user = Blueprint(
-    "private_v1_user", __name__, url_prefix="/private/v1/user"
+    "private_v1_user", __name__, url_prefix="/v1/user"
 )
 
 

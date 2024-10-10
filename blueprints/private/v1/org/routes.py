@@ -11,7 +11,7 @@ from blueprints.private.v1.org.project.routes import private_v1_blueprint_projec
 
 
 private_v1_blueprint_org = Blueprint(
-    "private_v1_org", __name__, url_prefix="/private/v1/org"
+    "private_v1_org", __name__, url_prefix="/v1/org"
 )
 
 private_v1_blueprint_org.register_blueprint(private_v1_blueprint_project)

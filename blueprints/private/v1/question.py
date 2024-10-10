@@ -18,7 +18,7 @@ from blueprints.v1.utils.question_helper import (
 
 # Define a Blueprint for the '/v1/query' endpoint
 private_v1_blueprint_question = Blueprint(
-    "question", __name__, url_prefix="/private/v1/question"
+    "question", __name__, url_prefix="/v1/question"
 )
 
 
