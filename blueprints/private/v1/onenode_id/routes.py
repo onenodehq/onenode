@@ -6,7 +6,6 @@ from blueprints.private.v1.onenode_id.services import (
     get_user_by_access_token_service,
     get_user_by_email_service,
 )
-from blueprints.private.v1.org.services import create_default_org_service
 
 
 private_v1_blueprint_user = Blueprint(

@@ -18,10 +18,9 @@ private_v1_blueprint_org.register_blueprint(private_v1_blueprint_project)
 
 
 @private_v1_blueprint_org.route("/default", methods=["POST"])
-@require_admin_api_key
+@requires_auth
 def create_default_org():
-    data = request.get_json()
-    onenode_id = data.get("onenode_id")
+    onenode_id = g.onenode_id
     create_default_org_service(onenode_id)
     return jsonify({"message": "Default organization created successfully"}), 200
 

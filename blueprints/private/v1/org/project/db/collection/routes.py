@@ -21,11 +21,11 @@ private_v1_blueprint_collection = Blueprint(
 private_v1_blueprint_collection.register_blueprint(private_v1_blueprint_document)
 
 
-@private_v1_blueprint_collection.route("", methods=["POST"])
+@private_v1_blueprint_collection.route("", methods=["PUT"])
 @requires_auth
 def create_collection(org_id, project_id, db_name):
     data = request.get_json()
-    collection_name = data.get("name")
+    collection_name = data.get("collection_name")
     if re.search(r"[^a-zA-Z0-9_]", collection_name) or re.search(
         r"[^a-zA-Z0-9_]", db_name
     ):
