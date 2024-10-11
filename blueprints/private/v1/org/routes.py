@@ -18,6 +18,7 @@ private_v1_blueprint_org.register_blueprint(private_v1_blueprint_project)
 
 
 @private_v1_blueprint_org.route("/default", methods=["POST"])
+@require_admin_api_key
 @requires_auth
 def create_default_org():
     onenode_id = g.onenode_id

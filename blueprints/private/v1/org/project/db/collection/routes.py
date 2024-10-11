@@ -1,5 +1,6 @@
 import re
 from flask import Blueprint, abort, g, jsonify, request
+from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from blueprints.private.v1.org.project.db.collection.services import (
     create_collection_service,
@@ -22,6 +23,7 @@ private_v1_blueprint_collection.register_blueprint(private_v1_blueprint_document
 
 
 @private_v1_blueprint_collection.route("", methods=["PUT"])
+@require_admin_api_key
 @requires_auth
 def create_collection(org_id, project_id, db_name):
     data = request.get_json()
@@ -48,6 +50,7 @@ def create_collection(org_id, project_id, db_name):
 
 
 @private_v1_blueprint_collection.route("/<string:collection_name>", methods=["DELETE"])
+@require_admin_api_key
 @requires_auth
 def delete_collection(org_id, project_id, db_name, collection_name):
     onenode_id = g.onenode_id
