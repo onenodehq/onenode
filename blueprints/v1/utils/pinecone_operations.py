@@ -88,7 +88,8 @@ def pc_client_delete_collection(project_id: str, db_name: str, collection_name: 
     for ids in pc_client_index.list(prefix=collection_prefix):
         ids_to_delete.extend(ids)
 
-    pc_client_index.delete(ids=ids_to_delete)
+    if ids_to_delete:
+        pc_client_index.delete(ids=ids_to_delete)
 
 
 def generate_pc_metadata(
