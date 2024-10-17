@@ -36,6 +36,7 @@ def requires_auth(f):
             token = auth_header.split(" ")[1]
             decoded_token = decode_nextauth_session(token)
             g.onenode_id = decoded_token["user"]["_id"]
+            g.email = decoded_token["user"]["email"]
         except Exception as e:
             print(f"Error decoding token: {e}")
             return jsonify({"message": "Token is invalid or expired!"}), 401
