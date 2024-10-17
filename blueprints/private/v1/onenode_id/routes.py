@@ -6,6 +6,7 @@ from blueprints.private.v1.onenode_id.services import (
     get_user_by_access_token_service,
     get_user_by_email_service,
 )
+from utils.email import notify_admin
 
 
 private_v1_blueprint_user = Blueprint(
@@ -32,6 +33,8 @@ def create_user():
     new_user = create_user_service(
         email=email, given_name=given_name, family_name=family_name, picture=picture
     )
+
+    notify_admin("New signup", "New sign up. \n-end-")
     return jsonify(new_user), 200
 
 
