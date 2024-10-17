@@ -20,7 +20,7 @@ private_v1_blueprint.register_blueprint(private_v1_blueprint_user)
 @private_v1_blueprint.route("/feedback", methods=["POST"])
 @requires_auth
 def send_feedback():
-    email = g.email
+    onenode_id = g.onenode_id
 
     data = request.get_json()
     message = data.get("message")
@@ -28,5 +28,5 @@ def send_feedback():
     if not data or "message" not in data or not data["message"].strip():
         return jsonify({"error": "Missing 'message' parameter"}), 400
 
-    send_feedback_service(email, message)
+    send_feedback_service(onenode_id, message)
     return jsonify({"message": "success"}), 200
