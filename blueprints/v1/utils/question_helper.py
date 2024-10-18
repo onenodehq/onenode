@@ -12,7 +12,7 @@ def docs_to_context(docs: list[dict]) -> str:
         if doc_id is None or doc_text is None:
             continue  # Skip documents that do not meet the required structure
 
-        formatted.append(f"Source ID: {doc_id}, Source Snippet: {doc_text}")
+        formatted.append(f"Information ID: {doc_id}, Information: {doc_text}")
     return "\n\n" + "\n\n".join(formatted)
 
 
