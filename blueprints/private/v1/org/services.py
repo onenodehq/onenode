@@ -20,6 +20,7 @@ def create_default_org_service(onenode_id: str):
             "name": new_org_name,
             "owners": [onenode_id],
             "readers": [],
+            "plan": "free",
             "projects": [
                 {
                     "_id": new_project_id,

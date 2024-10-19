@@ -3,7 +3,7 @@ import os
 import secrets
 import string
 from bson import ObjectId
-from blueprints.v1.utils.mongo_setup import mongo_api_keys
+from blueprints.v1.utils.mongo_setup import mongo_orgs, mongo_api_keys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,10 +30,14 @@ def hash_api_key(api_key: str) -> str:
 def save_api_key(
     onenode_id: str, hashed_api_key: str, project_id: str, key_name: str = ""
 ) -> str:
+    org = mongo_orgs.find({"projects": {"$elemMatch": {"_id": project_id}}})
+    plan = org.get("plan", "free")
+    
     new_api_key = {
         "_id": hashed_api_key,
         "name": key_name,
         "owner": onenode_id,
+        "plan": plan,
         "permissions": {
             "projects": [
                 {
