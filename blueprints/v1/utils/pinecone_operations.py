@@ -77,8 +77,9 @@ def create_vector_bases(
     return vector_bases
 
 
-def pc_upsert(vectors: list) -> UpsertResponse:
-    result = pc_client_index.upsert(vectors=vectors)
+def pc_upsert(vectors: list, project_id: str, db_name) -> UpsertResponse:
+    namespace = project_id + db_name
+    result = pc_client_index.upsert(vectors=vectors, namespace=namespace)
     return result
 
 
@@ -164,8 +165,10 @@ def pc_client_query(
     if doc_ids:
         filter_criteria.update({"doc_id": {"$in": doc_ids}})
 
+    namespace = project_id + "_" + db_name
     result = pc_client_index.query(
         vector=vector,
+        namespace=namespace,
         filter=filter_criteria,
         top_k=top_k,
         include_values=include_values,

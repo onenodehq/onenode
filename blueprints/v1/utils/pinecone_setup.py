@@ -5,6 +5,7 @@ from pinecone import Pinecone, ServerlessSpec
 
 PINECONE_ADMIN_INDEX = os.getenv("PINECONE_ADMIN_INDEX")
 PINECONE_CLIENT_INDEX = os.getenv("PINECONE_CLIENT_INDEX")
+PC_FREE_STORAGE_LIMIT_MB = int(os.getenv("PC_FREE_STORAGE_LIMIT_MB"))
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 

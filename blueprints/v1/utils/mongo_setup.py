@@ -10,6 +10,7 @@ MONGO_CONTENTS = os.getenv("MONGO_CONTENTS")
 MONGO_USERS = os.getenv("MONGO_USERS")
 MONGO_API_KEYS = os.getenv("MONGO_API_KEYS")
 MONGO_ORGS = os.getenv("MONGO_ORGS")
+MONG0_FREE_STORAGE_LIMIT_MB = int(os.getenv("MONG0_FREE_STORAGE_LIMIT_MB"))
 
 
 mongo_admin_cluster = MongoClient(MONGO_ADMIN_URI, tlsCAFile=certifi.where())
