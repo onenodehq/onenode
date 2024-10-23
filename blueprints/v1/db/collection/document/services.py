@@ -1,20 +1,30 @@
 from bson import ObjectId
+from flask import g
 from blueprints.v1.db.collection.document.helper import (
     delete_pc_vectors,
     prepare_update_fields,
     process_document_fields,
+)
+from blueprints.v1.utils.free_tier_monitorings import (
+    check_mongo_storage,
+    check_pc_storage,
 )
 from blueprints.v1.utils.mongo_operations import (
     get_client_collection,
     get_doc_ids_by_filter,
 )
 from blueprints.v1.utils.pinecone_operations import pc_delete_with_doc_ids
+from blueprints.v1.utils.pinecone_setup import pc
 from celery_tasks import save_vectors_task
 
 
 def create_docs_service(
     documents: list[dict], project_id: str, db_name: str, collection_name: str
 ):
+    
+    if g.plan == "free":
+        check_mongo_storage(project_id, db_name)
+        check_pc_storage(project_id, db_name)
 
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
 
@@ -35,7 +45,7 @@ def create_docs_service(
     mongo_collection.insert_many(documents=documents)
 
     if all_vector_bases:
-        task = save_vectors_task.delay(all_vector_bases)
+        task = save_vectors_task.delay(all_vector_bases, project_id, db_name)
         return task.id
 
     return
@@ -44,6 +54,9 @@ def create_docs_service(
 def update_docs_service(
     filter: dict, update: dict, project_id: str, db_name: str, collection_name: str
 ):
+    if g.plan == "free":
+        check_mongo_storage(project_id, db_name)
+        check_pc_storage(project_id, db_name)
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
 
     documents_to_update = mongo_collection.find(filter=filter, projection={"_id": 1})
@@ -77,7 +90,7 @@ def update_docs_service(
     )
 
     if all_vector_bases:
-        task = save_vectors_task.delay(all_vector_bases)
+        task = save_vectors_task.delay(all_vector_bases, project_id, db_name)
         return task.id
 
     return
