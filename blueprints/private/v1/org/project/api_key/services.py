@@ -3,6 +3,7 @@ import os
 import secrets
 import string
 from bson import ObjectId
+from flask import abort
 from blueprints.v1.utils.mongo_setup import mongo_orgs, mongo_api_keys
 from dotenv import load_dotenv
 
@@ -30,9 +31,11 @@ def hash_api_key(api_key: str) -> str:
 def save_api_key(
     onenode_id: str, hashed_api_key: str, project_id: str, key_name: str = ""
 ) -> str:
-    org = mongo_orgs.find({"projects": {"$elemMatch": {"_id": project_id}}})
+    org = mongo_orgs.find_one({"projects": {"$elemMatch": {"_id": ObjectId(project_id)}}})
+    if not org:
+        abort(404, description="Organization not found")
     plan = org.get("plan", "free")
-    
+
     new_api_key = {
         "_id": hashed_api_key,
         "name": key_name,
