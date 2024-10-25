@@ -16,7 +16,7 @@ def query_chunks(permissions: list[dict], db_id: str, collection_name: str):
     check_api_key_permissions(permissions, project_id)
 
     data = json_util.loads(request.get_data(as_text=True))
-    text = data.get("text")
+    text = data.get("query")
     top_k = int(data.get("top_k", "10"))
     filter = data.get("filter")
 
