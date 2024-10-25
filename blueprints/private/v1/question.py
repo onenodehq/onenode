@@ -51,7 +51,7 @@ def generate_response():
     contextualized_q = contextualize_question(
         question=question, chat_history=chat_history
     )
-    query_vector = embed_text(text=contextualized_q)
+    query_vector = embed_text(text=contextualized_q, model="text-embedding-ada-002")
 
     pc_filter = {"user_id": user_id}
     resource_ids = [
