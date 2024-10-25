@@ -26,56 +26,42 @@ def get_chunk_by_path(doc: dict, path: str, chunk_n: int) -> str | None:
 
 
 def compose_query_response(
-    matches: list, sorted_docs: list[dict], include_values: bool
+    matches: list, doc_lookup: dict, include_values: bool
 ) -> list[dict]:
     data: list[dict] = []
-    i, j = 0, 0
-    while i < len(matches) and j < len(sorted_docs):
-        match = matches[i]
-        reference_id = ObjectId(
-            match.get("metadata", {}).get("doc_id", "000000000000000000000000")
+    for match in matches:
+        pc_id: str = match["id"]
+        substrings = pc_id.split("#")
+        doc_id: str = substrings[3]
+        path: str = substrings[4]
+        chunk_n = int(substrings[5])
+        score: float = match["score"]
+        values: list[float] = match.get("values", [])
+        doc = doc_lookup.get(doc_id)
+
+        chunk = get_chunk_by_path(
+            doc,
+            path,
+            chunk_n,
         )
 
-        document = sorted_docs[j]
-        doc_id: ObjectId = document["_id"]
-
-        if reference_id == doc_id:
-            pc_id: str = match["id"]
-
-            substrings = pc_id.split("#")
-            path: str = substrings[4]
-            chunk_n = int(substrings[5])
-            score: float = match["score"]
-            values: list[float] = match.get("values", [])
-            chunk = get_chunk_by_path(
-                document,
-                path,
-                chunk_n,
-            )
-
-            if include_values:
-                data_item = {
-                    "document_id": doc_id,
-                    "path": path,
-                    "chunk": chunk,
-                    "chunk_n": chunk_n,
-                    "score": score,
-                    "values": values,
-                }
-            else:
-                data_item = {
-                    "document_id": doc_id,
-                    "path": path,
-                    "chunk": chunk,
-                    "chunk_n": chunk_n,
-                    "score": score,
-                }
-            data.append(data_item)
-            i += 1
-        elif reference_id < doc_id:
-            # this case shouldn't happen
-            i += 1
+        if include_values:
+            data_item = {
+                "document_id": doc_id,
+                "path": path,
+                "chunk": chunk,
+                "chunk_n": chunk_n,
+                "score": score,
+                "values": values,
+            }
         else:
-            j += 1
+            data_item = {
+                "document_id": doc_id,
+                "path": path,
+                "chunk": chunk,
+                "chunk_n": chunk_n,
+                "score": score,
+            }
+        data.append(data_item)
 
     return data

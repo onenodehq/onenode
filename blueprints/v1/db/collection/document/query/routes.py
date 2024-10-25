@@ -33,7 +33,7 @@ def query_chunks(permissions: list[dict], db_id: str, collection_name: str):
     )
 
     response = {
-        "data": data,
+        "matches": data,
     }
 
     return json_util.dumps(response), 200

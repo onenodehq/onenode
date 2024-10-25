@@ -64,13 +64,14 @@ def query_chunks_service(
     })
 
 
-    sorted_docs = list(
-        mongo_collection.find({"_id": {"$in": unique_doc_ids}}).sort("_id", ASCENDING)
+    matched_docs = list(
+        mongo_collection.find({"_id": {"$in": unique_doc_ids}})
     )
+    doc_lookup = {str(doc['_id']): doc for doc in matched_docs}
 
     data = compose_query_response(
         matches,
-        sorted_docs,
+        doc_lookup,
         include_values,
     )
 
