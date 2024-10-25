@@ -158,8 +158,6 @@ def pc_client_query(
 ) -> QueryResponse:
 
     filter_criteria = {
-        "project_id": {"$eq": project_id},
-        "db_name": {"$eq": db_name},
         "collection_name": {"$eq": collection_name},
     }
     if doc_ids:

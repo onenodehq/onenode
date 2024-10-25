@@ -25,12 +25,8 @@ def query_chunks_service(
     vector: list[float] = embed_text(text)
 
     if filter:
-        document_ids_to_filter = get_doc_ids_by_filter(
-            mongo_collection=mongo_collection, filter=filter
-        )
-
-        pc_ids = get_pc_ids_by_doc_ids(
-            project_id, db_name, collection_name, document_ids_to_filter
+        doc_ids_to_filter = get_doc_ids_by_filter(
+            filter, project_id, db_name, collection_name
         )
 
         # Collection + document filter
@@ -41,7 +37,7 @@ def query_chunks_service(
             collection_name,
             top_k,
             include_values,
-            pc_ids,
+            doc_ids_to_filter,
         )
     else:
         # Collection filter
@@ -54,20 +50,18 @@ def query_chunks_service(
             include_values,
         )
 
-
     matches = query_res["matches"]
 
-    unique_doc_ids: list[ObjectId] = list({
-        ObjectId(item["metadata"]["doc_id"])
-        for item in matches
-        if "metadata" in item and "doc_id" in item["metadata"]
-    })
-
-
-    matched_docs = list(
-        mongo_collection.find({"_id": {"$in": unique_doc_ids}})
+    unique_doc_ids: list[ObjectId] = list(
+        {
+            ObjectId(item["metadata"]["doc_id"])
+            for item in matches
+            if "metadata" in item and "doc_id" in item["metadata"]
+        }
     )
-    doc_lookup = {str(doc['_id']): doc for doc in matched_docs}
+
+    matched_docs = list(mongo_collection.find({"_id": {"$in": unique_doc_ids}}))
+    doc_lookup = {str(doc["_id"]): doc for doc in matched_docs}
 
     data = compose_query_response(
         matches,
