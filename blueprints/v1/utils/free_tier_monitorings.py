@@ -1,6 +1,7 @@
 from os import abort
 from blueprints.v1.utils.mongo_operations import get_client_db
 from blueprints.v1.utils.mongo_setup import MONG0_FREE_STORAGE_LIMIT_MB
+from blueprints.v1.utils.pinecone_operations import generate_pc_namespace
 from blueprints.v1.utils.pinecone_setup import (
     PC_FREE_STORAGE_LIMIT_MB,
     pc_client_index,
@@ -24,11 +25,11 @@ def check_mongo_storage(project_id: str, db_name: str):
 
 
 def check_pc_storage(project_id: str, db_name: str):
-    namespace = project_id + "_" + db_name
+    namespace = generate_pc_namespace(project_id, db_name)
     stats = pc_client_index.describe_index_stats()
     dimension = stats.get("dimension", 0)
     namespaces = stats.get("namespaces", {})
-    vector_count = namespaces.get(namespace, 0)
+    vector_count = namespaces.get(namespace, {}).get("vector_count", 0)
 
     vector_size_bytes = dimension * 4
     vector_size_mb = vector_size_bytes / (1024 * 1024)  # Convert to MB
