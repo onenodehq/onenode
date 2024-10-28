@@ -120,8 +120,6 @@ def generate_pc_id_prefix(
     doc_id: str = None,
     path: str = None,
 ) -> str:
-    if path:
-        path = path.replace(".", "#")
     if doc_id:
         if path:
             pc_id_prefix = (
