@@ -21,7 +21,7 @@ from celery_tasks import save_vectors_task
 def create_docs_service(
     documents: list[dict], project_id: str, db_name: str, collection_name: str
 ):
-    
+
     if g.plan == "free":
         check_mongo_storage(project_id, db_name)
         check_pc_storage(project_id, db_name)
@@ -42,13 +42,16 @@ def create_docs_service(
         )
         all_vector_bases.extend(vector_bases)
     # documents, all_chunks, and all_pc_ids will be modified after process_doc()
-    mongo_collection.insert_many(documents=documents)
+    insert_many_result = mongo_collection.insert_many(documents=documents)
+    inserted_ids = insert_many_result.inserted_ids
 
     if all_vector_bases:
         task = save_vectors_task.delay(all_vector_bases, project_id, db_name)
-        return task.id
 
-    return
+    return {
+        "inserted_ids": inserted_ids,
+        "task_id": task.id if all_vector_bases else None,
+    }
 
 
 def update_docs_service(
@@ -79,7 +82,7 @@ def update_docs_service(
         if vector_bases:
             all_vector_bases.extend(vector_bases)
 
-    mongo_collection.update_many(filter=filter, update=update)
+    update_result = mongo_collection.update_many(filter=filter, update=update)
 
     delete_pc_vectors(
         doc_ids,
@@ -91,9 +94,13 @@ def update_docs_service(
 
     if all_vector_bases:
         task = save_vectors_task.delay(all_vector_bases, project_id, db_name)
-        return task.id
 
-    return
+    return {
+        "matched_count": update_result.matched_count,
+        "modified_count": update_result.modified_count,
+        "upserted_id": update_result.upserted_id,
+        "task_id": task.id if all_vector_bases else None,
+    }
 
 
 def delete_docs_service(
@@ -111,7 +118,7 @@ def delete_docs_service(
         return
 
     collection = get_client_collection(project_id, db_name, collection_name)
-    collection.delete_many(filter=filter)
+    delete_result = collection.delete_many(filter=filter)
 
     pc_delete_with_doc_ids(
         project_id,
@@ -119,4 +126,4 @@ def delete_docs_service(
         collection_name,
         doc_ids,
     )
-    return
+    return {"deleted_count": delete_result.deleted_count}

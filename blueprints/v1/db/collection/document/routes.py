@@ -32,21 +32,14 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     if not docs:
         abort(400, description="Missing 'documents' field.")
 
-    task_id: str | None = create_docs_service(
+    result = create_docs_service(
         docs,
         project_id,
         db_name,
         collection_name,
     )
 
-    response = {
-        "message": "Request was successful.",
-    }
-
-    if task_id:
-        response.update({"task_id": task_id})
-
-    return jsonify(response), 200
+    return jsonify(result), 200
 
 
 @v1_blueprint_doc.route("", methods=["PUT"])
@@ -65,7 +58,7 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
     if not update:
         abort(400, description="Missing 'update' field in the request data.")
 
-    task_id = update_docs_service(
+    result = update_docs_service(
         filter,
         update,
         project_id,
@@ -73,11 +66,7 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
         collection_name,
     )
 
-    response = {"message": "documents updated successfully."}
-    if task_id:
-        response.update({"task_id": task_id})
-
-    return jsonify(response), 200
+    return jsonify(result), 200
 
 
 @v1_blueprint_doc.route("", methods=["DELETE"])
@@ -93,10 +82,11 @@ def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
     if not filter:
         abort(400, description="Missing 'filter' field in the request data.")
 
-    delete_docs_service(
+    result = delete_docs_service(
         filter,
         project_id,
         db_name,
         collection_name,
     )
-    return {"message": "documents deleted successfully."}, 200
+
+    return jsonify(result), 200
