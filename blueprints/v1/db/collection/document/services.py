@@ -1,9 +1,9 @@
 from bson import ObjectId
 from flask import g
 from blueprints.v1.db.collection.document.helper import (
-    delete_pc_vectors,
-    prepare_update_fields,
-    process_document_fields,
+    delete_overwritten_pc_vectors,
+    process_document,
+    process_update,
 )
 from blueprints.v1.utils.free_tier_monitorings import (
     check_mongo_storage,
@@ -33,12 +33,12 @@ def create_docs_service(
         if not document.get("_id"):
             document["_id"] = ObjectId()
         doc_id = str(document["_id"])
-        vector_bases = process_document_fields(
+        vector_bases = process_document(
             document,
             project_id,
             db_name,
             collection_name,
-            doc_id,
+            [doc_id],
         )
         all_vector_bases.extend(vector_bases)
     # documents, all_chunks, and all_pc_ids will be modified after process_doc()
@@ -67,26 +67,26 @@ def update_docs_service(
     if not doc_ids:
         return
 
-    non_emb_paths: list[str] = []
     all_vector_bases = []
+    updated_paths = []
     for operator, fields in update.items():
-        vector_bases = prepare_update_fields(
+        vector_bases = process_update(
             operator,
             fields,
             project_id,
             db_name,
             collection_name,
             doc_ids,
-            non_emb_paths,
+            updated_paths,
         )
         if vector_bases:
             all_vector_bases.extend(vector_bases)
 
     update_result = mongo_collection.update_many(filter=filter, update=update)
 
-    delete_pc_vectors(
+    delete_overwritten_pc_vectors(
         doc_ids,
-        non_emb_paths,
+        updated_paths,
         project_id,
         db_name,
         collection_name,
@@ -119,7 +119,6 @@ def delete_docs_service(
 
     collection = get_client_collection(project_id, db_name, collection_name)
     delete_result = collection.delete_many(filter=filter)
-
     pc_delete_with_doc_ids(
         project_id,
         db_name,

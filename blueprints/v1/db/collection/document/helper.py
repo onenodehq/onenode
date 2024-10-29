@@ -12,12 +12,12 @@ from blueprints.v1.utils.openai_operations import image_to_text
 
 
 # Recursively check each field for the '@' prefix
-def process_document_fields(
+def process_document(
     data: dict,
     project_id: str,
     db_name: str,
     collection_name: str,
-    doc_id: str,
+    doc_ids: list,
     parent_path: str = "",
 ) -> list:
     all_vector_bases = []
@@ -39,25 +39,26 @@ def process_document_fields(
                 text = value.get("text")
                 chunks = chunk(text=text)
                 value["chunks"] = chunks
-                metadata = generate_pc_metadata(
-                    project_id,
-                    db_name,
-                    collection_name,
-                    doc_id,
-                    parent_path,
-                    "text",
-                )
+                for doc_id in doc_ids:
+                    metadata = generate_pc_metadata(
+                        project_id,
+                        db_name,
+                        collection_name,
+                        doc_id,
+                        parent_path,
+                        "text",
+                    )
 
-                vector_bases = create_vector_bases(
-                    chunks,
-                    metadata,
-                    project_id,
-                    db_name,
-                    collection_name,
-                    doc_id,
-                    parent_path,
-                )
-                all_vector_bases.extend(vector_bases)
+                    vector_bases = create_vector_bases(
+                        chunks,
+                        metadata,
+                        project_id,
+                        db_name,
+                        collection_name,
+                        doc_id,
+                        parent_path,
+                    )
+                    all_vector_bases.extend(vector_bases)
 
             elif key == "@embImage":
                 if not EmbImage.is_valid_data(data=data):
@@ -72,39 +73,41 @@ def process_document_fields(
                     chunks = chunk(text=text)
                     value["chunks"] = chunks
                     value["text"] = text
-                    metadata = generate_pc_metadata(
-                        project_id,
-                        db_name,
-                        collection_name,
-                        doc_id,
-                        parent_path,
-                        "image",
-                    )
 
-                    vector_bases = create_vector_bases(
-                        chunks,
-                        metadata,
-                        project_id,
-                        db_name,
-                        collection_name,
-                        doc_id,
-                        parent_path,
-                    )
-                    all_vector_bases.extend(vector_bases)
+                    for doc_id in doc_ids:
+                        metadata = generate_pc_metadata(
+                            project_id,
+                            db_name,
+                            collection_name,
+                            doc_id,
+                            parent_path,
+                            "image",
+                        )
+
+                        vector_bases = create_vector_bases(
+                            chunks,
+                            metadata,
+                            project_id,
+                            db_name,
+                            collection_name,
+                            doc_id,
+                            parent_path,
+                        )
+                        all_vector_bases.extend(vector_bases)
 
             elif isinstance(value, dict):
-                vector_bases = process_document_fields(
+                vector_bases = process_document(
                     data=value,
                     project_id=project_id,
                     db_name=db_name,
                     collection_name=collection_name,
-                    doc_id=doc_id,
+                    doc_ids=doc_ids,
                     parent_path=current_path,
                 )
                 all_vector_bases.extend(vector_bases)
     elif isinstance(data, list):
         for item in data:
-            vector_bases = process_document_fields(
+            vector_bases = process_document(
                 data=item,
                 project_id=project_id,
                 db_name=db_name,
@@ -130,14 +133,14 @@ def chunk(text: str) -> list[str]:
     return texts
 
 
-def prepare_update_fields(
+def process_update(
     operator: str,
     fields: dict,
     project_id: str,
     db_name: str,
     collection_name: str,
     doc_ids: list[str],
-    non_emb_paths: list[str],
+    updated_paths: list[str],
 ) -> list:
     if not isinstance(fields, dict):  # Check if fields is not a dictionary
         abort(
@@ -148,86 +151,46 @@ def prepare_update_fields(
     for path, new_value in fields.items():
         if not isinstance(path, str):
             abort(400, description=f"Path must be a string - {path}")
+        updated_paths.append(path)
 
-        if new_value == "@embText":
-            if not EmbText.is_valid_data(data=new_value):
-                abort(400, description=f"Field value is invalid - {new_value}")
+        # Check the cases (the first two conditions are mostly the same)
+        # NOTE: for updating embJSON fields, check operation is one of allowed ones
+        path_substrings = path.split(".")
+        if path_substrings and path_substrings[-1] == "@embText":
+            abort(
+                400,
+                description=f"Invalid path (updating EmbJSON partially is not supported yet) - {path}",
+            )
+        elif len(path_substrings) > 1 and path_substrings[-2] == "@embText":
+            abort(
+                400,
+                description=f"Invalid path (updating EmbJSON partially is not supported yet) - {path}",
+            )
 
-            if operator not in ["$set", "$unset"]:
-                abort(
-                    400,
-                    description=f"Invalid update operator: '{operator}'. Allowed operators for {path} are '$set' and '$unset'.",
-                )
-
-            text = new_value["embText"]["text"]
-            chunks = chunk(text=text)
-            new_value["embText"]["chunks"] = chunks
-
-            for doc_id in doc_ids:
-                metadata = generate_pc_metadata(
-                    project_id, db_name, collection_name, doc_id, path, "text"
-                )
-                vector_bases = create_vector_bases(
-                    chunks,
-                    metadata,
-                    project_id,
-                    db_name,
-                    collection_name,
-                    doc_id,
-                    path,
-                )
+        elif "@embText" not in path_substrings:
+            vector_bases = process_document(
+                new_value, project_id, db_name, collection_name, doc_ids
+            )
+            if vector_bases:
                 all_vector_bases.extend(vector_bases)
 
-        elif new_value == "@embImage":
-            if not EmbImage.is_valid_data(data=new_value):
-                abort(400, description=f"Field value is invalid - {new_value}")
-
-            if operator not in ["$set", "$unset"]:
-                abort(
-                    400,
-                    description=f"Invalid update operator: '{operator}'. Allowed operators for {path} are '$set' and '$unset'.",
-                )
-
-            mime_type: str = new_value["@embImage"].get("mimeType")
-            content_data: str = new_value["@embImage"].pop("data")
-
-            if mime_type.startswith("image/"):
-                text = image_to_text(base64_image=content_data, mime_type=mime_type)
-                chunks = chunk(text=text)
-                new_value["@embImage"]["chunks"] = chunks
-                new_value["@embImage"]["text"] = text
-
-                for doc_id in doc_ids:
-                    metadata = generate_pc_metadata(
-                        project_id, db_name, collection_name, doc_id, path, "image"
-                    )
-                    vector_bases = create_vector_bases(
-                        chunks,
-                        metadata,
-                        project_id,
-                        db_name,
-                        collection_name,
-                        doc_id,
-                        path,
-                    )
-                    all_vector_bases.extend(vector_bases)
-
         else:
-            non_emb_paths.append(path)
+            abort(400, description=f"Invalid path - {path}")
 
     return all_vector_bases
 
 
-def delete_pc_vectors(
+def delete_overwritten_pc_vectors(
     doc_ids: list[str],
-    non_emb_paths: list[str],
+    updated_paths: list[str],
     project_id: str,
     db_name: str,
     collection_name: str,
 ):
+    # Delete all previous vectors that have the same paths that are being updated in this operation
     delete_id_prefixes: list[str] = []
     for doc_id in doc_ids:
-        for path in non_emb_paths:
+        for path in updated_paths:
             delete_id_prefix = generate_pc_id_prefix(
                 project_id,
                 db_name,

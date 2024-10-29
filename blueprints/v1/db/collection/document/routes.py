@@ -39,7 +39,7 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
         collection_name,
     )
 
-    return jsonify(result), 200
+    return json_util.dumps(result), 200
 
 
 @v1_blueprint_doc.route("", methods=["PUT"])
@@ -66,7 +66,7 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
         collection_name,
     )
 
-    return jsonify(result), 200
+    return json_util.dumps(result), 200
 
 
 @v1_blueprint_doc.route("", methods=["DELETE"])
@@ -89,4 +89,4 @@ def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
         collection_name,
     )
 
-    return jsonify(result), 200
+    return json_util.dumps(result), 200

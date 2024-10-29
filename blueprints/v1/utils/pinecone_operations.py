@@ -39,15 +39,15 @@ def query_all_resources(user_id: str):
 def pc_delete_with_doc_ids(
     project_id: str, db_name: str, collection_name: str, doc_ids: list[str]
 ):
+    namespace = generate_pc_namespace(project_id, db_name)
+    ids_to_delete = []
     for doc_id in doc_ids:
         prefix = generate_pc_id_prefix(project_id, db_name, collection_name, doc_id)
-        ids_to_delete = []
-        for ids in pc_client_index.list(prefix=prefix):
+        for ids in pc_client_index.list(prefix=prefix, namespace=namespace):
             ids_to_delete.extend(ids)
-
         # If there are any IDs to delete, perform the deletion
-        if ids_to_delete:
-            pc_client_index.delete(ids=ids_to_delete)
+    if ids_to_delete:
+        pc_client_index.delete(ids=ids_to_delete, namespace=namespace)
 
 
 def create_vector_bases(
@@ -132,7 +132,6 @@ def generate_pc_id_prefix(
                 + doc_id
                 + "#"
                 + path
-                + "#"
             )
         else:
             pc_id_prefix = (
