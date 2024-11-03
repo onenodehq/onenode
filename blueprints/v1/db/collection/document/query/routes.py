@@ -17,19 +17,22 @@ def query_chunks(permissions: list[dict], db_id: str, collection_name: str):
 
     data = json_util.loads(request.get_data(as_text=True))
     text = data.get("query")
-    top_k = int(data.get("top_k", "10"))
     filter = data.get("filter")
+    top_k = int(data.get("top_k", "10"))
+    projection = data.get("projection")
+
 
     if not text:
         return jsonify({"error": "Please provide a text query parameter."}), 400
 
     data = query_chunks_service(
-        text,
         project_id,
         db_name,
         collection_name,
+        text,
         filter,
         top_k,
+        projection,
     )
 
     response = {
