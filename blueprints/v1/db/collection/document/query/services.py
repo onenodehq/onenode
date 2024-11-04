@@ -22,7 +22,7 @@ def query_chunks_service(
     filter: dict,
     top_k: int,
     projection: dict,
-    include_values: bool = False,
+    include_values: bool,
 ) -> list[dict]:
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
     vector: list[float] = embed_text(text)

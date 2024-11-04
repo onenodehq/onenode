@@ -20,6 +20,7 @@ def query_chunks(permissions: list[dict], db_id: str, collection_name: str):
     filter = data.get("filter")
     top_k = int(data.get("top_k", "10"))
     projection = data.get("projection")
+    include_values = data.get("include_values", False)
 
 
     if not text:
@@ -33,6 +34,7 @@ def query_chunks(permissions: list[dict], db_id: str, collection_name: str):
         filter,
         top_k,
         projection,
+        include_values
     )
 
     response = {
