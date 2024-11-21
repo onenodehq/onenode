@@ -39,18 +39,19 @@ def compose_query_response(
         values = match.get("values", [])
 
         doc = doc_lookup.get(doc_id)
-        chunk = get_chunk_by_path(doc, path, chunk_n)
+        if doc: # Sync Failure Logic
+            chunk = get_chunk_by_path(doc, path, chunk_n)
 
-        # Construct the response item with conditional inclusion of "values"
-        data_item = {
-            "document": doc,
-            "path": path,
-            "chunk": chunk,
-            "chunk_n": chunk_n,
-            "score": score,
-            **({"values": values} if include_values else {}),
-        }
-        data.append(data_item)
+            # Construct the response item with conditional inclusion of "values"
+            data_item = {
+                "document": doc,
+                "path": path,
+                "chunk": chunk,
+                "chunk_n": chunk_n,
+                "score": score,
+                **({"values": values} if include_values else {}),
+            }
+            data.append(data_item)
 
     return data
 

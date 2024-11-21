@@ -68,11 +68,17 @@ def query_chunks_service(
         }
     )
 
+    mongo_projection.update({
+        item["metadata"]["path"]: 1
+        for item in matches
+        if "metadata" in item and "path" in item["metadata"]
+    })
+
     matched_docs = list(
         mongo_collection.find({"_id": {"$in": unique_doc_ids}}, mongo_projection)
     )
     doc_lookup = {str(doc["_id"]): doc for doc in matched_docs}
-
+    
     data = compose_query_response(
         matches,
         doc_lookup,
