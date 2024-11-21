@@ -44,12 +44,12 @@ def compose_query_response(
 
             # Construct the response item with conditional inclusion of "values"
             data_item = {
-                "document": doc,
-                "path": path,
                 "chunk": chunk,
+                "path": path,
                 "chunk_n": chunk_n,
                 "score": score,
                 **({"values": values} if include_values else {}),
+                "document": doc,
             }
             data.append(data_item)
 
