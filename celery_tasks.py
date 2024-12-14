@@ -1,5 +1,5 @@
-from blueprints.v1.utils.openai_operations import embed_text
-from blueprints.v1.utils.pinecone_operations import pc_upsert
+from blueprints.v0.utils.openai_operations import embed_text
+from blueprints.v0.utils.pinecone_operations import pc_upsert
 from celery_setup import celery
 
 

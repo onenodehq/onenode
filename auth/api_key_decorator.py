@@ -1,6 +1,6 @@
 from functools import wraps
-from blueprints.private.v1.org.project.api_key.services import hash_api_key
-from blueprints.v1.utils.mongo_setup import mongo_api_keys
+from blueprints.private.org.project.api_key.services import hash_api_key
+from blueprints.v0.utils.mongo_setup import mongo_api_keys
 from flask import g, jsonify, request
 
 

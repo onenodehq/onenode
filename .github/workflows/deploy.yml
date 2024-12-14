@@ -32,7 +32,7 @@ jobs:
           AWS_REGION: "us-east-2" # Set your AWS region
         run: |
           eb init -p python-3.11 OneNodeBrain --region $AWS_REGION
-          eb use onenodebrain-env
+          eb use capybaradb-env
           eb deploy
 
       - name: Deploy to AWS Elastic Beanstalk
@@ -43,5 +43,5 @@ jobs:
           AWS_REGION: "us-east-2" # Set your AWS region
         run: |
           eb init -p python-3.11 OneNodeBrain --region $AWS_REGION
-          eb use OneNodeBrain-env-dev
+          eb use capybaradb-env-dev
           eb deploy

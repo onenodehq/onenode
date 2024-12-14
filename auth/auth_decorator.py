@@ -35,7 +35,29 @@ def requires_auth(f):
             # Assuming the token is passed as 'Bearer <token>'
             token = auth_header.split(" ")[1]
             decoded_token = decode_nextauth_session(token)
-            g.onenode_id = decoded_token["user"]["_id"]
+            g.user_id = decoded_token["user"]["_id"]
+            g.email = decoded_token["user"]["email"]
+        except Exception as e:
+            print(f"Error decoding token: {e}")
+            return jsonify({"message": "Token is invalid or expired!"}), 401
+        # If the token is valid, proceed to the next function
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+def requires_onenode_auth(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header:
+            return jsonify({"message": "Token is missing!"}), 401
+
+        try:
+            # Assuming the token is passed as 'Bearer <token>'
+            token = auth_header.split(" ")[1]
+            decoded_token = decode_nextauth_session(token)
+            g.user_id = decoded_token["user"]["_id"]
             g.email = decoded_token["user"]["email"]
         except Exception as e:
             print(f"Error decoding token: {e}")

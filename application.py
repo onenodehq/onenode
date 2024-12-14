@@ -8,20 +8,15 @@ from errors import AuthError, PathNotFoundError
 load_dotenv()
 
 from flask import jsonify
-from langchain_openai import ChatOpenAI
-from blueprints.private.routes import private_v1_blueprint
-from blueprints.v1.routes import v1_blueprint_root
+from blueprints.private.routes import private_blueprint
 from blueprints.v0.routes import v0_blueprint_root
 from flask_cors import CORS
 from create_app import application
 
-llm = ChatOpenAI()
-
 CORS(application)
 
 # Register the Blueprint
-application.register_blueprint(private_v1_blueprint)
-application.register_blueprint(v1_blueprint_root)
+application.register_blueprint(private_blueprint)
 application.register_blueprint(v0_blueprint_root)
 
 
@@ -63,7 +58,7 @@ def handle_path_not_found_error(error):
 # Home route
 @application.route("/")
 def home():
-    return f"Welcome to OneNode API!"
+    return f"Welcome to CapybaraDB API!"
 
 
 # Only for development environment

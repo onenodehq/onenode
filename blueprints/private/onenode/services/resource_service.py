@@ -2,7 +2,6 @@ import datetime
 import uuid
 from typing import List
 import pymongo
-from typeguard import typechecked
 from blueprints.v0.utils.cloudfront_operations import generate_cloudfront_signed_url
 from blueprints.v0.utils.pinecone_setup import (
     vectorstore,
@@ -172,7 +171,6 @@ def update_resource_service(request):
     return response
 
 
-@typechecked
 def delete_resource_service(request, user_id):
     content_type = request.content_type
 
@@ -207,7 +205,6 @@ def delete_resource_service(request, user_id):
     return {"message": "Resources deleted successfully"}
 
 
-@typechecked
 def update_resource_context_service(user_id: str, request, context_id: str):
     data = request.get_json()
     if not data:
