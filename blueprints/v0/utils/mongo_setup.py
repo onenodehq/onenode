@@ -5,7 +5,7 @@ from pymongo import MongoClient
 
 MONGO_ADMIN_URI = os.getenv("MONGO_ADMIN_URI")
 MONGO_CLIENT_URI = os.getenv("MONGO_CLIENT_URI")
-MONG0_FREE_STORAGE_LIMIT_MB = os.getenv("MONG0_FREE_STORAGE_LIMIT_MB")
+MONG0_FREE_STORAGE_LIMIT_MB = int(os.getenv("MONG0_FREE_STORAGE_LIMIT_MB"))
 
 mongo_admin_cluster = MongoClient(MONGO_ADMIN_URI, tlsCAFile=certifi.where())
 mongo_client_cluster = MongoClient(MONGO_CLIENT_URI, tlsCAFile=certifi.where())
