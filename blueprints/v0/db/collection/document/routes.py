@@ -8,9 +8,8 @@ from blueprints.v0.db.collection.document.services import (
 from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
 from blueprints.v0.utils.mongo_operations import split_db_id
 from bson import json_util
-from blueprints.v0.db.collection.document.query.routes import (
-    v0_blueprint_query,
-)
+from blueprints.v0.db.collection.document.query.routes import v0_blueprint_query
+from blueprints.v0.db.collection.document.find.routes import v0_blueprint_find
 from blueprints.v0.utils.validations import validate_json_content_type
 
 
@@ -19,6 +18,7 @@ v0_blueprint_doc = Blueprint(
 )
 
 v0_blueprint_doc.register_blueprint(v0_blueprint_query)
+v0_blueprint_doc.register_blueprint(v0_blueprint_find)
 
 
 @v0_blueprint_doc.route("", methods=["POST"])
