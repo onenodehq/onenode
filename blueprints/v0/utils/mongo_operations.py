@@ -4,6 +4,8 @@ from blueprints.v0.utils.mongo_setup import mongo_client_cluster, mongo_orgs
 from pymongo.collection import Collection
 from pymongo.database import Database
 
+from errors import CustomAPIError
+
 
 def register_collection(project_id: str, db_name: str, collection_name: str):
     new_collection = {
@@ -59,11 +61,15 @@ def get_client_collection(
 ) -> Collection:
     db_id = generate_client_db_id(project_id, db_name)
     if must_exist and db_id not in mongo_client_cluster.list_database_names():
-        abort(404, description=f"Database `{db_id}` not found")
+        raise CustomAPIError(
+            f"Database `{db_id}` not found",
+        )
     db = mongo_client_cluster.get_database(db_id)
 
     if must_exist and collection_name not in db.list_collection_names():
-        abort(404, description=f"Collection '{collection_name}' not found")
+        raise CustomAPIError(
+            f"Collection '{collection_name}' not found",
+        )
     collection = db.get_collection(name=collection_name)
 
     if not must_exist and (

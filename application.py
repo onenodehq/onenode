@@ -2,7 +2,7 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from errors import AuthError, PathNotFoundError
+from errors import AuthError, CustomAPIError
 
 # Load environment variables
 load_dotenv()
@@ -33,26 +33,36 @@ logger = logging.getLogger(__name__)
 @application.errorhandler(AuthError)
 def handle_auth_error(ex):
     logger.error(
-        f"Authentication error: {ex.error}, Status code: {ex.status_code}",
+        f"AuthError: {ex.message}",
         exc_info=True,
     )
-    response = jsonify(ex.error)
-    response.status_code = ex.status_code
-    return response
+    response = {
+        "status": "error",
+        "code": ex.status_code,
+        "message": ex.message,
+    }
+    return jsonify(response), ex.status_code
 
 
 @application.errorhandler(Exception)
 def handle_exception(e):
-    logger.error(f"An unexpected error occurred: {e}", exc_info=True)
-    response = {"error": "An unexpected error occurred", "details": str(e)}
+    logger.error(f"AuthError: {e}", exc_info=True)
+    response = {
+        "status": "error",
+        "code": 500,
+        "message": "An unexpected error occurred.",
+    }
     return jsonify(response), 500
 
 
-@application.errorhandler(PathNotFoundError)
-def handle_path_not_found_error(error):
-    response = jsonify({"error": error.message})
-    response.status_code = 400  # Bad Request
-    return response
+@application.errorhandler(CustomAPIError)
+def handle_path_not_found_error(e):
+    response = {
+        "status": "error",
+        "code": e.status_code,
+        "message": e.message,
+    }
+    return jsonify(response), e.status_code
 
 
 # Home route
