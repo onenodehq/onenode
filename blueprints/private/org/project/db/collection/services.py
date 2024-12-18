@@ -3,20 +3,11 @@ from flask import abort
 from blueprints.v0.utils.mongo_operations import (
     get_client_collection,
     get_client_db,
+    register_collection,
+    unregister_collection,
 )
 from blueprints.v0.utils.mongo_setup import mongo_orgs
 from blueprints.v0.utils.pinecone_operations import pc_client_delete_collection
-
-
-def register_collection(project_id: str, db_name: str, collection_name: str):
-    new_collection = {
-        "name": collection_name,
-        "db_name": db_name,
-    }
-    mongo_orgs.update_one(
-        {"projects._id": ObjectId(project_id)},
-        {"$push": {"projects.$.collections": new_collection}},
-    )
 
 
 def create_client_collection(project_id: str, db_name: str, collection_name: str):
@@ -81,19 +72,8 @@ def drop_client_collection(project_id: str, db_name: str, collection_name: str):
     collection.drop()
 
 
-def unregister_collection(project_id: str, db_name: str, collection_name: str):
-    mongo_orgs.update_one(
-        {"projects._id": ObjectId(project_id)},
-        {
-            "$pull": {
-                "projects.$.collections": {"name": collection_name, "db_name": db_name}
-            }
-        },
-    )
-
-
 def delete_collection_service(
-    org_id: str, project_id: str, db_name: str, collection_name: str
+    project_id: str, db_name: str, collection_name: str
 ):
     drop_client_collection(project_id, db_name, collection_name)
     unregister_collection(project_id, db_name, collection_name)

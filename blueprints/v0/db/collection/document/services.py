@@ -26,7 +26,9 @@ def create_docs_service(
         check_mongo_storage(project_id, db_name)
         check_pc_storage(project_id, db_name)
 
-    mongo_collection = get_client_collection(project_id, db_name, collection_name)
+    mongo_collection = get_client_collection(
+        project_id, db_name, collection_name, must_exist=False
+    )
 
     all_vector_bases = []
     for document in documents:

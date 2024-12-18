@@ -1,8 +1,30 @@
+from bson import ObjectId
 from flask import abort
-from blueprints.private.org.project.db.collection.services import register_collection
-from blueprints.v0.utils.mongo_setup import mongo_client_cluster
+from blueprints.v0.utils.mongo_setup import mongo_client_cluster, mongo_orgs
 from pymongo.collection import Collection
 from pymongo.database import Database
+
+
+def register_collection(project_id: str, db_name: str, collection_name: str):
+    new_collection = {
+        "name": collection_name,
+        "db_name": db_name,
+    }
+    mongo_orgs.update_one(
+        {"projects._id": ObjectId(project_id)},
+        {"$push": {"projects.$.collections": new_collection}},
+    )
+
+
+def unregister_collection(project_id: str, db_name: str, collection_name: str):
+    mongo_orgs.update_one(
+        {"projects._id": ObjectId(project_id)},
+        {
+            "$pull": {
+                "projects.$.collections": {"name": collection_name, "db_name": db_name}
+            }
+        },
+    )
 
 
 def get_client_db(project_id: str, db_name: str) -> Database:
