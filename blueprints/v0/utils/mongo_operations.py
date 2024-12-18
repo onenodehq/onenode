@@ -66,7 +66,10 @@ def get_client_collection(
         abort(404, description=f"Collection '{collection_name}' not found")
     collection = db.get_collection(name=collection_name)
 
-    if not must_exist:
+    if not must_exist and (
+        db_id not in mongo_client_cluster.list_database_names()
+        or collection_name not in db.list_collection_names()
+    ):
         register_collection(project_id, db_name, collection_name)
 
     return collection
