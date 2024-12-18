@@ -8,15 +8,13 @@ from blueprints.v0.utils.mongo_setup import mongo_orgs
 from blueprints.v0.utils.pinecone_operations import pc_client_delete_collection
 
 
-def register_collection(
-    org_id: str, project_id: str, db_name: str, collection_name: str
-):
+def register_collection(project_id: str, db_name: str, collection_name: str):
     new_collection = {
         "name": collection_name,
         "db_name": db_name,
     }
     mongo_orgs.update_one(
-        {"_id": ObjectId(org_id), "projects._id": ObjectId(project_id)},
+        {"projects._id": ObjectId(project_id)},
         {"$push": {"projects.$.collections": new_collection}},
     )
 
@@ -34,7 +32,7 @@ def create_collection_service(
         db_name,
         collection_name,
     )
-    register_collection(org_id, project_id, db_name, collection_name)
+    register_collection(project_id, db_name, collection_name)
     return
 
 
@@ -83,11 +81,9 @@ def drop_client_collection(project_id: str, db_name: str, collection_name: str):
     collection.drop()
 
 
-def unregister_collection(
-    org_id: str, project_id: str, db_name: str, collection_name: str
-):
+def unregister_collection(project_id: str, db_name: str, collection_name: str):
     mongo_orgs.update_one(
-        {"_id": ObjectId(org_id), "projects._id": ObjectId(project_id)},
+        {"projects._id": ObjectId(project_id)},
         {
             "$pull": {
                 "projects.$.collections": {"name": collection_name, "db_name": db_name}
@@ -100,5 +96,5 @@ def delete_collection_service(
     org_id: str, project_id: str, db_name: str, collection_name: str
 ):
     drop_client_collection(project_id, db_name, collection_name)
-    unregister_collection(org_id, project_id, db_name, collection_name)
+    unregister_collection(project_id, db_name, collection_name)
     pc_client_delete_collection(project_id, db_name, collection_name)
