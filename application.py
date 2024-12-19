@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from errors import AuthError, CustomAPIError
+from pymongo.errors import InvalidOperation, OperationFailure
 
 # Load environment variables
 load_dotenv()
@@ -63,6 +64,16 @@ def handle_path_not_found_error(e):
         "message": e.message,
     }
     return jsonify(response), e.status_code
+
+
+@application.errorhandler(InvalidOperation)
+def handle_path_not_found_error(e):
+    response = {
+        "status": "error",
+        "code": 400,
+        "message": "Operation is invalid.",
+    }
+    return jsonify(response), 400
 
 
 # Home route
