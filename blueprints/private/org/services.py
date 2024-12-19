@@ -1,5 +1,4 @@
 from bson import ObjectId
-from flask import abort
 from blueprints.v0.utils.mongo_setup import mongo_orgs
 
 
@@ -10,10 +9,7 @@ def create_default_org_service(user_id: str):
 
     existing_org = mongo_orgs.find_one({"owners": user_id})
     if existing_org:
-        abort(
-            400,
-            description="An organization with this user_id in owners already exists.",
-        )
+        raise Exception("An organization with this user_id in owners already exists.")
 
     mongo_orgs.insert_one(
         {

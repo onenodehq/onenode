@@ -1,7 +1,7 @@
 from blueprints.v0.utils.mongo_setup import mongo_users
+from errors import AuthError
 from utils.email import notify_admin
 from bson import ObjectId
-from flask import abort
 from blueprints.v0.utils.mongo_setup import mongo_orgs
 
 
@@ -39,9 +39,6 @@ def check_project_permission(
     org = mongo_orgs.find_one(query)
 
     if not org:
-        abort(
-            403,
-            description="Access denied: User lacks permission for the specified project.",
-        )
+        AuthError("Access denied: User lacks permission for the specified project.")
 
     return True

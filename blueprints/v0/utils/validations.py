@@ -1,5 +1,8 @@
-from flask import abort, request
+from flask import request
+
+from errors import CustomAPIError
+
 
 def validate_json_content_type():
     if request.content_type != "application/json":
-        abort(400, description="Invalid content type. Expected 'application/json'.")
+        raise CustomAPIError("Invalid content type. Expected 'application/json'.")

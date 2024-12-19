@@ -1,4 +1,3 @@
-from os import abort
 from blueprints.v0.utils.mongo_operations import get_client_db
 from blueprints.v0.utils.mongo_setup import MONG0_FREE_STORAGE_LIMIT_MB
 from blueprints.v0.utils.pinecone_operations import generate_pc_namespace
@@ -6,6 +5,7 @@ from blueprints.v0.utils.pinecone_setup import (
     PC_FREE_STORAGE_LIMIT_MB,
     pc_client_index,
 )
+from errors import CustomAPIError
 
 
 def check_mongo_storage(project_id: str, db_name: str):
@@ -17,9 +17,9 @@ def check_mongo_storage(project_id: str, db_name: str):
 
     # Check if total storage is greater than 10MB (10 * 1024 * 1024 bytes)
     if total_size_mb > MONG0_FREE_STORAGE_LIMIT_MB:
-        abort(
-            403,
-            description=f"Storage limit exceeded. Total size is over {MONG0_FREE_STORAGE_LIMIT_MB} MB.",
+        raise CustomAPIError(
+            f"Storage limit exceeded. Total size is over {MONG0_FREE_STORAGE_LIMIT_MB} MB.",
+            429,
         )
     return
 
@@ -34,8 +34,8 @@ def check_pc_storage(project_id: str, db_name: str):
     vector_size_bytes = dimension * 4
     vector_size_mb = vector_size_bytes / (1024 * 1024)  # Convert to MB
     if vector_count * vector_size_mb > PC_FREE_STORAGE_LIMIT_MB:
-        abort(
-            403,
-            description=f"Vector storage limit exceeded. Total size is over {PC_FREE_STORAGE_LIMIT_MB} MB.",
+        raise CustomAPIError(
+            f"Vector storage limit exceeded. Total size is over {PC_FREE_STORAGE_LIMIT_MB} MB.",
+            429,
         )
     return

@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, jsonify, request
+from flask import Blueprint, request
 from auth.api_key_decorator import require_api_key
 from blueprints.v0.db.collection.document.services import (
     create_docs_service,
@@ -11,6 +11,7 @@ from bson import json_util
 from blueprints.v0.db.collection.document.query.routes import v0_blueprint_query
 from blueprints.v0.db.collection.document.find.routes import v0_blueprint_find
 from blueprints.v0.utils.validations import validate_json_content_type
+from errors import CustomAPIError
 
 
 v0_blueprint_doc = Blueprint(
@@ -30,7 +31,7 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     data = json_util.loads(request.get_data(as_text=True))
     docs: list[dict] = data.get("documents")
     if not docs:
-        abort(400, description="Missing 'documents' field.")
+        raise CustomAPIError("Missing 'documents' field.")
 
     result = create_docs_service(
         docs,
@@ -54,9 +55,9 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
     update = data.get("update")
 
     if not filter:
-        abort(400, description="Missing 'filter' field in the request data.")
+        raise CustomAPIError(message="Missing 'filter' field in the request data.")
     if not update:
-        abort(400, description="Missing 'update' field in the request data.")
+        raise CustomAPIError(message="Missing 'update' field in the request data.")
 
     result = update_docs_service(
         filter,
@@ -80,7 +81,7 @@ def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
     filter = data.get("filter")
 
     if not filter:
-        abort(400, description="Missing 'filter' field in the request data.")
+        raise CustomAPIError("Missing 'filter' field in the request data.")
 
     result = delete_docs_service(
         filter,

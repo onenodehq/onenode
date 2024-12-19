@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, g, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from blueprints.private.user.services import (
@@ -6,12 +6,11 @@ from blueprints.private.user.services import (
     get_user_by_access_token_service,
     get_user_by_email_service,
 )
+from errors import CustomAPIError
 from utils.email import notify_admin
 
 
-private_blueprint_user = Blueprint(
-    "private_user", __name__, url_prefix="/user"
-)
+private_blueprint_user = Blueprint("private_user", __name__, url_prefix="/user")
 
 
 @private_blueprint_user.route("", methods=["POST"])
@@ -26,9 +25,8 @@ def create_user():
     app = data.get("app")
 
     if not email or not given_name or not family_name or not picture:
-        abort(
-            400,
-            description="Missing required parameters: 'email', 'given_name', 'family_name', or 'picture'",
+        raise CustomAPIError(
+            "Missing required parameters: 'email', 'given_name', 'family_name', or 'picture'"
         )
 
     new_user = create_user_service(
@@ -44,7 +42,7 @@ def create_user():
 def get_user_by_email():
     email = request.args.get("email")
     if not email:
-        abort(400, description="Missing 'email' param.")
+        raise CustomAPIError("Missing 'email' param.")
 
     user = get_user_by_email_service(email=email)
 

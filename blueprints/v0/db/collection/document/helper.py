@@ -1,4 +1,3 @@
-from flask import abort
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from blueprints.v0.models.emb_image import EmbImage
 from blueprints.v0.models.emb_text import EmbText
@@ -9,6 +8,7 @@ from blueprints.v0.utils.pinecone_operations import (
     pc_delete_with_doc_ids,
 )
 from blueprints.v0.utils.openai_operations import image_to_text
+from errors import CustomAPIError
 
 
 # Recursively check each field for the '@' prefix
@@ -29,11 +29,11 @@ def process_document(
                 current_path = f"{key}"
 
             if not isinstance(key, str):
-                abort(400, description=f"Key name must be a string - {key}")
+                raise CustomAPIError(f"Key name must be a string - {key}")
 
             if key == "@embText":
                 if not EmbText.is_valid_data(data=data):
-                    abort(400, description=f"Field value is invalid - {data}")
+                    raise CustomAPIError(f"Field value is invalid - {data}")
                 value: dict
 
                 text = value.get("text")
@@ -62,7 +62,7 @@ def process_document(
 
             elif key == "@embImage":
                 if not EmbImage.is_valid_data(data=data):
-                    abort(400, description=f"Field value is invalid - {data}")
+                    raise CustomAPIError(f"Field value is invalid - {data}")
                 value: dict
 
                 mime_type: str = value.get("mimeType")
@@ -143,28 +143,25 @@ def process_update(
     updated_paths: list[str],
 ) -> list:
     if not isinstance(fields, dict):  # Check if fields is not a dictionary
-        abort(
-            400,
-            description=f"Expected dictionary for {operator}, but got {type(fields).__name__} instead.",
+        raise CustomAPIError(
+            message=f"Expected dictionary for {operator}, but got {type(fields).__name__} instead."
         )
     all_vector_bases = []
     for path, new_value in fields.items():
         if not isinstance(path, str):
-            abort(400, description=f"Path must be a string - {path}")
+            raise CustomAPIError(message=f"Path must be a string - {path}")
         updated_paths.append(path)
 
         # Check the cases (the first two conditions are mostly the same)
         # NOTE: for updating embJSON fields, check operation is one of allowed ones
         path_substrings = path.split(".")
         if path_substrings and path_substrings[-1] == "@embText":
-            abort(
-                400,
-                description=f"Invalid path (updating EmbJSON partially is not supported yet) - {path}",
+            raise CustomAPIError(
+                f"Invalid path (updating EmbJSON partially is not supported yet) - {path}"
             )
         elif len(path_substrings) > 1 and path_substrings[-2] == "@embText":
-            abort(
-                400,
-                description=f"Invalid path (updating EmbJSON partially is not supported yet) - {path}",
+            raise CustomAPIError(
+                f"Invalid path (updating EmbJSON partially is not supported yet) - {path}"
             )
 
         elif "@embText" not in path_substrings:
@@ -175,7 +172,7 @@ def process_update(
                 all_vector_bases.extend(vector_bases)
 
         else:
-            abort(400, description=f"Invalid path - {path}")
+            raise CustomAPIError(f"Invalid path - {path}")
 
     return all_vector_bases
 

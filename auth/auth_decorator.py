@@ -1,10 +1,11 @@
-from flask import g, request, jsonify
+from flask import g, request
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 from jose import jwe
 import json
 import os
 from functools import wraps
+from errors import AuthError
 
 
 # Helper function to decode the NextAuth session
@@ -29,7 +30,7 @@ def requires_auth(f):
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
-            return jsonify({"message": "Token is missing!"}), 401
+            raise AuthError("Token is missing!")
 
         try:
             # Assuming the token is passed as 'Bearer <token>'
@@ -38,12 +39,12 @@ def requires_auth(f):
             g.user_id = decoded_token["user"]["_id"]
             g.email = decoded_token["user"]["email"]
         except Exception as e:
-            print(f"Error decoding token: {e}")
-            return jsonify({"message": "Token is invalid or expired!"}), 401
+            raise AuthError("Token is invalid or expired!")
         # If the token is valid, proceed to the next function
         return f(*args, **kwargs)
 
     return decorated_function
+
 
 def requires_onenode_auth(f):
     @wraps(f)
@@ -51,7 +52,7 @@ def requires_onenode_auth(f):
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
-            return jsonify({"message": "Token is missing!"}), 401
+            raise AuthError("Token is missing!")
 
         try:
             # Assuming the token is passed as 'Bearer <token>'
@@ -60,8 +61,7 @@ def requires_onenode_auth(f):
             g.user_id = decoded_token["user"]["_id"]
             g.email = decoded_token["user"]["email"]
         except Exception as e:
-            print(f"Error decoding token: {e}")
-            return jsonify({"message": "Token is invalid or expired!"}), 401
+            raise AuthError("Token is invalid or expired!")
         # If the token is valid, proceed to the next function
         return f(*args, **kwargs)
 

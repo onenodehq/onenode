@@ -1,5 +1,4 @@
-from bson import ObjectId
-from flask import abort
+from errors import CustomAPIError
 
 
 def get_chunk_by_path(doc: dict, path: str, chunk_n: int) -> str | None:
@@ -39,7 +38,7 @@ def compose_query_response(
         values = match.get("values", [])
 
         doc = doc_lookup.get(doc_id)
-        if doc: # Sync Failure Logic
+        if doc:  # Sync Failure Logic
             chunk = get_chunk_by_path(doc, path, chunk_n)
 
             # Construct the response item with conditional inclusion of "values"
@@ -71,7 +70,7 @@ def convert_projection(projection):
     """
     # Validate that 'projection' is a dictionary
     if not isinstance(projection, dict):
-        abort(400, description="Projection must be a dictionary.")
+        raise CustomAPIError("Projection must be a dictionary.")
 
     # Allowed keys in 'projection'
     allowed_keys = {"mode", "fields"}
@@ -80,12 +79,12 @@ def convert_projection(projection):
     # Check for invalid keys
     invalid_keys = provided_keys - allowed_keys
     if invalid_keys:
-        abort(400, description=f"Invalid keys in projection: {', '.join(invalid_keys)}")
+        raise CustomAPIError(f"Invalid keys in projection: {', '.join(invalid_keys)}")
 
     # 'mode' is required and must be 'include' or 'exclude'
     mode = projection.get("mode")
     if mode not in {"include", "exclude"}:
-        abort(400, description="Mode must be 'include' or 'exclude'.")
+        raise CustomAPIError("Mode must be 'include' or 'exclude'.")
 
     # 'fields' is optional
     fields = projection.get("fields")
@@ -93,9 +92,9 @@ def convert_projection(projection):
     # If 'fields' is provided, it must be a list of strings
     if fields is not None:
         if not isinstance(fields, list):
-            abort(400, description="'fields' must be a list of field names.")
+            raise CustomAPIError("'fields' must be a list of field names.")
         if not all(isinstance(field, str) for field in fields):
-            abort(400, description="All field names must be strings.")
+            raise CustomAPIError("All field names must be strings.")
 
     # Build the MongoDB projection
     if mode == "include":

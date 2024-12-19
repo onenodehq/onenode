@@ -1,5 +1,5 @@
 import re
-from flask import Blueprint, abort, g, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from blueprints.private.org.project.db.collection.services import (
@@ -12,6 +12,7 @@ from blueprints.private.services import check_project_permission
 from blueprints.private.org.project.db.collection.documents.routes import (
     private_blueprint_document,
 )
+from errors import CustomAPIError
 
 private_blueprint_collection = Blueprint(
     "private_v1_collection",
@@ -31,9 +32,8 @@ def create_collection(org_id, project_id, db_name):
     if re.search(r"[^a-zA-Z0-9_]", collection_name) or re.search(
         r"[^a-zA-Z0-9_]", db_name
     ):
-        abort(
-            400,
-            description="Database name or collection name cannot contain spaces or special characters.",
+        raise CustomAPIError(
+            "Database name or collection name cannot contain spaces or special characters."
         )
 
     user_id = g.user_id

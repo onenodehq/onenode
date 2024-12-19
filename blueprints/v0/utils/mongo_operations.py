@@ -1,5 +1,4 @@
 from bson import ObjectId
-from flask import abort
 from blueprints.v0.utils.mongo_setup import mongo_client_cluster, mongo_orgs
 from pymongo.collection import Collection
 from pymongo.database import Database
@@ -45,9 +44,8 @@ def split_db_id(db_id: str):
         project_id, db_name = db_id.split("_", 1)
     except ValueError:
         # Return a 400 Bad Request error with a custom message
-        abort(
-            400,
-            description=f"Invalid db_id format: '{db_id}'. Expected format: 'project_id_db_name'.",
+        raise Exception(
+            f"Invalid db_id format: '{db_id}'. Expected format: 'project_id_db_name'."
         )
 
     return project_id, db_name

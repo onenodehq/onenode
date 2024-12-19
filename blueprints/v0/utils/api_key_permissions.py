@@ -1,5 +1,6 @@
 from bson import ObjectId
-from flask import abort
+
+from errors import AuthError
 
 
 def check_api_key_permissions(
@@ -12,4 +13,4 @@ def check_api_key_permissions(
         and projects[0].get("role") == role
     ):
         return True
-    abort(403, description="API key denied. Insufficient permissions.")
+    raise ("API key denied. Insufficient permissions.")

@@ -1,5 +1,4 @@
 from bson import ObjectId
-from flask import abort
 from blueprints.v0.utils.mongo_operations import (
     get_client_collection,
     get_client_db,
@@ -8,6 +7,7 @@ from blueprints.v0.utils.mongo_operations import (
 )
 from blueprints.v0.utils.mongo_setup import mongo_orgs
 from blueprints.v0.utils.pinecone_operations import pc_client_delete_collection
+from errors import CustomAPIError
 
 
 def create_client_collection(project_id: str, db_name: str, collection_name: str):
@@ -51,14 +51,14 @@ def get_collection_service(
     )
     # Check if the result or projects field is missing
     if not result or not result.get("projects"):
-        abort(404, description="Project not found.")
+        raise CustomAPIError("Project not found.", status_code=404)
 
     # Retrieve the projects list
     projects = result["projects"]
 
     # Check if collections exist in the project and is not empty
     if "collections" not in projects[0] or not projects[0]["collections"]:
-        abort(404, description="Collection not found.")
+        raise CustomAPIError("Collection not found.", 404)
 
     # Return the first collection (since we used $elemMatch it should be the only one)
     collection: dict = projects[0]["collections"][0]
@@ -72,9 +72,7 @@ def drop_client_collection(project_id: str, db_name: str, collection_name: str):
     collection.drop()
 
 
-def delete_collection_service(
-    project_id: str, db_name: str, collection_name: str
-):
+def delete_collection_service(project_id: str, db_name: str, collection_name: str):
     drop_client_collection(project_id, db_name, collection_name)
     unregister_collection(project_id, db_name, collection_name)
     pc_client_delete_collection(project_id, db_name, collection_name)
