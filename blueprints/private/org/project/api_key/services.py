@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ONENODE_API_KEY_LENGTH = int(os.getenv("ONENODE_API_KEY_LENGTH"))
+CAPYBARA_API_KEY_LENGTH = int(os.getenv("CAPYBARA_API_KEY_LENGTH"))
 
 
-def generate_api_key(length=ONENODE_API_KEY_LENGTH) -> str:
+def generate_api_key(length=CAPYBARA_API_KEY_LENGTH) -> str:
     alphabet = string.ascii_letters + string.digits
     api_key = "".join(secrets.choice(alphabet) for _ in range(length))
     return api_key

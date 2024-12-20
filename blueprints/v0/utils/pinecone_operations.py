@@ -26,16 +26,6 @@ def query_resources_by_user_id(user_id: str):
     return data
 
 
-def query_all_resources(user_id: str):
-    if user_id == os.getenv("ADMIN_ID"):
-        data = pc_admin_index.query(
-            vector=dummy_vector, include_metadata=True, top_k=10000
-        )
-        return data
-    else:
-        raise PermissionError("Failed to authorize admin request")
-
-
 def pc_delete_with_doc_ids(
     project_id: str, db_name: str, collection_name: str, doc_ids: list[str]
 ):
