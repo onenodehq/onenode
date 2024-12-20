@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from errors import AuthError, CustomAPIError
-from pymongo.errors import InvalidOperation, OperationFailure
+from pymongo.errors import InvalidOperation
 
 # Load environment variables
 load_dotenv()

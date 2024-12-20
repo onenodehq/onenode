@@ -1,11 +1,10 @@
 import os
 import boto3
-from mypy_boto3_s3 import S3Client
 
 # Check if running on localhost
 if os.getenv("FLASK_RUN_HOST", "") == "localhost":
     # Use credentials for local development
-    s3: S3Client = boto3.client(
+    s3 = boto3.client(
         "s3",
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
@@ -13,7 +12,7 @@ if os.getenv("FLASK_RUN_HOST", "") == "localhost":
     )
 else:
     # Use IAM roles in production
-    s3: S3Client = boto3.client(
+    s3 = boto3.client(
         "s3",
         region_name=os.getenv("AWS_REGION"),
     )

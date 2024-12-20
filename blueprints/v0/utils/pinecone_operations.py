@@ -1,10 +1,8 @@
-import os
 from blueprints.v0.utils.pinecone_setup import (
     DIMENSIONS,
     pc_admin_index,
     pc_client_index,
 )
-from pinecone.core.client.models import UpsertResponse, QueryResponse
 
 
 dummy_vector = [0] * DIMENSIONS
@@ -67,7 +65,7 @@ def create_vector_bases(
     return vector_bases
 
 
-def pc_upsert(vectors: list, project_id: str, db_name) -> UpsertResponse:
+def pc_upsert(vectors: list, project_id: str, db_name):
     namespace = generate_pc_namespace(project_id, db_name)
     result = pc_client_index.upsert(vectors=vectors, namespace=namespace)
     return result
@@ -142,7 +140,7 @@ def pc_client_query(
     top_k: int,
     include_values: bool,
     doc_ids: list[str] = None,
-) -> QueryResponse:
+):
 
     filter_criteria = {
         "collection_name": {"$eq": collection_name},

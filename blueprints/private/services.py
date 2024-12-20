@@ -39,6 +39,8 @@ def check_project_permission(
     org = mongo_orgs.find_one(query)
 
     if not org:
-        AuthError("Access denied: User lacks permission for the specified project.")
+        raise AuthError(
+            "Access denied: User lacks permission for the specified project."
+        )
 
     return True

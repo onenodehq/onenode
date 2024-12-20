@@ -9,10 +9,8 @@ from blueprints.v0.utils.s3_setup import (
     SIGNED_URL_EXPIRATION,
     s3,
 )
-from typeguard import typechecked
 
 
-@typechecked
 def process_image_resources(
     resources: List[Dict], ids: List[str], user_id: str
 ) -> List[Dict]:

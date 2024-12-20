@@ -1,7 +1,3 @@
-from typeguard import typechecked
-
-
-@typechecked
 def docs_to_context(docs: list[dict]) -> str:
     formatted = []
     for doc in docs:

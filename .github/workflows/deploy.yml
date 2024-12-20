@@ -32,7 +32,7 @@ jobs:
           AWS_REGION: "us-east-2" # Set your AWS region
         run: |
           eb init -p python-3.11 CapybaraDBAPI --region $AWS_REGION
-          eb use CapybaraDBAPI-env
+          eb use capybaradb
           eb deploy
 
       - name: Deploy to AWS Elastic Beanstalk
