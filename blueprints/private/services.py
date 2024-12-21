@@ -26,6 +26,16 @@ def send_feedback_service(user_id: str, message: str) -> None:
     notify_admin(subject, body)
 
 
+def send_docs_feedback_service(message: str) -> None:
+    subject = "Feedback from a user about docs"
+
+    # Construct email body using f-strings for clarity
+    body = f"{message}\n" f"-end-"
+
+    # Notify admin via email
+    notify_admin(subject, body)
+
+
 def check_project_permission(
     user_id: str, org_id: str, project_id: str, role: str = "owners"
 ):
