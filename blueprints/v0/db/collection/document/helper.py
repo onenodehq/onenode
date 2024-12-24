@@ -36,8 +36,20 @@ def process_document(
                     raise CustomAPIError(f"Field value is invalid - {data}")
                 value: dict
 
-                text = value.get("text")
-                chunks = chunk(text=text)
+                text = value["text"]
+                max_chunk_size = value["max_chunk_size"]
+                chunk_overlap = value["chunk_overlap"]
+                is_separator_regex = value["is_separator_regex"]
+                separators = value["separators"]
+                keep_separator = value["keep_separator"]
+                chunks = chunk(
+                    text,
+                    max_chunk_size,
+                    chunk_overlap,
+                    is_separator_regex,
+                    separators,
+                    keep_separator,
+                )
                 value["chunks"] = chunks
                 for doc_id in doc_ids:
                     metadata = generate_pc_metadata(
@@ -65,12 +77,24 @@ def process_document(
                     raise CustomAPIError(f"Field value is invalid - {data}")
                 value: dict
 
-                mime_type: str = value.get("mimeType")
+                mime_type: str = value["mimeType"]
                 base64_image: str = value.pop("data")
+                max_chunk_size = value["max_chunk_size"]
+                chunk_overlap = value["chunk_overlap"]
+                is_separator_regex = value["is_separator_regex"]
+                separators = value["separators"]
+                keep_separator = value["keep_separator"]
 
                 if mime_type.startswith("image/"):
                     text = image_to_text(base64_image=base64_image, mime_type=mime_type)
-                    chunks = chunk(text=text)
+                    chunks = chunk(
+                        text,
+                        max_chunk_size,
+                        chunk_overlap,
+                        is_separator_regex,
+                        separators,
+                        keep_separator,
+                    )
                     value["chunks"] = chunks
                     value["text"] = text
 
@@ -120,13 +144,22 @@ def process_document(
     return all_vector_bases
 
 
-def chunk(text: str) -> list[str]:
+def chunk(
+    text: str,
+    max_chunk_size: int,
+    chunk_overlap: int,
+    is_separator_regex: bool,
+    separators: list[str],
+    keep_separator: bool,
+) -> list[str]:
     text_splitter = RecursiveCharacterTextSplitter(
         # Set a really small chunk size, just to show.
-        chunk_size=200,
-        chunk_overlap=20,
+        chunk_size=max_chunk_size,
+        chunk_overlap=chunk_overlap,
         length_function=len,
-        is_separator_regex=False,
+        is_separator_regex=is_separator_regex,
+        separators=separators,
+        keep_separator=keep_separator,
     )
     texts = text_splitter.split_text(text=text)
 
