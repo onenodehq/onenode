@@ -1,3 +1,4 @@
+import hashlib
 from bson import ObjectId
 from blueprints.v0.utils.mongo_setup import mongo_client_cluster, mongo_orgs
 from pymongo.collection import Collection
@@ -34,8 +35,9 @@ def get_client_db(project_id: str, db_name: str) -> Database:
     return database
 
 
-def generate_client_db_id(project_id: str, db_name: str):
-    return project_id + "_" + db_name
+def generate_client_db_id(project_id: str, db_name: str) -> str:
+    combined_string = f"{project_id}:{db_name}".encode("utf-8")
+    return hashlib.sha256(combined_string).hexdigest()[:32]
 
 
 def split_db_id(db_id: str):
