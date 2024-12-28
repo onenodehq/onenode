@@ -80,8 +80,10 @@ def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
     data = json_util.loads(request.get_data(as_text=True))
     filter = data.get("filter")
 
-    if not filter:
-        raise CustomAPIError("Missing 'filter' field in the request data.")
+    if filter is None:
+        raise CustomAPIError(
+            "Missing 'filter' field in the request data. 'None' is not allowed."
+        )
 
     result = delete_docs_service(
         filter,
