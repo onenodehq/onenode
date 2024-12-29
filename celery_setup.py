@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from create_app import application
 from celery import Celery
+from celery.schedules import crontab
 from bson import json_util
 
 load_dotenv()
@@ -27,6 +28,12 @@ def make_celery(app):
     celery.conf.update(
         task_serializer="bson",
         accept_content=["bson", "json"],
+        beat_schedule={  # Configure beat schedule here
+            "check_usage_hourly": {
+                "task": "celery_tasks.check_usage",  # Update with your task path
+                "schedule": crontab(minute="0"),  # Every hour at minute 0
+            },
+        },
     )
 
     class ContextTask(celery.Task):

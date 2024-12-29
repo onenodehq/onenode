@@ -2,4 +2,11 @@
 # To avoid circular imports
 from flask import Flask
 
-application = Flask(__name__)
+
+def create_app():
+    application = Flask(__name__)
+
+    return application
+
+
+application = create_app()
