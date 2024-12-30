@@ -1,6 +1,6 @@
 import os, time
 from langchain_openai import OpenAIEmbeddings
-from langchain_pinecone import Pinecone
+from langchain_pinecone import Pinecone as LangchainPinecone
 from pinecone import Pinecone, ServerlessSpec
 
 PINECONE_ADMIN_INDEX = os.getenv("PINECONE_ADMIN_INDEX")
@@ -37,4 +37,4 @@ if PINECONE_CLIENT_INDEX not in existing_indexes:
 pc_admin_index = pc.Index(PINECONE_ADMIN_INDEX)
 pc_client_index = pc.Index(PINECONE_CLIENT_INDEX)
 
-vectorstore = Pinecone(index_name=PINECONE_ADMIN_INDEX, embedding=openai_ef)
+vectorstore = LangchainPinecone(index_name=PINECONE_ADMIN_INDEX, embedding=openai_ef)

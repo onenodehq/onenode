@@ -1,3 +1,4 @@
+from bson import ObjectId
 from blueprints.v0.utils.openai_operations import embed_text
 from blueprints.v0.utils.pinecone_operations import pc_upsert
 from celery_setup import celery
@@ -13,7 +14,7 @@ from utils.email import notify_admin
 
 
 @celery.task
-def save_vectors_task(vector_bases: list, project_id: str, db_name):
+def save_vectors_task(vector_bases: list, project_id_str: str, db_name):
     """
     Task that embeds text via OpenAI and upserts the resulting vectors into Pinecone.
     """
@@ -22,24 +23,24 @@ def save_vectors_task(vector_bases: list, project_id: str, db_name):
         embedding = embed_text(vector_basis["values"])
         vector_basis.update({"values": embedding})
         vectors.append(vector_basis)
-    pc_upsert(vectors, project_id, db_name)
+    pc_upsert(vectors, project_id_str, db_name)
 
 
-def fetch_pinecone_usage(project_id: str, db_name: str) -> float:
+def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
     """
     Fetch Pinecone storage usage for a given project and database namespace.
     Returns storage usage in MB.
     """
+    namespace = generate_pc_namespace(project_id_str, db_name)
     try:
-        namespace = generate_pc_namespace(project_id, db_name)
         index_stats = pc_client_index.describe_index_stats()
 
         namespace_stats = (
             index_stats.get("namespaces", {}).get(namespace, {}).get("vector_count", 0)
         )
 
-        # Estimate storage based on vector count (assuming 1KB per vector)
-        storage_mb = (namespace_stats * 1) / 1024  # Convert KB to MB
+        # Estimate storage based on vector count (assuming 6KB per vector)
+        storage_mb = (namespace_stats * 6) / 1024  # Convert KB to MB
         return round(storage_mb, 2)
     except Exception as e:
         notify_admin(
@@ -70,7 +71,7 @@ def check_usage():
             org_name = org.get("name")
 
             for project in org.get("projects", []):
-                project_id = project.get("_id")
+                project_id_str = str(project.get("_id"))
                 project_name = project.get("name")
 
                 total_project_mongo_storage = 0
@@ -97,7 +98,9 @@ def check_usage():
                             # ---------------------
                             # Pinecone Stats
                             # ---------------------
-                            pinecone_usage = fetch_pinecone_usage(project_id, db_name)
+                            pinecone_usage = fetch_pinecone_usage(
+                                project_id_str, db_name
+                            )
                             total_project_pinecone += pinecone_usage
 
                             database_details.append(
@@ -121,7 +124,7 @@ def check_usage():
                             notify_admin(
                                 "Usage Sampling Failed",
                                 f"Failed to fetch stats for {db_name} "
-                                f"in project {project_id}: {e}",
+                                f"in project {project_id_str}: {e}",
                             )
 
                 # ----------------------------------------------------------------
@@ -132,7 +135,7 @@ def check_usage():
                         "timestamp": current_time.replace(second=0, microsecond=0),
                         "org_id": org_id,
                         "org_name": org_name,
-                        "project_id": project_id,
+                        "project_id": ObjectId(project_id_str),
                         "project_name": project_name,
                         "mongo_storage_mb": round(
                             total_project_mongo_storage / (1024 * 1024), 2

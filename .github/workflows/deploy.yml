@@ -31,8 +31,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-east-2" # Set your AWS region
         run: |
-          eb init -p python-3.11 CapybaraDBAPI --region $AWS_REGION
-          eb use capybaradb
+          eb init -p python-3.11 capybaradb-app --region $AWS_REGION
+          eb use capybaradb-env
           eb deploy
 
       - name: Deploy to AWS Elastic Beanstalk
