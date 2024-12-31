@@ -29,8 +29,8 @@ def make_celery(app):
         task_serializer="bson",
         accept_content=["bson", "json"],
         beat_schedule={  # Configure beat schedule here
-            "check_usage_hourly": {
-                "task": "celery_tasks.check_usage",  # Update with your task path
+            "record_usage_hourly": {
+                "task": "celery_tasks.record_usage",  # Update with your task path
                 "schedule": crontab(minute="0"),  # Every hour at minute 0
             },
         },
