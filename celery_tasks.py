@@ -3,6 +3,7 @@ from blueprints.v0.utils.openai_operations import embed_text
 from blueprints.v0.utils.pinecone_operations import pc_upsert
 from celery_setup import celery
 import datetime
+import json
 from blueprints.v0.utils.pinecone_operations import generate_pc_namespace
 from blueprints.v0.utils.mongo_setup import (
     mongo_orgs,
@@ -11,13 +12,16 @@ from blueprints.v0.utils.mongo_setup import (
 )
 from blueprints.v0.utils.pinecone_setup import pc_client_index
 from utils.email import notify_admin
+from redis import Redis
+
+# Initialize Redis connection using the same Redis instance as Celery broker
+redis_client = Redis.from_url(celery.conf.broker_url)
+
+CACHE_TTL = 86400 #24 hours
 
 
 @celery.task
 def save_vectors_task(vector_bases: list, project_id_str: str, db_name):
-    """
-    Task that embeds text via OpenAI and upserts the resulting vectors into Pinecone.
-    """
     vectors = []
     for vector_basis in vector_bases:
         embedding = embed_text(vector_basis["values"])
@@ -27,10 +31,6 @@ def save_vectors_task(vector_bases: list, project_id_str: str, db_name):
 
 
 def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
-    """
-    Fetch Pinecone storage usage for a given project and database namespace.
-    Returns storage usage in MB.
-    """
     namespace = generate_pc_namespace(project_id_str, db_name)
     try:
         index_stats = pc_client_index.describe_index_stats()
@@ -50,14 +50,43 @@ def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
         return 0.0
 
 
+def cache_usage_data(usage_doc: dict):
+    try:
+        # Convert ObjectId to string for JSON serialization
+        usage_doc["project_id"] = str(usage_doc["project_id"])
+
+        serialized_data = json.dumps(usage_doc)
+
+        # Primary cache key (persistent)
+        project_key = f"usage:project:{usage_doc['project_id']}"
+
+        # Store in primary cache (no expiration)
+        redis_client.set(project_key, CACHE_TTL, serialized_data)
+
+    except Exception as e:
+        notify_admin("Usage Caching Failed", f"Failed to cache usage data: {e}")
+
+
+def get_cached_usage(project_id_str: str) -> dict:
+    primary_key = f"usage:project:{project_id_str}"
+
+    # Try primary cache first
+    cached_data = redis_client.get(primary_key)
+
+    # If both caches are empty, run check_usage and try again
+    if cached_data is None:
+        # Run check_usage (synchronously or via a Celery delay)
+        # If you want it asynchronous, use check_usage.delay() instead.
+        check_usage()
+
+        # Attempt to retrieve from cache again
+        cached_data = redis_client.get(primary_key)
+
+    return json.loads(cached_data) if cached_data else None
+
+
 @celery.task
 def check_usage():
-    """
-    1. Checks storage usage (Mongo + Pinecone) across all orgs/projects.
-    2. Stores usage data in Mongo.
-
-    Celery Beat will handle scheduling this task every hour (or at your chosen interval).
-    """
     current_time = datetime.datetime.now()
     usage_documents = []
 
@@ -67,7 +96,6 @@ def check_usage():
         # ----------------------------------------------------------------------
         orgs = mongo_orgs.find({})
         for org in orgs:
-            org_id = org.get("_id")
             org_name = org.get("name")
 
             for project in org.get("projects", []):
@@ -130,28 +158,32 @@ def check_usage():
                 # ----------------------------------------------------------------
                 # Prepare the usage document for this project
                 # ----------------------------------------------------------------
-                usage_documents.append(
-                    {
-                        "timestamp": current_time.replace(second=0, microsecond=0),
-                        "org_id": org_id,
-                        "org_name": org_name,
-                        "project_id": ObjectId(project_id_str),
-                        "project_name": project_name,
-                        "mongo_storage_mb": round(
-                            total_project_mongo_storage / (1024 * 1024), 2
-                        ),
-                        "mongo_index_mb": round(
-                            total_project_mongo_index / (1024 * 1024), 2
-                        ),
-                        "mongo_total_mb": round(
-                            (total_project_mongo_storage + total_project_mongo_index)
-                            / (1024 * 1024),
-                            2,
-                        ),
-                        "pinecone_mb": round(total_project_pinecone, 2),
-                        "database_details": database_details,
-                    }
-                )
+                usage_doc = {
+                    "timestamp": current_time.replace(second=0, microsecond=0),
+                    "org_id": org.get("_id"),  # Kept for Mongo storage reference
+                    "org_name": org_name,
+                    "project_id": ObjectId(project_id_str),
+                    "project_name": project_name,
+                    "mongo_storage_mb": round(
+                        total_project_mongo_storage / (1024 * 1024), 2
+                    ),
+                    "mongo_index_mb": round(
+                        total_project_mongo_index / (1024 * 1024), 2
+                    ),
+                    "mongo_total_mb": round(
+                        (total_project_mongo_storage + total_project_mongo_index)
+                        / (1024 * 1024),
+                        2,
+                    ),
+                    "pinecone_mb": round(total_project_pinecone, 2),
+                    "database_details": database_details,
+                }
+
+                usage_documents.append(usage_doc)
+                # Cache each usage document using project-level keys
+                cache_usage_data(
+                    usage_doc.copy()
+                )  # Use copy to prevent modification of the original
 
         # ----------------------------------------------------------------------
         # B) Insert Usage Data Into mongo_usage
