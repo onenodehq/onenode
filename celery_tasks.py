@@ -17,7 +17,7 @@ from redis import Redis
 # Initialize Redis connection using the same Redis instance as Celery broker
 redis_client = Redis.from_url(celery.conf.broker_url)
 
-CACHE_TTL = 86400 #24 hours
+CACHE_TTL = 86400  # 24 hours
 
 
 @celery.task
@@ -54,6 +54,8 @@ def cache_usage_data(usage_doc: dict):
     try:
         # Convert ObjectId to string for JSON serialization
         usage_doc["project_id"] = str(usage_doc["project_id"])
+        usage_doc["org_id"] = str(usage_doc["org_id"])
+        usage_doc["timestamp"] = str(usage_doc["timestamp"])
 
         serialized_data = json.dumps(usage_doc)
 
@@ -61,7 +63,7 @@ def cache_usage_data(usage_doc: dict):
         project_key = f"usage:project:{usage_doc['project_id']}"
 
         # Store in primary cache (no expiration)
-        redis_client.set(project_key, CACHE_TTL, serialized_data)
+        redis_client.set(project_key, serialized_data, ex=CACHE_TTL)
 
     except Exception as e:
         notify_admin("Usage Caching Failed", f"Failed to cache usage data: {e}")
@@ -160,7 +162,7 @@ def check_usage():
                 # ----------------------------------------------------------------
                 usage_doc = {
                     "timestamp": current_time.replace(second=0, microsecond=0),
-                    "org_id": org.get("_id"),  # Kept for Mongo storage reference
+                    "org_id": org.get("_id"),
                     "org_name": org_name,
                     "project_id": ObjectId(project_id_str),
                     "project_name": project_name,
