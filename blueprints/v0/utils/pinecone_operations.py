@@ -46,7 +46,6 @@ def create_vector_bases(
     collection_name: str,
     doc_id: str,
     path: str,
-    emb_model: str = "text-embedding-3-small",
 ) -> list:
     vector_bases = []
     for i, chunk in enumerate(chunks):
@@ -61,7 +60,6 @@ def create_vector_bases(
             ),
             "values": chunk,
             "metadata": metadata,
-            "model": emb_model,
         }
         vector_bases.append(vector_basis)
     return vector_bases
@@ -90,6 +88,7 @@ def generate_pc_metadata(
     doc_id: str,
     path: str,
     type: str = "text",
+    emb_model: str = "text-embedding-3-small",
 ):
     metadata = {
         "project_id": project_id,
@@ -98,6 +97,7 @@ def generate_pc_metadata(
         "doc_id": doc_id,
         "path": path,
         "type": type,
+        "emb_model": emb_model,
     }
 
     return metadata
@@ -141,11 +141,13 @@ def pc_client_query(
     collection_name: str,
     top_k: int,
     include_values: bool,
+    model: str,
     doc_ids: list[str] = None,
 ):
 
     filter_criteria = {
         "collection_name": {"$eq": collection_name},
+        "emb_model": {"$eq": model},
     }
     if doc_ids:
         filter_criteria.update({"doc_id": {"$in": doc_ids}})

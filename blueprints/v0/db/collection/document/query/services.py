@@ -23,9 +23,10 @@ def query_chunks_service(
     top_k: int,
     projection: dict,
     include_values: bool,
+    emb_model: str,
 ) -> list[dict]:
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
-    vector: list[float] = embed_text(text)
+    vector: list[float] = embed_text(text, emb_model)
 
     if projection == None:
         mongo_projection = {"_id": 1}
@@ -45,6 +46,7 @@ def query_chunks_service(
             collection_name,
             top_k,
             include_values,
+            emb_model,
             doc_ids_to_filter,
         )
     else:
@@ -56,6 +58,7 @@ def query_chunks_service(
             collection_name,
             top_k,
             include_values,
+            emb_model,
         )
 
     matches = query_res["matches"]
@@ -68,17 +71,19 @@ def query_chunks_service(
         }
     )
 
-    mongo_projection.update({
-        item["metadata"]["path"]: 1
-        for item in matches
-        if "metadata" in item and "path" in item["metadata"]
-    })
+    mongo_projection.update(
+        {
+            item["metadata"]["path"]: 1
+            for item in matches
+            if "metadata" in item and "path" in item["metadata"]
+        }
+    )
 
     matched_docs = list(
         mongo_collection.find({"_id": {"$in": unique_doc_ids}}, mongo_projection)
     )
     doc_lookup = {str(doc["_id"]): doc for doc in matched_docs}
-    
+
     data = compose_query_response(
         matches,
         doc_lookup,

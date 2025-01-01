@@ -10,7 +10,7 @@ from blueprints.v0.utils.mongo_setup import (
     mongo_client_cluster,
     mongo_usage,
 )
-from blueprints.v0.utils.pinecone_setup import DIMENSIONS, pc_client_index
+from blueprints.v0.utils.pinecone_setup import pc_client_index
 from utils.email import notify_admin
 from redis import Redis
 
@@ -30,8 +30,10 @@ def save_vectors_task(
     vectors = []
     total_vector_dimensions = 0
     for vector_basis in vector_bases:
-        embedding = embed_text(vector_basis["values"])
-        total_vector_dimensions += DIMENSIONS
+        embedding = embed_text(
+            vector_basis["values"], vector_bases["metadata"]["emb_model"]
+        )
+        total_vector_dimensions += len(embedding)
         vector_basis.update({"values": embedding})
         vectors.append(vector_basis)
     pc_upsert(vectors, project_id_str, db_name)

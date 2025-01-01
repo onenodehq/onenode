@@ -1,3 +1,4 @@
+from math import e
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from blueprints.v0.models.emb_image import EmbImage
 from blueprints.v0.models.emb_text import EmbText
@@ -37,6 +38,7 @@ def process_document(
                 value: dict
 
                 text = value["text"]
+                emb_model = value["emb_model"]
                 max_chunk_size = value["max_chunk_size"]
                 chunk_overlap = value["chunk_overlap"]
                 is_separator_regex = value["is_separator_regex"]
@@ -59,6 +61,7 @@ def process_document(
                         doc_id,
                         parent_path,
                         "text",
+                        emb_model,
                     )
 
                     vector_bases = create_vector_bases(
@@ -77,6 +80,7 @@ def process_document(
                     raise CustomAPIError(f"Field value is invalid - {data}")
                 value: dict
 
+                emb_model = value["emb_model"]
                 mime_type: str = value["mimeType"]
                 base64_image: str = value.pop("data")
                 max_chunk_size = value["max_chunk_size"]
@@ -106,6 +110,7 @@ def process_document(
                             doc_id,
                             parent_path,
                             "image",
+                            emb_model,
                         )
 
                         vector_bases = create_vector_bases(
