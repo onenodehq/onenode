@@ -15,9 +15,7 @@ def create_client_collection(project_id: str, db_name: str, collection_name: str
     db.create_collection(name=collection_name)
 
 
-def create_collection_service(
-    org_id: str, project_id: str, db_name: str, collection_name: str
-):
+def create_collection_service(project_id: str, db_name: str, collection_name: str):
     create_client_collection(
         project_id,
         db_name,

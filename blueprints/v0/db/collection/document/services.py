@@ -14,8 +14,12 @@ from blueprints.v0.utils.mongo_operations import (
     get_doc_ids_by_filter,
 )
 from blueprints.v0.utils.pinecone_operations import pc_delete_with_doc_ids
-from blueprints.v0.utils.pinecone_setup import pc
-from celery_tasks import save_vectors_task
+from celery_tasks import (
+    save_vectors_task,
+    decrement_collection_usage_cache,
+    update_vectors_task,
+)
+from utils.usage import check_current_usage
 
 
 def create_docs_service(
@@ -23,8 +27,7 @@ def create_docs_service(
 ):
 
     if g.plan == "free":
-        check_mongo_storage(project_id, db_name)
-        check_pc_storage(project_id, db_name)
+        check_current_usage(project_id, db_name, collection_name)
 
     mongo_collection = get_client_collection(
         project_id, db_name, collection_name, must_exist=False
@@ -48,7 +51,9 @@ def create_docs_service(
     inserted_ids = insert_many_result.inserted_ids
 
     if all_vector_bases:
-        task = save_vectors_task.delay(all_vector_bases, project_id, db_name)
+        task = save_vectors_task.delay(
+            all_vector_bases, project_id, db_name, collection_name, documents
+        )
 
     return {
         "inserted_ids": inserted_ids,
@@ -95,7 +100,7 @@ def update_docs_service(
     )
 
     if all_vector_bases:
-        task = save_vectors_task.delay(all_vector_bases, project_id, db_name)
+        task = update_vectors_task.delay(all_vector_bases, project_id, db_name)
 
     return {
         "matched_count": update_result.matched_count,
@@ -127,4 +132,12 @@ def delete_docs_service(
         collection_name,
         doc_ids,
     )
+
+    if doc_ids:
+        decrement_collection_usage_cache.delay(
+            project_id_str=project_id,
+            db_name=db_name,
+            collection_name=collection_name,
+            doc_delta=len(doc_ids),
+        )
     return {"deleted_count": delete_result.deleted_count}

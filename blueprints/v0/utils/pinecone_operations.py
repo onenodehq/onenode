@@ -46,6 +46,7 @@ def create_vector_bases(
     collection_name: str,
     doc_id: str,
     path: str,
+    emb_model: str = "text-embedding-3-small",
 ) -> list:
     vector_bases = []
     for i, chunk in enumerate(chunks):
@@ -60,6 +61,7 @@ def create_vector_bases(
             ),
             "values": chunk,
             "metadata": metadata,
+            "model": emb_model,
         }
         vector_bases.append(vector_basis)
     return vector_bases

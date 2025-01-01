@@ -40,7 +40,6 @@ def create_collection(org_id, project_id, db_name):
     check_project_permission(user_id, org_id, project_id)
 
     create_collection_service(
-        org_id,
         project_id,
         db_name,
         collection_name,

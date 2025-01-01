@@ -1,4 +1,4 @@
-from bson import ObjectId
+from bson import BSON, ObjectId
 from blueprints.v0.utils.openai_operations import embed_text
 from blueprints.v0.utils.pinecone_operations import pc_upsert
 from celery_setup import celery
@@ -10,7 +10,7 @@ from blueprints.v0.utils.mongo_setup import (
     mongo_client_cluster,
     mongo_usage,
 )
-from blueprints.v0.utils.pinecone_setup import pc_client_index
+from blueprints.v0.utils.pinecone_setup import DIMENSIONS, pc_client_index
 from utils.email import notify_admin
 from redis import Redis
 
@@ -20,7 +20,33 @@ CACHE_TTL = 86400  # 24 hours
 
 
 @celery.task
-def save_vectors_task(vector_bases: list, project_id_str: str, db_name):
+def save_vectors_task(
+    vector_bases: list,
+    project_id_str: str,
+    db_name: str,
+    collection_name: str,
+    documents: list[dict],
+):
+    vectors = []
+    total_vector_dimensions = 0
+    for vector_basis in vector_bases:
+        embedding = embed_text(vector_basis["values"])
+        total_vector_dimensions += DIMENSIONS
+        vector_basis.update({"values": embedding})
+        vectors.append(vector_basis)
+    pc_upsert(vectors, project_id_str, db_name)
+
+    increment_collection_usage_cache(
+        project_id_str=project_id_str,
+        db_name=db_name,
+        collection_name=collection_name,
+        inserted_documents=documents,
+        total_vector_dimensions=total_vector_dimensions,
+    )
+
+
+@celery.task
+def update_vectors_task(vector_bases: list, project_id_str: str, db_name):
     vectors = []
     for vector_basis in vector_bases:
         embedding = embed_text(vector_basis["values"])
@@ -144,16 +170,18 @@ def record_usage():
                             coll_idx_size = coll_stats.get("totalIndexSize", 0)
                             doc_count = coll_stats.get("count", 0)
 
+                            pc_mb = fetch_pinecone_usage_for_collection(
+                                project_id_str, db_name, coll_name
+                            )
+
                             # Calculate average (storage + index) per document
                             if doc_count > 0:
                                 avg_doc_bytes = (coll_size + coll_idx_size) / doc_count
                                 avg_doc_mb = round(avg_doc_bytes / (1024 * 1024), 4)
+                                avg_pc_mb = pc_mb / doc_count
                             else:
                                 avg_doc_mb = 0.0
-
-                            pinecone_mb = fetch_pinecone_usage_for_collection(
-                                project_id_str, db_name, coll_name
-                            )
+                                avg_pc_mb = 0.0
 
                             collection_details.append(
                                 {
@@ -165,7 +193,8 @@ def record_usage():
                                         (coll_size + coll_idx_size) / (1024 * 1024), 2
                                     ),
                                     "avg_doc_mb": avg_doc_mb,
-                                    "pinecone_mb": pinecone_mb,
+                                    "pc_mb": pc_mb,
+                                    "avg_pc_mb": avg_pc_mb,
                                 }
                             )
 
@@ -183,7 +212,7 @@ def record_usage():
                                     / (1024 * 1024),
                                     2,
                                 ),
-                                "pinecone_mb": round(pinecone_usage, 2),
+                                "pc_mb": round(pinecone_usage, 2),
                                 "collection_details": collection_details,
                             }
                         )
@@ -212,7 +241,7 @@ def record_usage():
                         / (1024 * 1024),
                         2,
                     ),
-                    "pinecone_mb": round(total_project_pinecone, 2),
+                    "pc_mb": round(total_project_pinecone, 2),
                     "database_details": database_details,
                 }
 
@@ -233,4 +262,218 @@ def record_usage():
         notify_admin(
             "Usage Sampling Failed",
             f"An unexpected error occurred while checking usage: {e}",
+        )
+
+
+def increment_collection_usage_cache(
+    project_id_str: str,
+    db_name: str,
+    collection_name: str,
+    inserted_documents: list,
+    total_vector_dimensions: int,
+):
+
+    try:
+        usage_doc = get_cached_usage(project_id_str)
+        if not usage_doc:
+            notify_admin(
+                "Cache Miss",
+                f"No cached usage document found for project {project_id_str}. "
+                f"Cannot update usage after save.",
+            )
+            return
+
+        # ----------------------------------------------------------------------
+        # 1. Locate the correct DB and collection in the usage document
+        # ----------------------------------------------------------------------
+        db_detail_list = usage_doc.get("database_details", [])
+        db_detail = next(
+            (db for db in db_detail_list if db.get("db_name") == db_name), None
+        )
+        if not db_detail:
+            notify_admin(
+                "Database Not Found",
+                f"No database '{db_name}' found in usage cache for project {project_id_str}.",
+            )
+            return
+
+        coll_detail_list = db_detail.get("collection_details", [])
+        coll_detail = next(
+            (
+                c
+                for c in coll_detail_list
+                if c.get("collection_name") == collection_name
+            ),
+            None,
+        )
+        if not coll_detail:
+            notify_admin(
+                "Collection Not Found",
+                f"No collection '{collection_name}' found in usage cache for project {project_id_str}.",
+            )
+            return
+
+        # ----------------------------------------------------------------------
+        # 2. Calculate actual Mongo doc size in bytes, then MB
+        # ----------------------------------------------------------------------
+        total_new_docs_bytes = 0
+        for doc in inserted_documents:
+            # Example: encode to BSON and measure size
+            total_new_docs_bytes += len(BSON.encode(doc))
+
+        total_new_docs_mb = round(total_new_docs_bytes / (1024 * 1024), 4)
+
+        # ----------------------------------------------------------------------
+        # 3. Calculate Pinecone usage (bytes -> MB)
+        #    Assume 4 bytes per dimension
+        # ----------------------------------------------------------------------
+        total_vector_bytes = total_vector_dimensions * 4
+        total_vector_mb = round(total_vector_bytes / (1024 * 1024), 4)
+
+        # ----------------------------------------------------------------------
+        # 4. Update collection-level stats
+        # ----------------------------------------------------------------------
+        current_doc_count = coll_detail.get("document_count", 0)
+        new_doc_count = current_doc_count + len(inserted_documents)
+
+        coll_detail["document_count"] = new_doc_count
+        coll_detail["total_mb"] = round(
+            coll_detail.get("total_mb", 0.0) + total_new_docs_mb, 2
+        )
+        coll_detail["pc_mb"] = round(coll_detail.get("pc_mb", 0.0) + total_vector_mb, 2)
+
+        # ----------------------------------------------------------------------
+        # 5. Update DB-level usage
+        # ----------------------------------------------------------------------
+        db_detail["mongo_total_mb"] = round(
+            db_detail.get("mongo_total_mb", 0.0) + total_new_docs_mb, 2
+        )
+        db_detail["pc_mb"] = round(db_detail.get("pc_mb", 0.0) + total_vector_mb, 2)
+
+        # ----------------------------------------------------------------------
+        # 6. Update project-level usage
+        # ----------------------------------------------------------------------
+        usage_doc["mongo_total_mb"] = round(
+            usage_doc.get("mongo_total_mb", 0.0) + total_new_docs_mb, 2
+        )
+        usage_doc["pc_mb"] = round(usage_doc.get("pc_mb", 0.0) + total_vector_mb, 2)
+
+        # ----------------------------------------------------------------------
+        # 7. Re-cache the updated usage doc
+        # ----------------------------------------------------------------------
+        cache_usage_data(usage_doc)
+
+    except Exception as e:
+        notify_admin(
+            "Cache Update Failed [Save]",
+            f"Failed to update usage cache (SAVE) for project {project_id_str}, "
+            f"db {db_name}, collection {collection_name}: {e}",
+        )
+
+
+@celery.task
+def decrement_collection_usage_cache(
+    project_id_str: str,
+    db_name: str,
+    collection_name: str,
+    doc_delta: int,
+):
+    try:
+        usage_doc = get_cached_usage(project_id_str)
+        if not usage_doc:
+            notify_admin(
+                "Cache Miss",
+                f"No cached usage document found for project {project_id_str}. "
+                f"Cannot update usage after delete.",
+            )
+            return
+
+        # Find DB
+        db_details = usage_doc.get("database_details", [])
+        db_detail = next(
+            (db for db in db_details if db.get("db_name") == db_name), None
+        )
+        if not db_detail:
+            notify_admin(
+                "Database Not Found",
+                f"No database '{db_name}' found in usage cache for project {project_id_str}.",
+            )
+            return
+
+        # Find collection
+        coll_details = db_detail.get("collection_details", [])
+        coll_detail = next(
+            (c for c in coll_details if c.get("collection_name") == collection_name),
+            None,
+        )
+        if not coll_detail:
+            notify_admin(
+                "Collection Not Found",
+                f"No collection '{collection_name}' found in usage cache for project {project_id_str}.",
+            )
+            return
+
+        current_doc_count = coll_detail.get("document_count", 0)
+        avg_mongo_per_doc = coll_detail.get("avg_doc_mb", 0.0)  # (storage + index)
+        avg_pinecone_per_doc = coll_detail.get("avg_pc_mb", 0.0)
+
+        # Prevent negative doc_count
+        if doc_delta > current_doc_count:
+            doc_delta = current_doc_count
+
+        new_doc_count = current_doc_count - doc_delta
+
+        # Calculate the approximate MB usage to remove
+        mongo_delta_mb = avg_mongo_per_doc * doc_delta
+        pinecone_delta_mb = avg_pinecone_per_doc * doc_delta
+
+        # Update the collection-level stats
+        coll_detail["document_count"] = new_doc_count
+        coll_detail["total_mb"] = round(
+            coll_detail.get("total_mb", 0.0) - mongo_delta_mb, 2
+        )
+        coll_detail["pc_mb"] = round(
+            coll_detail.get("pc_mb", 0.0) - pinecone_delta_mb, 2
+        )
+        if coll_detail["total_mb"] < 0:
+            coll_detail["total_mb"] = 0
+        if coll_detail["pc_mb"] < 0:
+            coll_detail["pc_mb"] = 0
+
+        # Update DB-level usage
+        db_detail["mongo_total_mb"] = round(
+            db_detail.get("mongo_total_mb", 0.0) - mongo_delta_mb,
+            2,
+        )
+        db_detail["pc_mb"] = round(
+            db_detail.get("pc_mb", 0.0) - pinecone_delta_mb,
+            2,
+        )
+        if db_detail["mongo_total_mb"] < 0:
+            db_detail["mongo_total_mb"] = 0
+        if db_detail["pc_mb"] < 0:
+            db_detail["pc_mb"] = 0
+
+        # Update project-level usage
+        usage_doc["mongo_total_mb"] = round(
+            usage_doc.get("mongo_total_mb", 0.0) - mongo_delta_mb,
+            2,
+        )
+        usage_doc["pc_mb"] = round(
+            usage_doc.get("pc_mb", 0.0) - pinecone_delta_mb,
+            2,
+        )
+        if usage_doc["mongo_total_mb"] < 0:
+            usage_doc["mongo_total_mb"] = 0
+        if usage_doc["pc_mb"] < 0:
+            usage_doc["pc_mb"] = 0
+
+        # Save updated usage doc back to cache
+        cache_usage_data(usage_doc)
+
+    except Exception as e:
+        notify_admin(
+            "Cache Update Failed [Delete]",
+            f"Failed to update usage cache (DELETE) for project {project_id_str}, "
+            f"db {db_name}, collection {collection_name}: {e}",
         )
