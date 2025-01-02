@@ -10,7 +10,7 @@ from utils.email import notify_admin
 # Load environment variables
 load_dotenv()
 
-from flask import jsonify
+from flask import jsonify, request
 from blueprints.private.routes import private_blueprint
 from blueprints.v0.routes import v0_blueprint_root
 from flask_cors import CORS
@@ -49,17 +49,26 @@ def handle_auth_error(ex):
 
 @application.errorhandler(Exception)
 def handle_exception(e):
-    logger.error(f"AuthError: {e}", exc_info=True)
+    logger.error(f"Exception: {e}", exc_info=True)
     response = {
         "status": "error",
         "code": 500,
         "message": "An unexpected error occurred.",
     }
     notify_admin(
-        f"An unexpected error occurred: {e}",
         "An unexpected error occurred",
+        f"An unexpected error occurred: {e}",
     )
     return jsonify(response), 500
+
+
+@application.errorhandler(404)
+def not_found(error):
+    application.logger.warning(
+        f"404 Not Found: {request.method} {request.path} from {request.remote_addr} "
+        f"User-Agent: {request.headers.get('User-Agent')}"
+    )
+    return jsonify(error="Not Found"), 404
 
 
 @application.errorhandler(CustomAPIError)
