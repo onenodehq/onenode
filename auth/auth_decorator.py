@@ -38,6 +38,8 @@ def requires_auth(f):
             decoded_token = decode_nextauth_session(token)
             g.user_id = decoded_token["user"]["_id"]
             g.email = decoded_token["user"]["email"]
+            g.given_name = decoded_token["user"].get("given_name", "")
+            g.family_name = decoded_token["user"].get("family_name", "")
         except Exception as e:
             raise AuthError("Token is invalid or expired!")
         # If the token is valid, proceed to the next function
