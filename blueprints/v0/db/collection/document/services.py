@@ -27,7 +27,7 @@ def create_docs_service(
 ):
 
     if g.plan == "free":
-        check_current_usage(project_id, db_name, collection_name)
+        check_current_usage(project_id)
 
     mongo_collection = get_client_collection(
         project_id, db_name, collection_name, must_exist=False

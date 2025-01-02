@@ -21,7 +21,7 @@ def require_api_key(f):
         stored_hash = mongo_api_keys.find_one(filter={"_id": hashed_api_key})
         if not stored_hash:
             raise AuthError("Unauthorized access")
-        g.plan = stored_hash.get("plan", {}).get("type", "free")
+        g.plan = stored_hash.get("plan", "free")
 
         permissions = stored_hash.get("permissions")
 
