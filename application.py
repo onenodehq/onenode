@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from errors import AuthError, CustomAPIError
 from pymongo.errors import InvalidOperation
 
+from utils.email import notify_admin
+
 # Load environment variables
 load_dotenv()
 
@@ -53,6 +55,10 @@ def handle_exception(e):
         "code": 500,
         "message": "An unexpected error occurred.",
     }
+    notify_admin(
+        f"An unexpected error occurred: {e}",
+        "An unexpected error occurred",
+    )
     return jsonify(response), 500
 
 
