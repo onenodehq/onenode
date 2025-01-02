@@ -3,7 +3,7 @@ from blueprints.v0.utils.pinecone_setup import (
     pc_admin_index,
     pc_client_index,
 )
-
+from utils.email import notify_admin
 
 dummy_vector = [0] * DIMENSIONS
 
@@ -203,3 +203,45 @@ def generate_pc_id(
 def generate_pc_namespace(project_id: str, db_name: str):
     namespace = project_id + "_" + db_name
     return namespace
+
+
+def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
+    namespace = generate_pc_namespace(project_id_str, db_name)
+    try:
+        index_stats = pc_client_index.describe_index_stats()
+        namespace_stats = (
+            index_stats.get("namespaces", {}).get(namespace, {}).get("vector_count", 0)
+        )
+        # Estimate storage based on vector count (assuming ~6KB per vector)
+        storage_mb = (namespace_stats * 6) / 1024  # Convert KB to MB
+        return round(storage_mb, 2)
+    except Exception as e:
+        notify_admin(
+            "Usage Sampling Failed",
+            f"Failed to fetch Pinecone stats for namespace {namespace}: {e}",
+        )
+        return 0.0
+
+
+def fetch_pinecone_usage_for_collection(
+    project_id_str: str, db_name: str, collection_name: str
+) -> float:
+    namespace = generate_pc_namespace(project_id_str, db_name)
+    try:
+        # Filter by collection name; your actual namespace might differ if you
+        # combine project_id_str, db_name, etc. Adjust as needed.
+        index_stats = pc_client_index.describe_index_stats(
+            filter={"collection_name": collection_name}
+        )
+        namespace_stats = (
+            index_stats.get("namespaces", {}).get(namespace, {}).get("vector_count", 0)
+        )
+        # Estimate storage based on vector count (assuming ~6KB per vector)
+        storage_mb = (namespace_stats * 6) / 1024  # Convert KB to MB
+        return round(storage_mb, 2)
+    except Exception as e:
+        notify_admin(
+            "Usage Sampling Failed",
+            f"Failed to fetch Pinecone stats for collection {collection_name}: {e}",
+        )
+        return 0.0

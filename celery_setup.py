@@ -33,6 +33,10 @@ def make_celery(app):
                 "task": "celery_tasks.record_usage",  # Update with your task path
                 "schedule": crontab(minute="0"),  # Every hour at minute 0
             },
+            "check_and_update_expired_plans": {
+                "task": "celery_tasks.check_and_update_expired_plans",
+                "schedule": crontab(hour=0, minute=0),  # Every day at midnight
+            },
         },
     )
 
