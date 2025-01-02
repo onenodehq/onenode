@@ -1,4 +1,6 @@
 from bson import ObjectId
+from flask import g
+import stripe
 from blueprints.v0.utils.mongo_setup import mongo_orgs
 
 
@@ -16,7 +18,9 @@ def create_default_org_service(user_id: str):
             "name": new_org_name,
             "owners": [user_id],
             "readers": [],
-            "plan": "free",
+            "plan": {
+                "type": "free",
+            },
             "projects": [
                 {
                     "_id": new_project_id,
@@ -44,3 +48,26 @@ def list_orgs_service(user_id: str):
 def get_org_service(org_id: str):
     org = mongo_orgs.find_one({"_id": ObjectId(org_id)})
     return org
+
+
+def create_stripe_customer_service(org_id: str):
+    user_email = g.email
+    user_name = g.given_name + " " + g.family_name
+    metadata = {
+        "org_id": org_id,
+    }
+
+    customer = stripe.Customer.create(
+        email=user_email,
+        name=user_name,
+        metadata=metadata,
+    )
+
+    mongo_orgs.update_one(
+        {
+            "_id": ObjectId(org_id),
+        },
+        {"$set": {"stripe_id": customer.id}},
+    )
+
+    return

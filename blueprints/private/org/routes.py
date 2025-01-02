@@ -3,6 +3,7 @@ from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from blueprints.private.org.services import (
     create_default_org_service,
+    create_stripe_customer_service,
     get_org_service,
     list_orgs_service,
 )
@@ -10,11 +11,18 @@ from bson import json_util
 from blueprints.private.org.project.routes import private_blueprint_project
 
 
-private_blueprint_org = Blueprint(
-    "private_org", __name__, url_prefix="/org"
-)
+private_blueprint_org = Blueprint("private_org", __name__, url_prefix="/org")
 
 private_blueprint_org.register_blueprint(private_blueprint_project)
+
+
+@private_blueprint_org.route("<string:org_id>/stripe", methods=["POST"])
+@require_admin_api_key
+@requires_auth
+def create_stripe_customer(org_id):
+    create_stripe_customer_service(org_id)
+
+    return jsonify({"status": "success"}), 201
 
 
 @private_blueprint_org.route("/default", methods=["POST"])

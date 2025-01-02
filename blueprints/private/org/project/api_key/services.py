@@ -35,13 +35,11 @@ def save_api_key(
     )
     if not org:
         raise Exception("Organization not found")
-    plan = org.get("plan", "free")
 
     new_api_key = {
         "_id": hashed_api_key,
         "name": key_name,
         "owner": user_id,
-        "plan": plan,
         "permissions": {
             "projects": [
                 {
