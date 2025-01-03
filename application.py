@@ -71,6 +71,15 @@ def not_found(error):
     return jsonify(error="Not Found"), 404
 
 
+@application.errorhandler(405)
+def method_not_allowed(error):
+    application.logger.warning(
+        f"405 Method Not Allowed: {request.method} {request.path} from {request.remote_addr} "
+        f"User-Agent: {request.headers.get('User-Agent')}"
+    )
+    return (jsonify(error="Method Not Allowed"), 405)
+
+
 @application.errorhandler(CustomAPIError)
 def handle_path_not_found_error(e):
     response = {
