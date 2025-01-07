@@ -70,4 +70,4 @@ def create_stripe_customer_service(org_id: str):
         {"$set": {"stripe_id": customer.id}},
     )
 
-    return
+    return customer.id

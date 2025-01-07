@@ -8,6 +8,7 @@ from blueprints.private.services import (
 from blueprints.private.org.routes import private_blueprint_org
 from blueprints.private.user.routes import private_blueprint_user
 from blueprints.private.onenode.routes import private_onenode_blueprint
+from blueprints.private.webhook.routes import private_webhook_blueprint
 
 private_blueprint = Blueprint(
     "private",
@@ -17,6 +18,7 @@ private_blueprint = Blueprint(
 private_blueprint.register_blueprint(private_blueprint_org)
 private_blueprint.register_blueprint(private_blueprint_user)
 private_blueprint.register_blueprint(private_onenode_blueprint)
+private_blueprint.register_blueprint(private_webhook_blueprint)
 
 
 @private_blueprint.route("/feedback", methods=["POST"])

@@ -20,9 +20,9 @@ private_blueprint_org.register_blueprint(private_blueprint_project)
 @require_admin_api_key
 @requires_auth
 def create_stripe_customer(org_id):
-    create_stripe_customer_service(org_id)
+    customer_id = create_stripe_customer_service(org_id)
 
-    return jsonify({"status": "success"}), 201
+    return jsonify({"status": "success", "customer_id": customer_id}), 201
 
 
 @private_blueprint_org.route("/default", methods=["POST"])
