@@ -1,7 +1,8 @@
 from blueprints.v0.utils.pinecone_setup import (
     DIMENSIONS,
     pc_admin_index,
-    pc_client_index,
+    pc_index_1536,
+    pc_index_3072,
 )
 from utils.email import notify_admin
 
@@ -31,11 +32,11 @@ def pc_delete_with_doc_ids(
     ids_to_delete = []
     for doc_id in doc_ids:
         prefix = generate_pc_id_prefix(project_id, db_name, collection_name, doc_id)
-        for ids in pc_client_index.list(prefix=prefix, namespace=namespace):
+        for ids in pc_index_1536.list(prefix=prefix, namespace=namespace):
             ids_to_delete.extend(ids)
         # If there are any IDs to delete, perform the deletion
     if ids_to_delete:
-        pc_client_index.delete(ids=ids_to_delete, namespace=namespace)
+        pc_index_1536.delete(ids=ids_to_delete, namespace=namespace)
 
 
 def create_vector_bases(
@@ -65,20 +66,24 @@ def create_vector_bases(
     return vector_bases
 
 
-def pc_upsert(vectors: list, project_id: str, db_name):
+def pc_upsert(vectors: list, project_id: str, db_name: str, dimensions: int):
     namespace = generate_pc_namespace(project_id, db_name)
-    result = pc_client_index.upsert(vectors=vectors, namespace=namespace)
-    return result
+    if dimensions == 1536:
+        result = pc_index_1536.upsert(vectors=vectors, namespace=namespace)
+        return result
+    elif dimensions == 3072:
+        result = pc_index_3072.upsert(vectors=vectors, namespace=namespace)
+        return result
 
 
 def pc_client_delete_collection(project_id: str, db_name: str, collection_name: str):
     collection_prefix = generate_pc_id_prefix(project_id, db_name, collection_name)
     ids_to_delete = []
-    for ids in pc_client_index.list(prefix=collection_prefix):
+    for ids in pc_index_1536.list(prefix=collection_prefix):
         ids_to_delete.extend(ids)
 
     if ids_to_delete:
-        pc_client_index.delete(ids=ids_to_delete)
+        pc_index_1536.delete(ids=ids_to_delete)
 
 
 def generate_pc_metadata(
@@ -153,7 +158,7 @@ def pc_client_query(
         filter_criteria.update({"doc_id": {"$in": doc_ids}})
 
     namespace = generate_pc_namespace(project_id, db_name)
-    result = pc_client_index.query(
+    result = pc_index_1536.query(
         vector=vector,
         namespace=namespace,
         filter=filter_criteria,
@@ -171,7 +176,7 @@ def get_pc_ids_by_doc_ids(
     pc_ids = []
     for doc_id in doc_ids:
         prefix = generate_pc_id_prefix(project_id, db_name, collection_name, doc_id)
-        for ids in pc_client_index.list(prefix=prefix):
+        for ids in pc_index_1536.list(prefix=prefix):
             pc_ids.extend(ids)
 
     return pc_ids
@@ -208,7 +213,7 @@ def generate_pc_namespace(project_id: str, db_name: str):
 def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
     namespace = generate_pc_namespace(project_id_str, db_name)
     try:
-        index_stats = pc_client_index.describe_index_stats()
+        index_stats = pc_index_1536.describe_index_stats()
         namespace_stats = (
             index_stats.get("namespaces", {}).get(namespace, {}).get("vector_count", 0)
         )
@@ -230,7 +235,7 @@ def fetch_pinecone_usage_for_collection(
     try:
         # Filter by collection name; your actual namespace might differ if you
         # combine project_id_str, db_name, etc. Adjust as needed.
-        index_stats = pc_client_index.describe_index_stats(
+        index_stats = pc_index_1536.describe_index_stats(
             filter={"collection_name": collection_name}
         )
         namespace_stats = (

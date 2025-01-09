@@ -3,7 +3,7 @@ from blueprints.v0.utils.mongo_setup import MONG0_FREE_STORAGE_LIMIT_MB
 from blueprints.v0.utils.pinecone_operations import generate_pc_namespace
 from blueprints.v0.utils.pinecone_setup import (
     PC_FREE_STORAGE_LIMIT_MB,
-    pc_client_index,
+    pc_index_1536,
 )
 from errors import CustomAPIError
 
@@ -26,7 +26,7 @@ def check_mongo_storage(project_id: str, db_name: str):
 
 def check_pc_storage(project_id: str, db_name: str):
     namespace = generate_pc_namespace(project_id, db_name)
-    stats = pc_client_index.describe_index_stats()
+    stats = pc_index_1536.describe_index_stats()
     dimension = stats.get("dimension", 0)
     namespaces = stats.get("namespaces", {})
     vector_count = namespaces.get(namespace, {}).get("vector_count", 0)
