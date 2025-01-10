@@ -29,14 +29,20 @@ def pc_delete_with_doc_ids(
     project_id: str, db_name: str, collection_name: str, doc_ids: list[str]
 ):
     namespace = generate_pc_namespace(project_id, db_name)
-    ids_to_delete = []
+    ids_to_delete_1536 = []
+    ids_to_delete_3072 = []
     for doc_id in doc_ids:
         prefix = generate_pc_id_prefix(project_id, db_name, collection_name, doc_id)
         for ids in pc_index_1536.list(prefix=prefix, namespace=namespace):
-            ids_to_delete.extend(ids)
-        # If there are any IDs to delete, perform the deletion
-    if ids_to_delete:
-        pc_index_1536.delete(ids=ids_to_delete, namespace=namespace)
+            ids_to_delete_1536.extend(ids)
+
+        for ids in pc_index_3072.list(prefix=prefix, namespace=namespace):
+            ids_to_delete_3072.extend(ids)
+
+    if ids_to_delete_1536:
+        pc_index_1536.delete(ids=ids_to_delete_1536, namespace=namespace)
+    if ids_to_delete_3072:
+        pc_index_3072.delete(ids=ids_to_delete_3072, namespace=namespace)
 
 
 def create_vector_bases(
@@ -78,12 +84,17 @@ def pc_upsert(vectors: list, project_id: str, db_name: str, dimensions: int):
 
 def pc_client_delete_collection(project_id: str, db_name: str, collection_name: str):
     collection_prefix = generate_pc_id_prefix(project_id, db_name, collection_name)
-    ids_to_delete = []
+    ids_to_delete_1536 = []
+    ids_to_delete_3072 = []
     for ids in pc_index_1536.list(prefix=collection_prefix):
-        ids_to_delete.extend(ids)
+        ids_to_delete_1536.extend(ids)
+    for ids in pc_index_3072.list(prefix=collection_prefix):
+        ids_to_delete_3072.extend(ids)
 
-    if ids_to_delete:
-        pc_index_1536.delete(ids=ids_to_delete)
+    if ids_to_delete_1536:
+        pc_index_1536.delete(ids=ids_to_delete_1536)
+    if ids_to_delete_3072:
+        pc_index_3072.delete(ids=ids_to_delete_3072)
 
 
 def generate_pc_metadata(
@@ -158,28 +169,29 @@ def pc_client_query(
         filter_criteria.update({"doc_id": {"$in": doc_ids}})
 
     namespace = generate_pc_namespace(project_id, db_name)
-    result = pc_index_1536.query(
-        vector=vector,
-        namespace=namespace,
-        filter=filter_criteria,
-        top_k=top_k,
-        include_values=include_values,
-        include_metadata=True,
-    )
 
-    return result
+    if model == "text-embedding-3-small":
+        result = pc_index_1536.query(
+            vector=vector,
+            namespace=namespace,
+            filter=filter_criteria,
+            top_k=top_k,
+            include_values=include_values,
+            include_metadata=True,
+        )
 
+        return result
+    elif model == "text-embedding-3-large":
+        result = pc_index_3072.query(
+            vector=vector,
+            namespace=namespace,
+            filter=filter_criteria,
+            top_k=top_k,
+            include_values=include_values,
+            include_metadata=True,
+        )
 
-def get_pc_ids_by_doc_ids(
-    project_id: str, db_name: str, collection_name: str, doc_ids: list[str]
-):
-    pc_ids = []
-    for doc_id in doc_ids:
-        prefix = generate_pc_id_prefix(project_id, db_name, collection_name, doc_id)
-        for ids in pc_index_1536.list(prefix=prefix):
-            pc_ids.extend(ids)
-
-    return pc_ids
+        return result
 
 
 def generate_pc_id(
@@ -213,12 +225,23 @@ def generate_pc_namespace(project_id: str, db_name: str):
 def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
     namespace = generate_pc_namespace(project_id_str, db_name)
     try:
-        index_stats = pc_index_1536.describe_index_stats()
-        namespace_stats = (
-            index_stats.get("namespaces", {}).get(namespace, {}).get("vector_count", 0)
+        index_stats_1536 = pc_index_1536.describe_index_stats()
+        namespace_stats_1536 = (
+            index_stats_1536.get("namespaces", {})
+            .get(namespace, {})
+            .get("vector_count", 0)
+        )
+
+        index_stats_3072 = pc_index_3072.describe_index_stats()
+        namespace_stats_3072 = (
+            index_stats_3072.get("namespaces", {})
+            .get(namespace, {})
+            .get("vector_count", 0)
         )
         # Estimate storage based on vector count (assuming ~6KB per vector)
-        storage_mb = (namespace_stats * 6) / 1024  # Convert KB to MB
+        storage_mb = (
+            (namespace_stats_1536 + namespace_stats_3072) * 6
+        ) / 1024  # Convert KB to MB
         return round(storage_mb, 2)
     except Exception as e:
         notify_admin(
@@ -235,14 +258,27 @@ def fetch_pinecone_usage_for_collection(
     try:
         # Filter by collection name; your actual namespace might differ if you
         # combine project_id_str, db_name, etc. Adjust as needed.
-        index_stats = pc_index_1536.describe_index_stats(
+        index_stats_1536 = pc_index_1536.describe_index_stats(
             filter={"collection_name": collection_name}
         )
-        namespace_stats = (
-            index_stats.get("namespaces", {}).get(namespace, {}).get("vector_count", 0)
+        namespace_stats_1536 = (
+            index_stats_1536.get("namespaces", {})
+            .get(namespace, {})
+            .get("vector_count", 0)
+        )
+
+        index_stats_3072 = pc_index_3072.describe_index_stats(
+            filter={"collection_name": collection_name}
+        )
+        namespace_stats_3072 = (
+            index_stats_3072.get("namespaces", {})
+            .get(namespace, {})
+            .get("vector_count", 0)
         )
         # Estimate storage based on vector count (assuming ~6KB per vector)
-        storage_mb = (namespace_stats * 6) / 1024  # Convert KB to MB
+        storage_mb = (
+            (namespace_stats_1536 + namespace_stats_3072) * 6
+        ) / 1024  # Convert KB to MB
         return round(storage_mb, 2)
     except Exception as e:
         notify_admin(
