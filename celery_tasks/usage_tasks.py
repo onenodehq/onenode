@@ -37,7 +37,7 @@ def get_cached_usage(project_id_str: str) -> dict:
     cached_data = redis_client.get(primary_key)
 
     if cached_data is None:
-        record_usage.delay()  # Trigger the usage recording task
+        record_usage()  # Trigger the usage recording task
         cached_data = redis_client.get(primary_key)
 
     return json.loads(cached_data) if cached_data else None
@@ -166,12 +166,6 @@ def record_usage():
                 usage_documents.append(usage_doc)
                 cache_usage_data(usage_doc.copy())
 
-        # Before writing to Mongo, remove "collection_details"
-        for doc in usage_documents:
-            for db_detail in doc.get("database_details", []):
-                if "collection_details" in db_detail:
-                    del db_detail["collection_details"]
-
         if usage_documents:
             mongo_usage.insert_many(usage_documents)
 
@@ -186,7 +180,7 @@ def increment_collection_usage_cache(
     project_id_str: str,
     db_name: str,
     collection_name: str,
-    inserted_documents: list,
+    inserted_documents: list[dict],
     total_vector_dimensions: int,
 ):
     try:

@@ -66,9 +66,6 @@ def save_vectors_task(
                 db_name=db_name,
                 dimensions=1536,
             )
-            increment_collection_usage_cache(
-                project_id_str, db_name, collection_name, len(batch), 1536
-            )
         except Exception as e:
             notify_admin(
                 "Pinecone Upsert Failed",
@@ -84,9 +81,6 @@ def save_vectors_task(
                 project_id=project_id_str,
                 db_name=db_name,
                 dimensions=3072,
-            )
-            increment_collection_usage_cache(
-                project_id_str, db_name, collection_name, len(batch), 3072
             )
         except Exception as e:
             notify_admin(
