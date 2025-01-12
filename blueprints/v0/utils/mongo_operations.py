@@ -62,7 +62,7 @@ def get_client_collection(
     db_id = generate_client_db_id(project_id, db_name)
     if must_exist and db_id not in mongo_client_cluster.list_database_names():
         raise CustomAPIError(
-            f"Database `{db_id}` not found",
+            f"Database '{db_name}' not found in your project. Please create a database and a collection from the dashboard, or perform an insert operation to automatically create them."
         )
     db = mongo_client_cluster.get_database(db_id)
 
