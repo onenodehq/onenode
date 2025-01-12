@@ -4,6 +4,7 @@ from blueprints.v0.utils.pinecone_setup import (
     pc_index_1536,
     pc_index_3072,
 )
+from celery_tasks.vector_tasks import batch_iterable
 from utils.email import notify_admin
 
 dummy_vector = [0] * DIMENSIONS
@@ -39,10 +40,13 @@ def pc_delete_with_doc_ids(
         for ids in pc_index_3072.list(prefix=prefix, namespace=namespace):
             ids_to_delete_3072.extend(ids)
 
+    batch_size = 1000  # Pinecone delete batch limit is 1,000
     if ids_to_delete_1536:
-        pc_index_1536.delete(ids=ids_to_delete_1536, namespace=namespace)
+        for batch in batch_iterable(ids_to_delete_1536, batch_size):
+            pc_index_1536.delete(ids=batch, namespace=namespace)
     if ids_to_delete_3072:
-        pc_index_3072.delete(ids=ids_to_delete_3072, namespace=namespace)
+        for batch in batch_iterable(ids_to_delete_1536, batch_size):
+            pc_index_3072.delete(ids=batch, namespace=namespace)
 
 
 def create_vector_bases(
