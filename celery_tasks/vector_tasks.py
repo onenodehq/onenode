@@ -1,19 +1,8 @@
 from celery_setup import celery
 from blueprints.v0.utils.openai_operations import embed_text
-from blueprints.v0.utils.pinecone_operations import pc_upsert
+from blueprints.v0.utils.pinecone_operations import batch_iterable, pc_upsert
 from celery_tasks.usage_tasks import increment_collection_usage_cache
 from utils.email import notify_admin
-from itertools import islice
-
-
-# helper
-def batch_iterable(iterable, batch_size):
-    it = iter(iterable)
-    while True:
-        batch = list(islice(it, batch_size))
-        if not batch:
-            break
-        yield batch
 
 
 @celery.task

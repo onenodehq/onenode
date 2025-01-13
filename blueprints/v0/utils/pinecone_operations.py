@@ -1,13 +1,23 @@
+from itertools import islice
 from blueprints.v0.utils.pinecone_setup import (
     DIMENSIONS,
     pc_admin_index,
     pc_index_1536,
     pc_index_3072,
 )
-from celery_tasks.vector_tasks import batch_iterable
 from utils.email import notify_admin
 
 dummy_vector = [0] * DIMENSIONS
+
+
+# helper
+def batch_iterable(iterable, batch_size):
+    it = iter(iterable)
+    while True:
+        batch = list(islice(it, batch_size))
+        if not batch:
+            break
+        yield batch
 
 
 def query_resources_by_id(resource_id: str, user_id: str):
