@@ -1,3 +1,4 @@
+from blueprints.v0.utils.mongo_operations import generate_client_db_id
 from celery_setup import celery
 from blueprints.v0.utils.pinecone_operations import (
     fetch_pinecone_usage,
@@ -67,9 +68,10 @@ def record_usage():
                     db_name = collection.get("db_name")
                     if not db_name:
                         continue
+                    db_id = generate_client_db_id(project_id_str, db_name)
 
                     try:
-                        db = mongo_client_cluster[db_name]
+                        db = mongo_client_cluster[db_id]
                         stats = db.command("dbStats")
 
                         mongo_storage_size = stats.get("storageSize", 0)
