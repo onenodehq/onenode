@@ -33,7 +33,7 @@ def create_user():
         email=email, given_name=given_name, family_name=family_name, picture=picture
     )
 
-    notify_admin("New signup", f"New sign up on {app} \n-end-")
+    notify_admin("New signup", f"New sign up on {app}\nUser: {email} \n-end-")
     return jsonify(new_user), 200
 
 
