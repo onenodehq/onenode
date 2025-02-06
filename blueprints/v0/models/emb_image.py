@@ -1,3 +1,6 @@
+from errors import CustomAPIError
+
+
 DEFAULT_IMG_EMB_MODEL = "text-embedding-3-small"
 DEFAULT_IMG_VISION_MODEL = "gpt-4o-mini"
 DEFAULT_IMG_MAX_CHUNK_SIZE = 200
@@ -5,6 +8,14 @@ DEFAULT_IMG_CHUNK_OVERLAP = 20
 DEFAULT_IMG_IS_SEPARATOR_REGEX = False
 DEFAULT_IMG_SEPARATORS = None
 DEFAULT_IMG_KEEP_SEPARATOR = False
+
+supported_mime = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+]
 
 
 class EmbImage:
@@ -22,5 +33,9 @@ class EmbImage:
                 and isinstance(attributes["mime_type"], str)
                 and attributes["mime_type"].startswith("image/")
             ):
-                return True
-        return False
+                if attributes["mime_type"] not in supported_mime:
+                    raise CustomAPIError(
+                        f"Unsupported mime type - {attributes['mime_type']}"
+                    )
+                return
+        raise CustomAPIError(f"Field value is invalid - {data}")

@@ -87,8 +87,8 @@ def process_document(
                     all_vector_bases.extend(vector_bases)
 
             elif key == "@embImage":
-                if not EmbImage.is_valid_data(data=data):
-                    raise CustomAPIError(f"Field value is invalid - {data}")
+                EmbImage.is_valid_data(data=data)
+
                 value: dict
 
                 emb_model = value.get("emb_model", DEFAULT_IMG_EMB_MODEL)
