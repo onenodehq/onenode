@@ -1,27 +1,26 @@
+DEFAULT_IMG_EMB_MODEL = "text-embedding-3-small"
+DEFAULT_IMG_VISION_MODEL = "gpt-4o-mini"
+DEFAULT_IMG_MAX_CHUNK_SIZE = 200
+DEFAULT_IMG_CHUNK_OVERLAP = 20
+DEFAULT_IMG_IS_SEPARATOR_REGEX = False
+DEFAULT_IMG_SEPARATORS = None
+DEFAULT_IMG_KEEP_SEPARATOR = False
+
+
 class EmbImage:
     @staticmethod
     def is_valid_data(data: dict) -> bool:
-        """Checks if a dictionary has the correct structure to be an EmbContent instance."""
-        # Ensure the dictionary only has one key: "@embImage"
-        if not isinstance(data, dict) or list(data.keys()) != ["@embImage"]:
-            return False
-
-        content_data = data["@embImage"]
-        if not isinstance(content_data, dict):
-            return False
-
-        status = content_data.get("status", "")
-        if status == "":
-            # Ensure 'data' and 'mimeType' fields exist and are strings
-            return isinstance(content_data.get("data"), str) and isinstance(
-                content_data.get("mimeType"), str
-            )
-        elif status == "processed":
-            # Ensure 'text' is a string and 'chunks' is a list of strings
-            return (
-                isinstance(content_data.get("text"), str)
-                and isinstance(content_data.get("chunks"), list)
-                and all(isinstance(chunk, str) for chunk in content_data["chunks"])
-            )
-
+        # NOTE can be more strict by checking if there is no other fields
+        """Checks if a dictionary has the correct structure to be an EmbImage instance."""
+        if isinstance(data, dict) and "@embImage" in data:
+            attributes = data["@embImage"]
+            if (
+                isinstance(attributes, dict)
+                and "data" in attributes
+                and isinstance(attributes["data"], str)
+                and "mimeType" in attributes
+                and isinstance(attributes["mimeType"], str)
+                and attributes["mimeType"].startswith("image/")
+            ):
+                return True
         return False

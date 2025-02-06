@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+import re
 from typing import Dict, List
 from blueprints.v0.utils.openai_operations import image_to_text
 from blueprints.v0.utils.s3_setup import (
@@ -84,6 +85,31 @@ def upload_to_s3(base64_image: str, mime_type: str, filename: str, namespace: st
     s3.upload_fileobj(
         file_binary, S3_BUCKET_NAME, keyname, ExtraArgs={"ContentType": mime_type}
     )
+
+
+def generate_object_key(
+    project_id: str,
+    database_name: str,
+    collection_name: str,
+    doc_id: str,
+    path: str,
+    mime_type: str,
+) -> str:
+    mime_to_extension = {
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "image/bmp": "bmp",
+        "image/tiff": "tiff",
+        "image/webp": "webp",
+        "image/svg+xml": "svg",
+        "image/heif": "heif",
+        "image/x-icon": "ico",
+    }
+    extension = mime_to_extension.get(mime_type, mime_type)
+
+    return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{path}.{extension}"
 
 
 def delete_s3_objects(object_keys: List[str]):

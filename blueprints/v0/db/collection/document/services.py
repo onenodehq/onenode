@@ -34,18 +34,20 @@ def create_docs_service(
     )
 
     all_vector_bases = []
+    all_emb_image_refs = []
     for document in documents:
         if not document.get("_id"):
             document["_id"] = ObjectId()
         doc_id = str(document["_id"])
-        vector_bases = process_document(
+        result = process_document(
             document,
             project_id,
             db_name,
             collection_name,
             [doc_id],
         )
-        all_vector_bases.extend(vector_bases)
+        all_vector_bases.extend(result["all_vector_bases"])
+        all_emb_image_refs.extend(result["emb_image_refs"])
     # documents, all_chunks, and all_pc_ids will be modified after process_doc()
     insert_many_result = mongo_collection.insert_many(documents=documents)
     inserted_ids = insert_many_result.inserted_ids

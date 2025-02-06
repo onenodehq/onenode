@@ -1,6 +1,15 @@
-from math import e
+from email.mime import base
+import re
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from blueprints.v0.models.emb_image import EmbImage
+from blueprints.v0.models.emb_image import (
+    DEFAULT_IMG_CHUNK_OVERLAP,
+    DEFAULT_IMG_EMB_MODEL,
+    DEFAULT_IMG_IS_SEPARATOR_REGEX,
+    DEFAULT_IMG_KEEP_SEPARATOR,
+    DEFAULT_IMG_MAX_CHUNK_SIZE,
+    DEFAULT_IMG_SEPARATORS,
+    EmbImage,
+)
 from blueprints.v0.models.emb_text import EmbText
 from blueprints.v0.utils.pinecone_operations import (
     create_vector_bases,
@@ -9,6 +18,7 @@ from blueprints.v0.utils.pinecone_operations import (
     pc_delete_with_doc_ids,
 )
 from blueprints.v0.utils.openai_operations import image_to_text
+from blueprints.v0.utils.s3_operations import generate_object_key
 from errors import CustomAPIError
 
 
@@ -20,8 +30,9 @@ def process_document(
     collection_name: str,
     doc_ids: list,
     parent_path: str = "",
-) -> list:
+) -> dict:
     all_vector_bases = []
+    emb_image_refs = []
     if isinstance(data, dict):
         for key, value in data.items():
             if parent_path:
@@ -80,52 +91,42 @@ def process_document(
                     raise CustomAPIError(f"Field value is invalid - {data}")
                 value: dict
 
-                emb_model = value["emb_model"]
+                emb_model = value.get("emb_model", DEFAULT_IMG_EMB_MODEL)
                 mime_type: str = value["mimeType"]
                 base64_image: str = value.pop("data")
-                max_chunk_size = value["max_chunk_size"]
-                chunk_overlap = value["chunk_overlap"]
-                is_separator_regex = value["is_separator_regex"]
-                separators = value["separators"]
-                keep_separator = value["keep_separator"]
+                max_chunk_size = value.get("max_chunk_size", DEFAULT_IMG_MAX_CHUNK_SIZE)
+                chunk_overlap = value.get("chunk_overlap", DEFAULT_IMG_CHUNK_OVERLAP)
+                is_separator_regex = value.get(
+                    "is_separator_regex", DEFAULT_IMG_IS_SEPARATOR_REGEX
+                )
+                separators = value.get("separators", DEFAULT_IMG_SEPARATORS)
+                keep_separator = value.get("keep_separator", DEFAULT_IMG_KEEP_SEPARATOR)
 
-                if mime_type.startswith("image/"):
-                    text = image_to_text(base64_image=base64_image, mime_type=mime_type)
-                    chunks = chunk(
-                        text,
-                        max_chunk_size,
-                        chunk_overlap,
-                        is_separator_regex,
-                        separators,
-                        keep_separator,
+                for doc_id in doc_ids:
+                    object_key = generate_object_key(
+                        project_id,
+                        db_name,
+                        collection_name,
+                        doc_id,
+                        parent_path,
+                        mime_type,
                     )
-                    value["chunks"] = chunks
-                    value["text"] = text
-
-                    for doc_id in doc_ids:
-                        metadata = generate_pc_metadata(
-                            project_id,
-                            db_name,
-                            collection_name,
-                            doc_id,
-                            parent_path,
-                            "image",
-                            emb_model,
-                        )
-
-                        vector_bases = create_vector_bases(
-                            chunks,
-                            metadata,
-                            project_id,
-                            db_name,
-                            collection_name,
-                            doc_id,
-                            parent_path,
-                        )
-                        all_vector_bases.extend(vector_bases)
+                    emb_image_refs.append(
+                        {
+                            "object_key": object_key,
+                            "base64_image": base64_image,
+                            "mime_type": mime_type,
+                            "emb_model": emb_model,
+                            "max_chunk_size": max_chunk_size,
+                            "chunk_overlap": chunk_overlap,
+                            "is_separator_regex": is_separator_regex,
+                            "separators": separators,
+                            "keep_separator": keep_separator,
+                        }
+                    )
 
             elif isinstance(value, dict):
-                vector_bases = process_document(
+                result = process_document(
                     data=value,
                     project_id=project_id,
                     db_name=db_name,
@@ -133,20 +134,25 @@ def process_document(
                     doc_ids=doc_ids,
                     parent_path=current_path,
                 )
-                all_vector_bases.extend(vector_bases)
+                all_vector_bases.extend(result["all_vector_bases"])
+                emb_image_refs.extend(result["emb_image_refs"])
     elif isinstance(data, list):
         for item in data:
-            vector_bases = process_document(
+            result = process_document(
                 data=item,
                 project_id=project_id,
                 db_name=db_name,
                 collection_name=collection_name,
-                doc_id=doc_id,
+                doc_ids=doc_ids,
                 parent_path=current_path,
             )
-            all_vector_bases.extend(vector_bases)
+            all_vector_bases.extend(result["all_vector_bases"])
+            emb_image_refs.extend(result["emb_image_refs"])
 
-    return all_vector_bases
+    return {
+        "all_vector_bases": all_vector_bases,
+        "emb_image_refs": emb_image_refs,
+    }
 
 
 def chunk(
@@ -203,11 +209,10 @@ def process_update(
             )
 
         elif "@embText" not in path_substrings:
-            vector_bases = process_document(
+            result = process_document(
                 new_value, project_id, db_name, collection_name, doc_ids
             )
-            if vector_bases:
-                all_vector_bases.extend(vector_bases)
+            all_vector_bases.extend(result["all_vector_bases"])
 
         else:
             raise CustomAPIError(f"Invalid path - {path}")
