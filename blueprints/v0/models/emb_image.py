@@ -18,9 +18,9 @@ class EmbImage:
                 isinstance(attributes, dict)
                 and "data" in attributes
                 and isinstance(attributes["data"], str)
-                and "mimeType" in attributes
-                and isinstance(attributes["mimeType"], str)
-                and attributes["mimeType"].startswith("image/")
+                and "mime_type" in attributes
+                and isinstance(attributes["mime_type"], str)
+                and attributes["mime_type"].startswith("image/")
             ):
                 return True
         return False

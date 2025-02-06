@@ -1,3 +1,4 @@
+from email.mime import base
 from bson import ObjectId
 from flask import g
 from blueprints.v0.db.collection.document.helper import (
@@ -14,6 +15,7 @@ from blueprints.v0.utils.mongo_operations import (
     get_doc_ids_by_filter,
 )
 from blueprints.v0.utils.pinecone_operations import pc_delete_with_doc_ids
+from blueprints.v0.utils.s3_operations import save_to_s3
 from celery_tasks import (
     save_vectors_task,
     decrement_collection_usage_cache,
@@ -56,6 +58,13 @@ def create_docs_service(
         task = save_vectors_task.delay(
             all_vector_bases, project_id, db_name, collection_name, documents
         )
+
+    if all_emb_image_refs:
+        for emb_image_ref in all_emb_image_refs:
+            base64_image = emb_image_ref["base64_image"]
+            object_key = emb_image_ref["object_key"]
+            mime_type = emb_image_ref["mime_type"]
+            save_to_s3(base64_image, object_key, mime_type)
 
     return {
         "inserted_ids": inserted_ids,

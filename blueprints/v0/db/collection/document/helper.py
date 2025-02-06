@@ -92,7 +92,7 @@ def process_document(
                 value: dict
 
                 emb_model = value.get("emb_model", DEFAULT_IMG_EMB_MODEL)
-                mime_type: str = value["mimeType"]
+                mime_type: str = value["mime_type"]
                 base64_image: str = value.pop("data")
                 max_chunk_size = value.get("max_chunk_size", DEFAULT_IMG_MAX_CHUNK_SIZE)
                 chunk_overlap = value.get("chunk_overlap", DEFAULT_IMG_CHUNK_OVERLAP)

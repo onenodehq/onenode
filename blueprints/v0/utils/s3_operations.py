@@ -78,12 +78,21 @@ def upload_to_s3_legacy(file_binary, filename, content_type):
     )
 
 
+# legacy function
 def upload_to_s3(base64_image: str, mime_type: str, filename: str, namespace: str):
     keyname = namespace + "/" + filename
     binary_image = base64.b64decode(base64_image)
     file_binary = io.BytesIO(binary_image)
     s3.upload_fileobj(
         file_binary, S3_BUCKET_NAME, keyname, ExtraArgs={"ContentType": mime_type}
+    )
+
+
+def save_to_s3(base64_image: str, object_key: str, mime_type: str):
+    binary_image = base64.b64decode(base64_image)
+    file_binary = io.BytesIO(binary_image)
+    s3.upload_fileobj(
+        file_binary, S3_BUCKET_NAME, object_key, ExtraArgs={"ContentType": mime_type}
     )
 
 
