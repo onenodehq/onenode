@@ -46,7 +46,6 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
 @v0_blueprint_doc.route("", methods=["PUT"])
 @require_api_key
 def update_docs(permissions: list[dict], db_id: str, collection_name: str):
-    validate_json_content_type()
     project_id, db_name = split_db_id(db_id)
     check_api_key_permissions(permissions, project_id)
 

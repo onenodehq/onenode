@@ -1,6 +1,5 @@
-from email.mime import base
-import re
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from blueprints.v0.models import emb_image
 from blueprints.v0.models.emb_image import (
     DEFAULT_IMG_CHUNK_OVERLAP,
     DEFAULT_IMG_EMB_MODEL,
@@ -8,17 +7,21 @@ from blueprints.v0.models.emb_image import (
     DEFAULT_IMG_KEEP_SEPARATOR,
     DEFAULT_IMG_MAX_CHUNK_SIZE,
     DEFAULT_IMG_SEPARATORS,
+    DEFAULT_IMG_VISION_MODEL,
     EmbImage,
 )
 from blueprints.v0.models.emb_text import EmbText
 from blueprints.v0.utils.pinecone_operations import (
     create_vector_bases,
+    delete_pc_vectors_by_id_prefix,
     generate_pc_id_prefix,
     generate_pc_metadata,
-    pc_delete_with_doc_ids,
 )
-from blueprints.v0.utils.openai_operations import image_to_text
-from blueprints.v0.utils.s3_operations import generate_object_key
+from blueprints.v0.utils.s3_operations import (
+    delete_s3_objects_with_prefix,
+    generate_object_key,
+    generate_object_key_prefix,
+)
 from errors import CustomAPIError
 
 
@@ -92,6 +95,7 @@ def process_document(
                 value: dict
 
                 emb_model = value.get("emb_model", DEFAULT_IMG_EMB_MODEL)
+                vision_model = value.get("vision_model", DEFAULT_IMG_VISION_MODEL)
                 mime_type: str = value["mime_type"]
                 base64_image: str = value.pop("data")
                 max_chunk_size = value.get("max_chunk_size", DEFAULT_IMG_MAX_CHUNK_SIZE)
@@ -117,6 +121,7 @@ def process_document(
                             "base64_image": base64_image,
                             "mime_type": mime_type,
                             "emb_model": emb_model,
+                            "vision_model": vision_model,
                             "max_chunk_size": max_chunk_size,
                             "chunk_overlap": chunk_overlap,
                             "is_separator_regex": is_separator_regex,
@@ -191,6 +196,7 @@ def process_update(
             message=f"Expected dictionary for {operator}, but got {type(fields).__name__} instead."
         )
     all_vector_bases = []
+    emb_image_refs = []
     for path, new_value in fields.items():
         if not isinstance(path, str):
             raise CustomAPIError(message=f"Path must be a string - {path}")
@@ -213,11 +219,15 @@ def process_update(
                 new_value, project_id, db_name, collection_name, doc_ids
             )
             all_vector_bases.extend(result["all_vector_bases"])
+            emb_image_refs.extend(result["emb_image_refs"])
 
         else:
             raise CustomAPIError(f"Invalid path - {path}")
 
-    return all_vector_bases
+    return {
+        "all_vector_bases": all_vector_bases,
+        "emb_image_refs": emb_image_refs,
+    }
 
 
 def delete_overwritten_pc_vectors(
@@ -225,7 +235,6 @@ def delete_overwritten_pc_vectors(
     updated_paths: list[str],
     project_id: str,
     db_name: str,
-    collection_name: str,
 ):
     # Delete all previous vectors that have the same paths that are being updated in this operation
     delete_id_prefixes: list[str] = []
@@ -239,8 +248,28 @@ def delete_overwritten_pc_vectors(
             )
             delete_id_prefixes.append(delete_id_prefix)
 
-    if delete_id_prefixes:
-        pc_delete_with_doc_ids(project_id, db_name, collection_name, doc_ids)
+    for delete_id_prefix in delete_id_prefixes:
+        delete_pc_vectors_by_id_prefix(project_id, db_name, delete_id_prefix)
+
+
+def delete_overwritten_s3_images(
+    doc_ids: list[str],
+    updated_paths: list[str],
+    project_id: str,
+    db_name: str,
+    collection_name: str,
+):
+    # Delete all previous images that have the same paths that are being updated in this operation
+    for doc_id in doc_ids:
+        for path in updated_paths:
+            object_key_prefix = generate_object_key_prefix(
+                project_id,
+                db_name,
+                collection_name,
+                doc_id,
+                path,
+            )
+            delete_s3_objects_with_prefix(object_key_prefix)
 
 
 def create_pc_id_suffixes(path: str, length: int) -> list[str]:

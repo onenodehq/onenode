@@ -55,7 +55,7 @@ def pc_delete_with_doc_ids(
         for batch in batch_iterable(ids_to_delete_1536, batch_size):
             pc_index_1536.delete(ids=batch, namespace=namespace)
     if ids_to_delete_3072:
-        for batch in batch_iterable(ids_to_delete_1536, batch_size):
+        for batch in batch_iterable(ids_to_delete_3072, batch_size):
             pc_index_3072.delete(ids=batch, namespace=namespace)
 
 
@@ -109,6 +109,21 @@ def pc_client_delete_collection(project_id: str, db_name: str, collection_name: 
         pc_index_1536.delete(ids=ids_to_delete_1536)
     if ids_to_delete_3072:
         pc_index_3072.delete(ids=ids_to_delete_3072)
+
+
+def delete_pc_vectors_by_id_prefix(project_id: str, db_name: str, prefix: str):
+    namespace = generate_pc_namespace(project_id, db_name)
+    ids_to_delete_1536 = []
+    ids_to_delete_3072 = []
+    for ids in pc_index_1536.list(prefix=prefix, namespace=namespace):
+        ids_to_delete_1536.extend(ids)
+    for ids in pc_index_3072.list(prefix=prefix, namespace=namespace):
+        ids_to_delete_3072.extend(ids)
+
+    if ids_to_delete_1536:
+        pc_index_1536.delete(ids=ids_to_delete_1536, namespace=namespace)
+    if ids_to_delete_3072:
+        pc_index_3072.delete(ids=ids_to_delete_3072, namespace=namespace)
 
 
 def generate_pc_metadata(

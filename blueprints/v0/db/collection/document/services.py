@@ -1,8 +1,10 @@
 from email.mime import base
+import re
 from bson import ObjectId
 from flask import g
 from blueprints.v0.db.collection.document.helper import (
     delete_overwritten_pc_vectors,
+    delete_overwritten_s3_images,
     process_document,
     process_update,
 )
@@ -15,12 +17,13 @@ from blueprints.v0.utils.mongo_operations import (
     get_doc_ids_by_filter,
 )
 from blueprints.v0.utils.pinecone_operations import pc_delete_with_doc_ids
-from blueprints.v0.utils.s3_operations import save_to_s3
+from blueprints.v0.utils.s3_operations import delete_s3_objects_with_doc_ids, save_to_s3
 from celery_tasks import (
     save_vectors_task,
     decrement_collection_usage_cache,
     update_vectors_task,
 )
+from celery_tasks.image_tasks import embed_image_task
 from utils.usage import check_current_usage
 
 
@@ -66,6 +69,8 @@ def create_docs_service(
             mime_type = emb_image_ref["mime_type"]
             save_to_s3(base64_image, object_key, mime_type)
 
+        emb_task = embed_image_task.delay(all_emb_image_refs)
+
     return {
         "inserted_ids": inserted_ids,
         "task_id": task.id if all_vector_bases else None,
@@ -86,9 +91,10 @@ def update_docs_service(
         return
 
     all_vector_bases = []
+    all_emb_image_refs = []
     updated_paths = []
     for operator, fields in update.items():
-        vector_bases = process_update(
+        result = process_update(
             operator,
             fields,
             project_id,
@@ -97,12 +103,19 @@ def update_docs_service(
             doc_ids,
             updated_paths,
         )
-        if vector_bases:
-            all_vector_bases.extend(vector_bases)
+        all_vector_bases.extend(result["all_vector_bases"])
+        all_emb_image_refs.extend(result["emb_image_refs"])
 
     update_result = mongo_collection.update_many(filter=filter, update=update)
 
     delete_overwritten_pc_vectors(
+        doc_ids,
+        updated_paths,
+        project_id,
+        db_name,
+    )
+
+    delete_overwritten_s3_images(
         doc_ids,
         updated_paths,
         project_id,
@@ -112,6 +125,9 @@ def update_docs_service(
 
     if all_vector_bases:
         task = update_vectors_task.delay(all_vector_bases, project_id, db_name)
+
+    if all_emb_image_refs:
+        emb_task = embed_image_task.delay(all_emb_image_refs)
 
     return {
         "matched_count": update_result.matched_count,
@@ -143,6 +159,8 @@ def delete_docs_service(
         collection_name,
         doc_ids,
     )
+
+    delete_s3_objects_with_doc_ids(project_id, db_name, collection_name, doc_ids)
 
     if doc_ids:
         decrement_collection_usage_cache.delay(

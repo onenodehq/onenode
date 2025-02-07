@@ -1,7 +1,6 @@
 import base64
 import io
 import logging
-import re
 from typing import Dict, List
 from blueprints.v0.utils.openai_operations import image_to_text
 from blueprints.v0.utils.s3_setup import (
@@ -96,6 +95,14 @@ def save_to_s3(base64_image: str, object_key: str, mime_type: str):
     )
 
 
+def retrieve_from_s3(object_key: str) -> tuple[str, str]:
+    response = s3.get_object(Bucket=S3_BUCKET_NAME, Key=object_key)
+    data = response["Body"].read()  # data is of type bytes
+    # Base64 encode the bytes and decode to a UTF-8 string
+    encoded_data = base64.b64encode(data).decode("utf-8")
+    return encoded_data, response["ContentType"]
+
+
 def generate_object_key(
     project_id: str,
     database_name: str,
@@ -117,8 +124,24 @@ def generate_object_key(
         "image/x-icon": "ico",
     }
     extension = mime_to_extension.get(mime_type, mime_type)
+    normalized_path = path.replace(".", "/")
 
-    return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{path}.{extension}"
+    return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{normalized_path}/image.{extension}"
+
+
+def generate_object_key_prefix(
+    project_id: str,
+    database_name: str,
+    collection_name: str,
+    doc_id: str,
+    path: str = None,
+) -> str:
+
+    if path:
+        normalized_path = path.replace(".", "/")
+        return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{normalized_path}/"
+    else:
+        return f"{project_id}/{database_name}/{collection_name}/{doc_id}/"
 
 
 def delete_s3_objects(object_keys: List[str]):
@@ -134,6 +157,37 @@ def delete_s3_objects(object_keys: List[str]):
     except Exception as e:
         logging.error(f"Failed to delete objects: {e}")
         raise RuntimeError(f"Failed to delete objects from S3: {str(e)}")
+
+
+def delete_s3_objects_with_doc_ids(
+    project_id: str, db_name: str, collection_name: str, doc_ids: List[str]
+):
+    for doc_id in doc_ids:
+        prefix = generate_object_key_prefix(
+            project_id, db_name, collection_name, doc_id
+        )
+        delete_s3_objects_with_prefix(object_key_prefix=prefix)
+
+
+def delete_s3_objects_with_prefix(object_key_prefix: str) -> None:
+    paginator = s3.get_paginator("list_objects_v2")
+    objects_to_delete = []
+
+    # Use pagination to process all objects with the given object_key_prefix.
+    for page in paginator.paginate(Bucket=S3_BUCKET_NAME, Prefix=object_key_prefix):
+        for obj in page.get("Contents", []):
+            objects_to_delete.append({"Key": obj["Key"]})
+
+            # S3 allows deletion of up to 1000 objects per delete_objects call.
+            if len(objects_to_delete) == 1000:
+                s3.delete_objects(
+                    Bucket=S3_BUCKET_NAME, Delete={"Objects": objects_to_delete}
+                )
+                objects_to_delete = []
+
+    # Delete any remaining objects that didn't complete a full batch.
+    if objects_to_delete:
+        s3.delete_objects(Bucket=S3_BUCKET_NAME, Delete={"Objects": objects_to_delete})
 
 
 def generate_signed_url(object_key):

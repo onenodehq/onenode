@@ -1,10 +1,9 @@
-import logging
-import os
 from dotenv import load_dotenv
 
 from errors import AuthError, CustomAPIError
 from pymongo.errors import InvalidOperation
 
+from logger import logger
 from utils.email import notify_admin
 
 # Load environment variables
@@ -22,15 +21,6 @@ CORS(application)
 application.register_blueprint(private_blueprint)
 application.register_blueprint(v0_blueprint_root)
 
-
-# Get log level from environment variable or default to 'WARNING'
-log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
-numeric_level = getattr(logging, log_level, None)
-# Configure logging
-logging.basicConfig(
-    level=numeric_level, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
 
 
 @application.errorhandler(AuthError)
