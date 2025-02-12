@@ -10,7 +10,15 @@ from blueprints.v0.models.emb_image import (
     DEFAULT_IMG_VISION_MODEL,
     EmbImage,
 )
-from blueprints.v0.models.emb_text import EmbText
+from blueprints.v0.models.emb_text import (
+    DEFAULT_TXT_CHUNK_OVERLAP,
+    DEFAULT_TXT_EMB_MODEL,
+    DEFAULT_TXT_IS_SEPARATOR_REGEX,
+    DEFAULT_TXT_KEEP_SEPARATOR,
+    DEFAULT_TXT_MAX_CHUNK_SIZE,
+    DEFAULT_TXT_SEPARATORS,
+    EmbText,
+)
 from blueprints.v0.utils.pinecone_operations import (
     create_vector_bases,
     delete_pc_vectors_by_id_prefix,
@@ -47,17 +55,19 @@ def process_document(
                 raise CustomAPIError(f"Key name must be a string - {key}")
 
             if key == "@embText":
-                if not EmbText.is_valid_data(data=data):
-                    raise CustomAPIError(f"Field value is invalid - {data}")
+                EmbText.is_valid_data(data=data)
+
                 value: dict
 
                 text = value["text"]
-                emb_model = value["emb_model"]
-                max_chunk_size = value["max_chunk_size"]
-                chunk_overlap = value["chunk_overlap"]
-                is_separator_regex = value["is_separator_regex"]
-                separators = value["separators"]
-                keep_separator = value["keep_separator"]
+                emb_model = value.get("emb_model", DEFAULT_TXT_EMB_MODEL)
+                max_chunk_size = value.get("max_chunk_size", DEFAULT_TXT_MAX_CHUNK_SIZE)
+                chunk_overlap = value.get("chunk_overlap", DEFAULT_TXT_CHUNK_OVERLAP)
+                is_separator_regex = value.get(
+                    "is_separator_regex", DEFAULT_TXT_IS_SEPARATOR_REGEX
+                )
+                separators = value.get("separators", DEFAULT_TXT_SEPARATORS)
+                keep_separator = value.get("keep_separator", DEFAULT_TXT_KEEP_SEPARATOR)
                 chunks = chunk(
                     text,
                     max_chunk_size,
