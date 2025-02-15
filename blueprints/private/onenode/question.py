@@ -91,7 +91,7 @@ def generate_response():
 
     return Response(
         get_contextual_response(question, chat_history, context),
-        mime_type="text/plain",
+        mimetype="text/plain",
     )
 
 
