@@ -38,8 +38,9 @@ def get_cached_usage(project_id_str: str) -> dict:
     cached_data = redis_client.get(primary_key)
 
     if cached_data is None:
-        record_usage()  # Trigger the usage recording task
-        cached_data = redis_client.get(primary_key)
+        #record_usage()  # Trigger the usage recording task
+        #cached_data = redis_client.get(primary_key)
+        pass # NOTE Need to be updated
 
     return json.loads(cached_data) if cached_data else None
 
