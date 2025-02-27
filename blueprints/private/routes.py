@@ -9,6 +9,7 @@ from blueprints.private.org.routes import private_blueprint_org
 from blueprints.private.user.routes import private_blueprint_user
 from blueprints.private.onenode.routes import private_onenode_blueprint
 from blueprints.private.webhook.routes import private_webhook_blueprint
+from utils.email import notify_admin
 
 private_blueprint = Blueprint(
     "private",
@@ -46,4 +47,18 @@ def send_docs_feedback():
         return jsonify({"error": "Missing 'message' parameter"}), 400
 
     send_docs_feedback_service(message)
+    return jsonify({"message": "success"}), 200
+
+
+@private_blueprint.route("/notify-admin", methods=["POST"])
+@require_admin_api_key
+def send_admin_notification():
+    data = request.get_json()
+    subject = data.get("subject")
+    body = data.get("body")
+
+    if not subject or not body:
+        return jsonify({"error": "Missing 'subject' or 'body' parameter"}), 400
+
+    notify_admin(subject, body)
     return jsonify({"message": "success"}), 200
