@@ -124,7 +124,7 @@ def update_docs_service(
     )
 
     if all_vector_bases:
-        task = update_vectors_task.delay(all_vector_bases, project_id, db_name)
+        task = update_vectors_task.delay(all_vector_bases, project_id, db_name, collection_name)
 
     if all_emb_image_refs:
         emb_task = embed_image_task.delay(all_emb_image_refs)
