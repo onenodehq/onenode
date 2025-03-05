@@ -1,14 +1,15 @@
 from flask import Blueprint, g, request
 from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
-from bson import json_util
+from bson import json_util, ObjectId
 from blueprints.private.org.project.db.collection.documents.services import (
     list_documents_service,
 )
 from blueprints.private.services import check_project_permission
-from blueprints.v0.db.collection.document.services import delete_docs_service
+from blueprints.v0.db.collection.document.services import delete_docs_service, update_docs_service
 from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
 from blueprints.v0.utils.mongo_operations import split_db_id
+from blueprints.v0.utils.mongo_setup import mongo_orgs
 from errors import CustomAPIError
 
 private_blueprint_document = Blueprint(
@@ -24,6 +25,13 @@ def list_documents(org_id, project_id, db_name, collection_name):
     user_id = g.user_id
 
     check_project_permission(user_id, org_id, project_id)
+
+    # Get organization to access plan
+    org = mongo_orgs.find_one({"_id": ObjectId(org_id)})
+    if org and "plan" in org:
+        g.plan = org["plan"].get("type", "free")
+    else:
+        g.plan = "free"
 
     documents = list_documents_service(
         project_id,
@@ -46,6 +54,13 @@ def delete_docs(
     user_id = g.user_id
     check_project_permission(user_id, org_id, project_id)
 
+    # Get organization to access plan
+    org = mongo_orgs.find_one({"_id": ObjectId(org_id)})
+    if org and "plan" in org:
+        g.plan = org["plan"].get("type", "free")
+    else:
+        g.plan = "free"
+
     data = json_util.loads(request.get_data(as_text=True))
     filter = data.get("filter")
     print("filter", filter)
@@ -57,6 +72,45 @@ def delete_docs(
 
     result = delete_docs_service(
         filter,
+        project_id,
+        db_name,
+        collection_name,
+    )
+
+    return json_util.dumps(result), 200
+
+
+@private_blueprint_document.route("", methods=["PUT"])
+@requires_auth
+@require_admin_api_key
+def update_docs(
+    org_id: str,
+    project_id: str,
+    db_name: str,
+    collection_name: str,
+):
+    user_id = g.user_id
+    check_project_permission(user_id, org_id, project_id)
+
+    # Get organization to access plan
+    org = mongo_orgs.find_one({"_id": ObjectId(org_id)})
+    if org and "plan" in org:
+        g.plan = org["plan"].get("type", "free")
+    else:
+        g.plan = "free"
+
+    data = json_util.loads(request.get_data(as_text=True))
+    filter = data.get("filter")
+    update = data.get("update")
+
+    if not filter:
+        raise CustomAPIError(message="Missing 'filter' field in the request data.")
+    if not update:
+        raise CustomAPIError(message="Missing 'update' field in the request data.")
+
+    result = update_docs_service(
+        filter,
+        update,
         project_id,
         db_name,
         collection_name,
