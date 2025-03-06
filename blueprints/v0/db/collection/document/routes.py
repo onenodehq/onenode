@@ -31,7 +31,10 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     data = json_util.loads(request.get_data(as_text=True))
     docs: list[dict] = data.get("documents")
     if not docs:
-        raise CustomAPIError("Missing 'documents' field.")
+        raise CustomAPIError(
+            "Missing or empty 'documents' field. Request must include a 'documents' array containing at least one document.",
+            status_code=400
+        )
 
     result = create_docs_service(
         docs,
@@ -54,9 +57,15 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
     update = data.get("update")
 
     if not filter:
-        raise CustomAPIError(message="Missing 'filter' field in the request data.")
+        raise CustomAPIError(
+            message="Missing 'filter' field in the request data. A filter is required to specify which documents to update.",
+            status_code=400
+        )
     if not update:
-        raise CustomAPIError(message="Missing 'update' field in the request data.")
+        raise CustomAPIError(
+            message="Missing 'update' field in the request data. An update operation is required to specify the changes to apply.",
+            status_code=400
+        )
 
     result = update_docs_service(
         filter,

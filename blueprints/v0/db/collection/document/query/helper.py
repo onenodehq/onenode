@@ -70,7 +70,10 @@ def convert_projection(projection):
     """
     # Validate that 'projection' is a dictionary
     if not isinstance(projection, dict):
-        raise CustomAPIError("Projection must be a dictionary.")
+        raise CustomAPIError(
+            "Invalid projection format: Projection must be a dictionary.",
+            status_code=400
+        )
 
     # Allowed keys in 'projection'
     allowed_keys = {"mode", "fields"}
@@ -79,12 +82,18 @@ def convert_projection(projection):
     # Check for invalid keys
     invalid_keys = provided_keys - allowed_keys
     if invalid_keys:
-        raise CustomAPIError(f"Invalid keys in projection: {', '.join(invalid_keys)}")
+        raise CustomAPIError(
+            f"Invalid projection configuration: Unrecognized keys in projection: {', '.join(invalid_keys)}. Allowed keys are: {', '.join(allowed_keys)}",
+            status_code=400
+        )
 
     # 'mode' is required and must be 'include' or 'exclude'
     mode = projection.get("mode")
     if mode not in {"include", "exclude"}:
-        raise CustomAPIError("Mode must be 'include' or 'exclude'.")
+        raise CustomAPIError(
+            f"Invalid projection mode: '{mode}'. Mode must be either 'include' or 'exclude'.",
+            status_code=400
+        )
 
     # 'fields' is optional
     fields = projection.get("fields")
@@ -92,9 +101,16 @@ def convert_projection(projection):
     # If 'fields' is provided, it must be a list of strings
     if fields is not None:
         if not isinstance(fields, list):
-            raise CustomAPIError("'fields' must be a list of field names.")
+            raise CustomAPIError(
+                f"Invalid fields format: 'fields' must be a list of field names, got {type(fields).__name__}.",
+                status_code=400
+            )
         if not all(isinstance(field, str) for field in fields):
-            raise CustomAPIError("All field names must be strings.")
+            non_string_fields = [f"{field} ({type(field).__name__})" for field in fields if not isinstance(field, str)]
+            raise CustomAPIError(
+                f"Invalid field names: All field names must be strings. Found non-string values: {', '.join(non_string_fields)}",
+                status_code=400
+            )
 
     # Build the MongoDB projection
     if mode == "include":

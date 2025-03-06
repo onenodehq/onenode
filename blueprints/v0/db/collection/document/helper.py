@@ -52,7 +52,10 @@ def process_document(
                 current_path = f"{key}"
 
             if not isinstance(key, str):
-                raise CustomAPIError(f"Key name must be a string - {key}")
+                raise CustomAPIError(
+                    f"Invalid document structure: Key name must be a string, got {type(key).__name__} with value {key}",
+                    status_code=400
+                )
 
             if key == "@embText":
                 EmbText.is_valid_data(data=data)
@@ -203,13 +206,17 @@ def process_update(
 ) -> list:
     if not isinstance(fields, dict):  # Check if fields is not a dictionary
         raise CustomAPIError(
-            message=f"Expected dictionary for {operator}, but got {type(fields).__name__} instead."
+            message=f"Invalid update operation: Expected dictionary for {operator}, but got {type(fields).__name__} instead.",
+            status_code=400
         )
     all_vector_bases = []
     emb_image_refs = []
     for path, new_value in fields.items():
         if not isinstance(path, str):
-            raise CustomAPIError(message=f"Path must be a string - {path}")
+            raise CustomAPIError(
+                message=f"Invalid update path: Path must be a string, got {type(path).__name__} with value {path}",
+                status_code=400
+            )
         updated_paths.append(path)
 
         # Check the cases (the first two conditions are mostly the same)
@@ -217,11 +224,13 @@ def process_update(
         path_substrings = path.split(".")
         if path_substrings and path_substrings[-1] == "@embText":
             raise CustomAPIError(
-                f"Invalid path (updating EmbJSON partially is not supported yet) - {path}"
+                f"Unsupported operation: Updating EmbJSON fields partially is not supported yet. Invalid path: {path}",
+                status_code=400
             )
         elif len(path_substrings) > 1 and path_substrings[-2] == "@embText":
             raise CustomAPIError(
-                f"Invalid path (updating EmbJSON partially is not supported yet) - {path}"
+                f"Unsupported operation: Updating EmbJSON fields partially is not supported yet. Invalid path: {path}",
+                status_code=400
             )
 
         elif "@embText" not in path_substrings:
@@ -232,7 +241,10 @@ def process_update(
             emb_image_refs.extend(result["emb_image_refs"])
 
         else:
-            raise CustomAPIError(f"Invalid path - {path}")
+            raise CustomAPIError(
+                f"Invalid path format: {path}. The path contains '@embText' in an unsupported position.",
+                status_code=400
+            )
 
     return {
         "all_vector_bases": all_vector_bases,
