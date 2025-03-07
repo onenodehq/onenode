@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+import os
 from typing import Dict, List
 from blueprints.v0.utils.openai_operations import image_to_text
 from blueprints.v0.utils.s3_setup import (
@@ -91,7 +92,13 @@ def save_to_s3(base64_image: str, object_key: str, mime_type: str):
     binary_image = base64.b64decode(base64_image)
     file_binary = io.BytesIO(binary_image)
     s3.upload_fileobj(
-        file_binary, S3_BUCKET_NAME, object_key, ExtraArgs={"ContentType": mime_type}
+        file_binary, 
+        S3_BUCKET_NAME, 
+        object_key, 
+        ExtraArgs={
+            "ContentType": mime_type,
+            "ACL": "public-read"
+        }
     )
 
 
@@ -191,21 +198,22 @@ def delete_s3_objects_with_prefix(object_key_prefix: str) -> None:
 
 
 def generate_signed_url(object_key):
-    expiration = SIGNED_URL_EXPIRATION
-    """
-    Generate a signed URL for an S3 object.
+    return s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": S3_BUCKET_NAME, "Key": object_key},
+        ExpiresIn=SIGNED_URL_EXPIRATION,
+    )
 
-    :param bucket_name: The name of the S3 bucket.
-    :param object_key: The key of the S3 object. ex) 'path/to/user-content.jpg'
-    :param expiration: Time in seconds for the signed URL to remain valid (default: 3600 seconds).
-    :return: The signed URL as a string.
+
+def generate_public_url(object_key: str) -> str:
     """
-    try:
-        signed_url = s3.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": S3_BUCKET_NAME, "Key": object_key},
-            ExpiresIn=expiration,
-        )
-        return signed_url
-    except Exception as e:
-        raise RuntimeError(e)
+    Generate a public URL for an S3 object that has been uploaded with public-read ACL.
+    
+    Args:
+        object_key: The S3 object key
+        
+    Returns:
+        A string containing the public URL for the S3 object
+    """
+    region = os.getenv("AWS_REGION", "us-east-1")
+    return f"https://{S3_BUCKET_NAME}.s3.{region}.amazonaws.com/{object_key}"

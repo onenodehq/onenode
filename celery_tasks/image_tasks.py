@@ -1,5 +1,5 @@
 from celery_setup import celery
-from blueprints.v0.utils.s3_operations import retrieve_from_s3
+from blueprints.v0.utils.s3_operations import retrieve_from_s3, generate_public_url
 from blueprints.v0.utils.openai_operations import (
     image_to_text,
 )
@@ -36,6 +36,9 @@ def embed_image_task(refs: list[dict]):
         try:
             # Retrieve image from S3
             base64_image, mime_type = retrieve_from_s3(object_key)
+            
+            # Generate public URL for the image
+            public_url = generate_public_url(object_key)
 
             # Call dummy OpenAI vision function to generate description
             description = image_to_text(base64_image, mime_type, vision_model)
@@ -79,6 +82,7 @@ def embed_image_task(refs: list[dict]):
                     "$set": {
                         f"{path}.@embImage.chunks": chunks,
                         f"{path}.@embImage.status": "processed",
+                        f"{path}.@embImage.url": public_url,
                     }
                 },
             )
