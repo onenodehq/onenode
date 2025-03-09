@@ -81,7 +81,10 @@ def save_base64_image_legacy(base64_image, filename):
 
 def upload_to_s3_legacy(file_binary, filename, content_type):
     s3.upload_fileobj(
-        file_binary, S3_BUCKET_NAME, filename, ExtraArgs={"ContentType": content_type}
+        file_binary, S3_BUCKET_NAME, filename, ExtraArgs={
+            "ContentType": content_type,
+            "ACL": "public-read"
+        }
     )
 
 
@@ -91,7 +94,10 @@ def upload_to_s3(base64_image: str, mime_type: str, filename: str, namespace: st
     binary_image = base64.b64decode(base64_image)
     file_binary = io.BytesIO(binary_image)
     s3.upload_fileobj(
-        file_binary, S3_BUCKET_NAME, keyname, ExtraArgs={"ContentType": mime_type}
+        file_binary, S3_BUCKET_NAME, keyname, ExtraArgs={
+            "ContentType": mime_type,
+            "ACL": "public-read"
+        }
     )
 
 
