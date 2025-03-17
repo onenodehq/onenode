@@ -5,6 +5,7 @@ from pymongo.errors import InvalidOperation
 
 from logger import logger
 from utils.email import notify_admin
+import celery_tasks
 
 # Load environment variables
 load_dotenv()

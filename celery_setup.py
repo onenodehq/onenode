@@ -1,8 +1,10 @@
+import os
 from dotenv import load_dotenv
 from create_app import application
 from celery import Celery
 from celery.schedules import crontab
 from bson import json_util
+import celery_tasks
 
 load_dotenv()
 
@@ -26,15 +28,17 @@ def make_celery(app):
     )
 
     celery.conf.update(
+        broker_url=os.getenv("CELERY_BROKER_URL"),
+        result_backend=os.getenv("CELERY_RESULT_BACKEND"),
         task_serializer="bson",
         accept_content=["bson", "json"],
         beat_schedule={  # Configure beat schedule here
             "record_usage_hourly": {
-                "task": "celery_tasks.record_usage",  # Update with your task path
+                "task": "celery_tasks.usage_tasks.record_usage",  # Update with your task path
                 "schedule": crontab(minute=0),  # Every hour at minute 0
             },
             "check_and_update_expired_plans": {
-                "task": "celery_tasks.check_and_update_expired_plans",
+                "task": "celery_tasks.plan_tasks.check_and_update_expired_plans",
                 "schedule": crontab(hour=0, minute=0),  # Every day at midnight
             },
         },

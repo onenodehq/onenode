@@ -51,6 +51,9 @@ def record_usage():
     usage_documents = []
 
     try:
+        # Notify admin when task is fired
+        notify_admin("Usage Task Fired", f"record_usage task started at {current_time}")
+        
         orgs = mongo_orgs.find({})
         for org in orgs:
             org_name = org.get("name")
