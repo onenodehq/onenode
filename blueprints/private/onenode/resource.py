@@ -22,7 +22,6 @@ private_onenode_blueprint_resource = Blueprint("resource", __name__, url_prefix=
 def get_resource():
     user_id = g.user_id
     response = get_resource_service(request, user_id)
-    notify_admin("Resource API Used", f"GET resource endpoint accessed by user_id: {user_id}")
     return jsonify(response), 200
 
 
