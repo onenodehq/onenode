@@ -283,7 +283,8 @@ def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
 def fetch_pinecone_usage_for_collection(
     project_id_str: str, db_name: str, collection_name: str
 ) -> float:
-    namespace = generate_pc_namespace(project_id_str, db_name)
+    # this function is not working as expected, so we are returning 0.0
+    """     namespace = generate_pc_namespace(project_id_str, db_name)
     try:
         # Filter by collection name; your actual namespace might differ if you
         # combine project_id_str, db_name, etc. Adjust as needed.
@@ -314,4 +315,5 @@ def fetch_pinecone_usage_for_collection(
             "Usage Sampling Failed",
             f"Failed to fetch Pinecone stats for collection {collection_name}: {e}",
         )
-        return 0.0
+        return 0.0 """
+    return 0.0
