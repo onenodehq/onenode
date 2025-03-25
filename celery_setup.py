@@ -4,7 +4,6 @@ from create_app import application
 from celery import Celery
 from celery.schedules import crontab
 from bson import json_util
-import celery_tasks
 
 load_dotenv()
 
