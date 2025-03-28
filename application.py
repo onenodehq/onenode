@@ -94,7 +94,7 @@ def handle_path_not_found_error(e):
 # Home route
 @application.route("/")
 def home():
-    return f"Welcome to CapybaraDB API!"
+    return f"Welcome to CapyDB API!"
 
 
 # Only for development environment
