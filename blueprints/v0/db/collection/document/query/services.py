@@ -21,16 +21,14 @@ def query_chunks_service(
     text: str,
     filter: dict,
     top_k: int,
-    projection: dict,
+    projection: dict | None,
     include_values: bool,
     emb_model: str,
 ) -> list[dict]:
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
     vector: list[float] = embed_text(text, emb_model)
 
-    if projection == None:
-        mongo_projection = {"_id": 1}
-    else:
+    if projection != None:
         mongo_projection = convert_projection(projection)
 
     if filter:
@@ -68,14 +66,6 @@ def query_chunks_service(
             ObjectId(item["metadata"]["doc_id"])
             for item in matches
             if "metadata" in item and "doc_id" in item["metadata"]
-        }
-    )
-
-    mongo_projection.update(
-        {
-            item["metadata"]["path"]: 1
-            for item in matches
-            if "metadata" in item and "path" in item["metadata"]
         }
     )
 
