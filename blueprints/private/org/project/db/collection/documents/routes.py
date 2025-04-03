@@ -32,11 +32,16 @@ def list_documents(org_id, project_id, db_name, collection_name):
         g.plan = org["plan"].get("type", "free")
     else:
         g.plan = "free"
+    
+    page_num = int(request.args.get("page", 1))
+    page_size = int(request.args.get("limit", 20))
 
     documents = list_documents_service(
         project_id,
         db_name,
         collection_name,
+        page_num,
+        page_size
     )
 
     return json_util.dumps(documents), 200
