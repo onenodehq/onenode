@@ -3,6 +3,7 @@ from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from bson import json_util, ObjectId
 from blueprints.private.org.project.db.collection.documents.services import (
+    find_documents_service,
     list_documents_service,
 )
 from blueprints.private.services import check_project_permission
@@ -42,6 +43,38 @@ def list_documents(org_id, project_id, db_name, collection_name):
         collection_name,
         page_num,
         page_size
+    )
+
+    return json_util.dumps(documents), 200
+
+@private_blueprint_document.route("/find", methods=["POST"])
+@requires_auth
+def find_documents(org_id, project_id, db_name, collection_name):
+    user_id = g.user_id
+
+    check_project_permission(user_id, org_id, project_id)
+
+    # Get organization to access plan
+    org = mongo_orgs.find_one({"_id": ObjectId(org_id)})
+    if org and "plan" in org:
+        g.plan = org["plan"].get("type", "free")
+    else:
+        g.plan = "free"
+    
+    data = request.get_json() 
+    page_num = int(data.get("page", 1))
+    page_size = int(data.get("limit", 20))
+    filter = data.get("filter", "{}")
+
+    print("filter", filter)
+    
+    documents = find_documents_service(
+        project_id,
+        db_name,
+        collection_name,
+        page_num,
+        page_size,
+        filter
     )
 
     return json_util.dumps(documents), 200
