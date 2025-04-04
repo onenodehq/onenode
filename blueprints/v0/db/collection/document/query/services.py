@@ -28,8 +28,7 @@ def query_chunks_service(
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
     vector: list[float] = embed_text(text, emb_model)
 
-    if projection != None:
-        mongo_projection = convert_projection(projection)
+    mongo_projection = convert_projection(projection)
 
     if filter:
         doc_ids_to_filter = get_doc_ids_by_filter(

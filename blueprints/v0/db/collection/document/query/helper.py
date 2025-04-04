@@ -55,20 +55,10 @@ def compose_query_response(
     return data
 
 
-def convert_projection(projection):
-    """
-    Converts the 'projection' dictionary into a MongoDB projection for a find operation.
+def convert_projection(projection: dict | None) -> dict | None:
+    if projection is None:
+        return None
 
-    Args:
-        projection (dict): A dictionary with 'mode' and optional 'fields'.
-
-    Returns:
-        dict or None: A MongoDB projection dictionary, or None for all fields.
-
-    Raises:
-        400 Bad Request: If the input is invalid.
-    """
-    # Validate that 'projection' is a dictionary
     if not isinstance(projection, dict):
         raise CustomAPIError(
             "Invalid projection format: Projection must be a dictionary.",
