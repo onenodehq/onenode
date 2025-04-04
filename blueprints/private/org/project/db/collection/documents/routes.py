@@ -2,14 +2,11 @@ from flask import Blueprint, g, request
 from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from bson import json_util, ObjectId
-from blueprints.private.org.project.db.collection.documents.services import (
-    find_documents_service,
-    list_documents_service,
-)
+from blueprints.private.org.project.db.collection.documents.services import list_documents_service
+from blueprints.v0.db.collection.document.find.services import find_docs_service
 from blueprints.private.services import check_project_permission
 from blueprints.v0.db.collection.document.services import delete_docs_service, update_docs_service
-from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
-from blueprints.v0.utils.mongo_operations import split_db_id
+from blueprints.v0.utils.mongo_operations import get_client_collection
 from blueprints.v0.utils.mongo_setup import mongo_orgs
 from errors import CustomAPIError
 
@@ -63,19 +60,43 @@ def find_documents(org_id, project_id, db_name, collection_name):
     
     data = request.get_json() 
     page_num = int(data.get("page", 1))
-    page_size = int(data.get("limit", 20))
-    filter = data.get("filter", "{}")
-
-    print("filter", filter)
+    page_size = int(data.get("limit", 0))
+    filter = data.get("filter")
+    projection = data.get("projection")
+    sort = data.get("sort")
     
-    documents = find_documents_service(
+    # Calculate skip value based on page number and size
+    skip = (page_num - 1) * page_size
+    limit = page_size
+    
+    # Get documents using find_docs_service
+    docs = find_docs_service(
         project_id,
         db_name,
         collection_name,
-        page_num,
-        page_size,
-        filter
+        filter,
+        projection,
+        sort,
+        skip,
+        limit,
     )
+    
+    mongo_collection = get_client_collection(project_id, db_name, collection_name)
+    total_count = mongo_collection.count_documents(filter)
+    
+    # Calculate total pages
+    total_pages = (total_count + page_size - 1) // page_size if total_count > 0 else 0
+    
+    pagination = {
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "current_page": page_num
+    }
+    
+    documents = {
+        "documents": docs,
+        "pagination": pagination
+    }
 
     return json_util.dumps(documents), 200
 
@@ -101,7 +122,6 @@ def delete_docs(
 
     data = json_util.loads(request.get_data(as_text=True))
     filter = data.get("filter")
-    print("filter", filter)
 
     if filter is None:
         raise CustomAPIError(
