@@ -17,6 +17,7 @@ from blueprints.v0.utils.s3_setup import (
     SIGNED_URL_EXPIRATION,
     s3,
 )
+from utils.email import notify_admin
 
 
 def process_image_resources(
@@ -81,10 +82,10 @@ def save_base64_image_legacy(base64_image, filename):
 
 def upload_to_s3_legacy(file_binary, filename, content_type):
     s3.upload_fileobj(
-        file_binary, S3_BUCKET_NAME, filename, ExtraArgs={
-            "ContentType": content_type,
-            "ACL": "public-read"
-        }
+        file_binary,
+        S3_BUCKET_NAME,
+        filename,
+        ExtraArgs={"ContentType": content_type, "ACL": "public-read"},
     )
 
 
@@ -94,10 +95,10 @@ def upload_to_s3(base64_image: str, mime_type: str, filename: str, namespace: st
     binary_image = base64.b64decode(base64_image)
     file_binary = io.BytesIO(binary_image)
     s3.upload_fileobj(
-        file_binary, S3_BUCKET_NAME, keyname, ExtraArgs={
-            "ContentType": mime_type,
-            "ACL": "public-read"
-        }
+        file_binary,
+        S3_BUCKET_NAME,
+        keyname,
+        ExtraArgs={"ContentType": mime_type, "ACL": "public-read"},
     )
 
 
@@ -105,13 +106,10 @@ def save_to_s3(base64_image: str, object_key: str, mime_type: str):
     binary_image = base64.b64decode(base64_image)
     file_binary = io.BytesIO(binary_image)
     s3.upload_fileobj(
-        file_binary, 
-        S3_BUCKET_NAME, 
-        object_key, 
-        ExtraArgs={
-            "ContentType": mime_type,
-            "ACL": "public-read"
-        }
+        file_binary,
+        S3_BUCKET_NAME,
+        object_key,
+        ExtraArgs={"ContentType": mime_type, "ACL": "public-read"},
     )
 
 
@@ -217,23 +215,20 @@ def get_secret(secret_name):
     # Create a Secrets Manager client
     session = boto3.session.Session()
     client = session.client(
-        service_name='secretsmanager',
-        region_name=os.getenv('AWS_REGION', 'us-east-1')
+        service_name="secretsmanager", region_name=os.getenv("AWS_REGION", "us-east-1")
     )
-    
+
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
         logging.error(f"Error retrieving secret {secret_name}: {e}")
         raise ValueError(f"Could not retrieve secret: {e}")
-    
+
     # Depending on whether the secret is a string or binary, one of these fields will be populated
-    if 'SecretString' in get_secret_value_response:
-        return get_secret_value_response['SecretString']
+    if "SecretString" in get_secret_value_response:
+        return get_secret_value_response["SecretString"]
     else:
-        return base64.b64decode(get_secret_value_response['SecretBinary'])
+        return base64.b64decode(get_secret_value_response["SecretBinary"])
 
 
 def rsa_signer(message):
@@ -243,38 +238,36 @@ def rsa_signer(message):
     """
     # Get the secret name from environment
     secret_name = os.getenv("CLOUDFRONT_PRIVATE_KEY_SECRET_NAME")
-    
+
     if not secret_name:
-        raise ValueError("CLOUDFRONT_PRIVATE_KEY_SECRET_NAME environment variable is not set")
-    
+        raise ValueError(
+            "CLOUDFRONT_PRIVATE_KEY_SECRET_NAME environment variable is not set"
+        )
+
     # Get private key from AWS Secrets Manager
     try:
         secret_value = get_secret(secret_name)
         # The secret might be stored as JSON with multiple values
         try:
             secret_json = json.loads(secret_value)
-            private_key_data = secret_json.get('cloudfront_private_key', '').encode('utf-8')
+            private_key_data = secret_json.get("cloudfront_private_key", "").encode(
+                "utf-8"
+            )
         except json.JSONDecodeError:
             # If not JSON, assume the entire secret is the private key
-            private_key_data = secret_value.encode('utf-8')
+            private_key_data = secret_value.encode("utf-8")
     except Exception as e:
         logging.error(f"Error retrieving private key from Secrets Manager: {e}")
         raise ValueError(f"Could not retrieve private key from Secrets Manager: {e}")
-    
+
     # Load the private key
     try:
         private_key = serialization.load_pem_private_key(
-            private_key_data,
-            password=None,
-            backend=default_backend()
+            private_key_data, password=None, backend=default_backend()
         )
-        
+
         # Sign the message
-        return private_key.sign(
-            message,
-            padding.PKCS1v15(),
-            hashes.SHA1()
-        )
+        return private_key.sign(message, padding.PKCS1v15(), hashes.SHA1())
     except Exception as e:
         logging.error(f"Error loading or using private key: {e}")
         raise ValueError(f"Error with private key: {e}")
@@ -285,39 +278,41 @@ def generate_signed_url(object_key):
     Generate a signed URL for accessing a private S3 object.
     If S3_CUSTOM_DOMAIN is configured, uses CloudFront signed URLs.
     Otherwise, falls back to S3 signed URLs.
-    
+
     Args:
         object_key: The S3 object key
-        
+
     Returns:
         A string containing the signed URL
     """
     # Use CloudFront signed URL if custom domain is configured
     custom_domain = os.getenv("S3_CUSTOM_DOMAIN")
     cloudfront_key_pair_id = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
-    
+
     if custom_domain and cloudfront_key_pair_id:
         try:
             # For CloudFront signed URLs
             resource_url = f"https://{custom_domain}/{object_key}"
-            
+
             # Create a CloudFront signer
             cf_signer = CloudFrontSigner(cloudfront_key_pair_id, rsa_signer)
-            
+
             # Set expiration time
-            expire_date = datetime.datetime.utcnow() + datetime.timedelta(seconds=int(SIGNED_URL_EXPIRATION))
-            
+            expire_date = datetime.datetime.utcnow() + datetime.timedelta(
+                seconds=int(SIGNED_URL_EXPIRATION)
+            )
+
             # Generate the signed URL
             signed_url = cf_signer.generate_presigned_url(
                 resource_url, date_less_than=expire_date
             )
-            
+
             return signed_url
         except Exception as e:
             logging.error(f"Error generating CloudFront signed URL: {e}")
             # Fall back to S3 signed URL if CloudFront signing fails
             logging.warning("Falling back to S3 signed URL")
-    
+
     # Use standard S3 signed URL
     return s3.generate_presigned_url(
         "get_object",
@@ -329,10 +324,10 @@ def generate_signed_url(object_key):
 def generate_public_url(object_key: str) -> str:
     """
     Generate a public URL for an S3 object that has been uploaded with public-read ACL.
-    
+
     Args:
         object_key: The S3 object key
-        
+
     Returns:
         A string containing the public URL for the S3 object
     """
@@ -341,5 +336,8 @@ def generate_public_url(object_key: str) -> str:
     if custom_domain:
         return f"https://{custom_domain}/{object_key}"
     else:
-        region = os.getenv("AWS_REGION", "us-east-1")
-        return f"https://{S3_BUCKET_NAME}.s3.{region}.amazonaws.com/{object_key}"
+        notify_admin(
+            "S3 Custom Domain Not Configured",
+            f"S3_CUSTOM_DOMAIN environment variable is not set. Please set it to use the custom domain.",
+        )
+        return f"https://{S3_BUCKET_NAME}.s3.amazonaws.com/{object_key}"
