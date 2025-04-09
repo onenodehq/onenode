@@ -35,7 +35,7 @@ from errors import CustomAPIError
 
 # Recursively check each field for the '@' prefix
 def process_document(
-    data: dict,
+    data: dict | list,
     project_id: str,
     db_name: str,
     collection_name: str,
@@ -155,7 +155,8 @@ def process_document(
                 all_vector_bases.extend(result["all_vector_bases"])
                 emb_image_refs.extend(result["emb_image_refs"])
     elif isinstance(data, list):
-        for item in data:
+        for i, item in enumerate(data):
+            current_path = f"{parent_path}.{i}"
             result = process_document(
                 data=item,
                 project_id=project_id,
