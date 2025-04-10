@@ -324,17 +324,27 @@ def generate_signed_url(object_key):
 def generate_public_url(object_key: str) -> str:
     """
     Generate a public URL for an S3 object that has been uploaded with public-read ACL.
-
+    
     Args:
         object_key: The S3 object key
-
+        
     Returns:
         A string containing the public URL for the S3 object
     """
-    # Use custom domain if configured, otherwise fall back to default S3 URL
     custom_domain = os.getenv("S3_CUSTOM_DOMAIN")
     if custom_domain:
         return f"https://{custom_domain}/{object_key}"
+    
+    elif os.getenv("SELF_HOSTED"):
+        s3_endpoint = os.getenv("S3_ENDPOINT_URL")
+        public_minio_port = os.getenv("S3_PUBLIC_PORT", "9000")
+        
+        if "minio" in s3_endpoint or ":" in s3_endpoint.replace("://", "").split("/")[0]:
+            return f"http://{s3_endpoint}:{public_minio_port}/{S3_BUCKET_NAME}/{object_key}"
+        
+        endpoint = s3_endpoint.replace("http://", "").replace("https://", "")
+        protocol = "http" if s3_endpoint.startswith("http://") else "https"
+        return f"{protocol}://{endpoint}/{S3_BUCKET_NAME}/{object_key}"
     else:
         notify_admin(
             "S3 Custom Domain Not Configured",

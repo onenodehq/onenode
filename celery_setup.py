@@ -18,6 +18,19 @@ register(
     content_encoding="utf-8",
 )
 
+if not os.environ.get("SELF_HOSTED"):
+    beat_schedule = {
+        "record_usage_hourly": {
+            "task": "celery_tasks.usage_tasks.record_usage",
+            "schedule": crontab(minute=0),
+        },
+        "check_and_update_expired_plans": {
+            "task": "celery_tasks.plan_tasks.check_and_update_expired_plans",
+            "schedule": crontab(hour=0, minute=0),  # Every day at midnight
+        },
+    }
+else:
+    beat_schedule = {}
 
 def make_celery(app):
     # In deployment, it automatically connects to SQS queue
@@ -31,16 +44,7 @@ def make_celery(app):
         result_backend=os.getenv("CELERY_RESULT_BACKEND"),
         task_serializer="bson",
         accept_content=["bson", "json"],
-        beat_schedule={  # Configure beat schedule here
-            "record_usage_hourly": {
-                "task": "celery_tasks.usage_tasks.record_usage",  # Update with your task path
-                "schedule": crontab(minute=0),  # Every hour at minute 0
-            },
-            "check_and_update_expired_plans": {
-                "task": "celery_tasks.plan_tasks.check_and_update_expired_plans",
-                "schedule": crontab(hour=0, minute=0),  # Every day at midnight
-            },
-        },
+        beat_schedule=beat_schedule,
     )
 
     class ContextTask(celery.Task):

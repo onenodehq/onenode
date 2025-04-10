@@ -10,7 +10,6 @@ from blueprints.v0.utils.mongo_operations import split_db_id
 from bson import json_util
 from blueprints.v0.db.collection.document.query.routes import v0_blueprint_query
 from blueprints.v0.db.collection.document.find.routes import v0_blueprint_find
-from blueprints.v0.utils.validations import validate_json_content_type
 from errors import CustomAPIError
 
 
@@ -81,7 +80,6 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
 @v0_blueprint_doc.route("", methods=["DELETE"])
 @require_api_key
 def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
-    validate_json_content_type()
     project_id, db_name = split_db_id(db_id)
     check_api_key_permissions(permissions, project_id)
 

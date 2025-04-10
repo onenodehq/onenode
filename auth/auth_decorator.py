@@ -27,6 +27,9 @@ def decode_nextauth_session(token):
 def requires_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        if os.environ.get("SELF_HOSTED"):
+            return f(*args, **kwargs)
+
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
@@ -46,28 +49,3 @@ def requires_auth(f):
         return f(*args, **kwargs)
 
     return decorated_function
-
-
-def requires_onenode_auth(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get("Authorization")
-
-        if not auth_header:
-            raise AuthError("Token is missing!")
-
-        try:
-            # Assuming the token is passed as 'Bearer <token>'
-            token = auth_header.split(" ")[1]
-            decoded_token = decode_nextauth_session(token)
-            g.user_id = decoded_token["user"]["_id"]
-            g.email = decoded_token["user"]["email"]
-        except Exception as e:
-            raise AuthError("Token is invalid or expired!")
-        # If the token is valid, proceed to the next function
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-# source (modified): https://www.reddit.com/r/nextjs/comments/1dq537p/handling_authjs_jwts_on_external_server/

@@ -1,6 +1,5 @@
 from errors import CustomAPIError
 
-
 DEFAULT_IMG_EMB_MODEL = "text-embedding-3-small"
 DEFAULT_IMG_VISION_MODEL = "gpt-4o-mini"
 DEFAULT_IMG_MAX_CHUNK_SIZE = 200

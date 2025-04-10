@@ -1,6 +1,5 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from blueprints.v0.models import emb_image
-from blueprints.v0.models.emb_image import (
+from blueprints.v0.emb_json.emb_image import (
     DEFAULT_IMG_CHUNK_OVERLAP,
     DEFAULT_IMG_EMB_MODEL,
     DEFAULT_IMG_IS_SEPARATOR_REGEX,
@@ -10,7 +9,7 @@ from blueprints.v0.models.emb_image import (
     DEFAULT_IMG_VISION_MODEL,
     EmbImage,
 )
-from blueprints.v0.models.emb_text import (
+from blueprints.v0.emb_json.emb_text import (
     DEFAULT_TXT_CHUNK_OVERLAP,
     DEFAULT_TXT_EMB_MODEL,
     DEFAULT_TXT_IS_SEPARATOR_REGEX,

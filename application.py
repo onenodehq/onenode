@@ -1,13 +1,11 @@
+import os
 from dotenv import load_dotenv
-
 from errors import AuthError, CustomAPIError
 from pymongo.errors import InvalidOperation
-
 from logger import logger
 from utils.email import notify_admin
 import celery_tasks
 
-# Load environment variables
 load_dotenv()
 
 from flask import jsonify, request
@@ -19,9 +17,9 @@ from create_app import application
 CORS(application)
 
 # Register the Blueprint
-application.register_blueprint(private_blueprint)
+if not os.environ.get("SELF_HOSTED"):
+    application.register_blueprint(private_blueprint)
 application.register_blueprint(v0_blueprint_root)
-
 
 
 @application.errorhandler(AuthError)

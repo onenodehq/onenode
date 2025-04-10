@@ -1,4 +1,5 @@
 from functools import wraps
+import os
 from blueprints.private.org.project.api_key.services import hash_api_key
 from blueprints.v0.utils.mongo_setup import mongo_api_keys
 from flask import g, request
@@ -9,6 +10,9 @@ from errors import AuthError
 def require_api_key(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        if os.environ.get("SELF_HOSTED"):
+            return f(*args, **kwargs)
+
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             raise AuthError("Authorization header missing")
@@ -33,6 +37,9 @@ def require_api_key(f):
 def require_admin_api_key(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        if os.environ.get("SELF_HOSTED"):
+            return f(*args, **kwargs)
+
         admin_api_key = request.headers.get("X-Admin-API-Key")
         if not admin_api_key:
             raise AuthError("Admin API key missing")

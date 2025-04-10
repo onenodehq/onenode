@@ -1,0 +1,190 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=application.py
+      - MONGO_CLIENT_URI=mongodb://mongodb:27017/
+      - REDIS_ENDPOINT_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERY_RESULT_EXPIRES=3600
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - S3_BUCKET_NAME=capydb-storage
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_USE_LOCAL=true
+      - S3_PUBLIC_HOST=localhost
+      - S3_PUBLIC_PORT=9000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: >
+      sh -c "gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 application:application"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - INSTANCE_ROLE=worker
+      - FLASK_ENV=development
+      - FLASK_APP=application.py
+      - MONGO_CLIENT_URI=mongodb://mongodb:27017/
+      - REDIS_ENDPOINT_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERY_RESULT_EXPIRES=3600
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - S3_BUCKET_NAME=capydb-storage
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_USE_LOCAL=true
+      - S3_PUBLIC_HOST=localhost
+      - S3_PUBLIC_PORT=9000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: >
+      sh -c "celery -A celery_setup worker --loglevel=info"
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - INSTANCE_ROLE=beat
+      - FLASK_ENV=development
+      - FLASK_APP=application.py
+      - MONGO_CLIENT_URI=mongodb://mongodb:27017/
+      - REDIS_ENDPOINT_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERY_RESULT_EXPIRES=3600
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - S3_BUCKET_NAME=capydb-storage
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_USE_LOCAL=true
+      - S3_PUBLIC_HOST=localhost
+      - S3_PUBLIC_PORT=9000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: >
+      sh -c "celery -A celery_setup beat --loglevel=info"
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=capydb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  redis:
+    image: redis:7.0
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/${S3_BUCKET_NAME:=capydb-storage};
+      /usr/bin/mc anonymous set public myminio/${S3_BUCKET_NAME:=capydb-storage};
+      exit 0;
+      "
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
+  minio_data: 

@@ -1,11 +1,13 @@
+import os
 from bson import ObjectId
-
 from errors import AuthError
-
 
 def check_api_key_permissions(
     permissions: dict, project_id: str, role: str = "owner"
 ) -> bool:
+    if os.environ.get("SELF_HOSTED"):
+        return True
+
     projects = permissions.get("projects", [])
     if (
         projects
@@ -13,4 +15,4 @@ def check_api_key_permissions(
         and projects[0].get("role") == role
     ):
         return True
-    raise ("API key denied. Insufficient permissions.")
+    raise AuthError("API key denied. Insufficient permissions.")

@@ -1,14 +1,9 @@
 from itertools import islice
 from blueprints.v0.utils.pinecone_setup import (
-    DIMENSIONS,
-    pc_admin_index,
     pc_index_1536,
     pc_index_3072,
 )
 from utils.email import notify_admin
-
-dummy_vector = [0] * DIMENSIONS
-
 
 # helper
 def batch_iterable(iterable, batch_size):
@@ -18,22 +13,6 @@ def batch_iterable(iterable, batch_size):
         if not batch:
             break
         yield batch
-
-
-def query_resources_by_id(resource_id: str, user_id: str):
-    filter = {"id": {"$eq": resource_id}, "user_id": {"$eq": user_id}}
-    data = pc_admin_index.query(
-        vector=dummy_vector, filter=filter, include_metadata=True, top_k=1
-    )
-    return data
-
-
-def query_resources_by_user_id(user_id: str):
-    filter = {"user_id": {"$eq": user_id}}
-    data = pc_admin_index.query(
-        vector=dummy_vector, filter=filter, include_metadata=True, top_k=10000
-    )
-    return data
 
 
 def pc_delete_with_doc_ids(
