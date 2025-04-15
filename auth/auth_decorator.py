@@ -27,9 +27,6 @@ def decode_nextauth_session(token):
 def requires_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if os.environ.get("SELF_HOSTED"):
-            return f(*args, **kwargs)
-
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:

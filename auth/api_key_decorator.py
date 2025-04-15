@@ -10,9 +10,6 @@ from errors import AuthError
 def require_api_key(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if os.environ.get("SELF_HOSTED"):
-            return f(*args, **kwargs)
-
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             raise AuthError("Authorization header missing")
@@ -37,15 +34,13 @@ def require_api_key(f):
 def require_admin_api_key(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if os.environ.get("SELF_HOSTED"):
-            return f(*args, **kwargs)
 
         admin_api_key = request.headers.get("X-Admin-API-Key")
         if not admin_api_key:
             raise AuthError("Admin API key missing")
 
         hashed_api_key = hash_api_key(api_key=admin_api_key)
-        stored_hash = mongo_api_keys.find_one(filter={"_id": hashed_api_key})
+        stored_hash = mongo_api_keys.find_one(filter={"_id": hashed_api_key, "status": "admin"})
 
         if not stored_hash or stored_hash.get("status") != "admin":
             raise AuthError("Unauthorized access")

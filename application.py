@@ -17,8 +17,7 @@ from create_app import application
 CORS(application)
 
 # Register the Blueprint
-if not os.environ.get("SELF_HOSTED"):
-    application.register_blueprint(private_blueprint)
+application.register_blueprint(private_blueprint)
 application.register_blueprint(v0_blueprint_root)
 
 
