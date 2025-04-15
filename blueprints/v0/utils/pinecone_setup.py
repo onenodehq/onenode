@@ -1,6 +1,4 @@
 import os, time
-from langchain_openai import OpenAIEmbeddings
-from langchain_pinecone import Pinecone as LangchainPinecone
 from pinecone import Pinecone, ServerlessSpec
 
 PINECONE_INDEX_1536 = os.getenv("PINECONE_INDEX_1536", "capydb_1536")
