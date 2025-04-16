@@ -15,6 +15,7 @@ import datetime
 import json
 from bson import ObjectId
 from bson import BSON
+from bson import json_util
 
 redis_client = Redis.from_url(celery.conf.broker_url)
 CACHE_TTL = 86400  # 24 hours
@@ -22,11 +23,13 @@ CACHE_TTL = 86400  # 24 hours
 
 def cache_usage_data(usage_doc: dict):
     try:
+        # Convert only top-level fields for backward compatibility
         usage_doc["project_id"] = str(usage_doc["project_id"])
         usage_doc["org_id"] = str(usage_doc["org_id"])
         usage_doc["timestamp"] = str(usage_doc["timestamp"])
 
-        serialized_data = json.dumps(usage_doc)
+        # Use bson.json_util to handle MongoDB-specific types
+        serialized_data = json_util.dumps(usage_doc)
         project_key = f"usage:project:{usage_doc['project_id']}"
         redis_client.set(project_key, serialized_data, ex=CACHE_TTL)
     except Exception as e:
@@ -45,132 +48,143 @@ def get_cached_usage(project_id_str: str) -> dict:
     return json.loads(cached_data) if cached_data else None
 
 
+def record_project_usage(org, project):
+    current_time = datetime.datetime.now()
+    project_id_str = str(project.get("_id"))
+    project_name = project.get("name")
+    org_name = org.get("name")
+
+    try:
+        total_project_mongo_storage = 0
+        total_project_mongo_index = 0
+        total_project_pinecone = 0
+
+        database_details = []
+
+        for collection in project.get("collections", []):
+            db_name = collection.get("db_name")
+            if not db_name:
+                continue
+            db_id = generate_client_db_id(project_id_str, db_name)
+
+            try:
+                db = mongo_client_cluster[db_id]
+                stats = db.command("dbStats")
+
+                mongo_storage_size = stats.get("storageSize", 0)
+                mongo_index_size = stats.get("indexSize", 0)
+
+                total_project_mongo_storage += mongo_storage_size
+                total_project_mongo_index += mongo_index_size
+
+                pinecone_usage = fetch_pinecone_usage(project_id_str, db_name)
+                total_project_pinecone += pinecone_usage
+
+                collection_details = []
+                for coll_name in db.list_collection_names():
+                    coll_stats = db.command({"collStats": coll_name})
+                    coll_size = coll_stats.get("size", 0)
+                    coll_idx_size = coll_stats.get("totalIndexSize", 0)
+                    doc_count = coll_stats.get("count", 0)
+
+                    pc_mb = fetch_pinecone_usage_for_collection(
+                        project_id_str, db_name, coll_name
+                    )
+
+                    # Calculate average (storage + index) per document
+                    if doc_count > 0:
+                        avg_doc_bytes = (coll_size + coll_idx_size) / doc_count
+                        avg_doc_mb = round(avg_doc_bytes / (1024 * 1024), 4)
+                        avg_pc_mb = pc_mb / doc_count
+                    else:
+                        avg_doc_mb = 0.0
+                        avg_pc_mb = 0.0
+
+                    collection_details.append(
+                        {
+                            "collection_name": coll_name,
+                            "document_count": doc_count,
+                            "storage_mb": round(coll_size / (1024 * 1024), 2),
+                            "index_mb": round(coll_idx_size / (1024 * 1024), 2),
+                            "total_mb": round(
+                                (coll_size + coll_idx_size) / (1024 * 1024), 2
+                            ),
+                            "avg_doc_mb": avg_doc_mb,
+                            "pc_mb": pc_mb,
+                            "avg_pc_mb": avg_pc_mb,
+                        }
+                    )
+
+                database_details.append(
+                    {
+                        "db_name": db_name,
+                        "mongo_storage_mb": round(
+                            mongo_storage_size / (1024 * 1024), 2
+                        ),
+                        "mongo_index_mb": round(
+                            mongo_index_size / (1024 * 1024), 2
+                        ),
+                        "mongo_total_mb": round(
+                            (mongo_storage_size + mongo_index_size)
+                            / (1024 * 1024),
+                            2,
+                        ),
+                        "pc_mb": round(pinecone_usage, 2),
+                        "collection_details": collection_details,
+                    }
+                )
+
+            except Exception as e:
+                notify_admin(
+                    "Usage Sampling Failed",
+                    f"Failed to fetch stats for {db_name} "
+                    f"in project {project_id_str}: {e}",
+                )
+
+        usage_doc = {
+            "timestamp": current_time.replace(second=0, microsecond=0),
+            "org_id": org.get("_id"),
+            "org_name": org_name,
+            "project_id": ObjectId(project_id_str),
+            "project_name": project_name,
+            "mongo_storage_mb": round(
+                total_project_mongo_storage / (1024 * 1024), 2
+            ),
+            "mongo_index_mb": round(
+                total_project_mongo_index / (1024 * 1024), 2
+            ),
+            "mongo_total_mb": round(
+                (total_project_mongo_storage + total_project_mongo_index)
+                / (1024 * 1024),
+                2,
+            ),
+            "pc_mb": round(total_project_pinecone, 2),
+            "database_details": database_details,
+        }
+
+        # Save individual project usage to database
+        mongo_usage.insert_one(usage_doc)
+        
+        # Cache the usage data
+        cache_usage_data(usage_doc.copy())
+        
+        return usage_doc
+        
+    except Exception as e:
+        notify_admin(
+            "Project Usage Sampling Failed",
+            f"Failed to record usage for project {project_id_str}: {e}",
+        )
+        return None
+
+
 @celery.task
 def record_usage():
-    current_time = datetime.datetime.now()
-    usage_documents = []
-
     try:        
         orgs = mongo_orgs.find({})
         for org in orgs:
-            org_name = org.get("name")
-
             for project in org.get("projects", []):
-                project_id_str = str(project.get("_id"))
-                project_name = project.get("name")
-
-                total_project_mongo_storage = 0
-                total_project_mongo_index = 0
-                total_project_pinecone = 0
-
-                database_details = []
-
-                for collection in project.get("collections", []):
-                    db_name = collection.get("db_name")
-                    if not db_name:
-                        continue
-                    db_id = generate_client_db_id(project_id_str, db_name)
-
-                    try:
-                        db = mongo_client_cluster[db_id]
-                        stats = db.command("dbStats")
-
-                        mongo_storage_size = stats.get("storageSize", 0)
-                        mongo_index_size = stats.get("indexSize", 0)
-
-                        total_project_mongo_storage += mongo_storage_size
-                        total_project_mongo_index += mongo_index_size
-
-                        pinecone_usage = fetch_pinecone_usage(project_id_str, db_name)
-                        total_project_pinecone += pinecone_usage
-
-                        collection_details = []
-                        for coll_name in db.list_collection_names():
-                            coll_stats = db.command({"collStats": coll_name})
-                            coll_size = coll_stats.get("size", 0)
-                            coll_idx_size = coll_stats.get("totalIndexSize", 0)
-                            doc_count = coll_stats.get("count", 0)
-
-                            pc_mb = fetch_pinecone_usage_for_collection(
-                                project_id_str, db_name, coll_name
-                            )
-
-                            # Calculate average (storage + index) per document
-                            if doc_count > 0:
-                                avg_doc_bytes = (coll_size + coll_idx_size) / doc_count
-                                avg_doc_mb = round(avg_doc_bytes / (1024 * 1024), 4)
-                                avg_pc_mb = pc_mb / doc_count
-                            else:
-                                avg_doc_mb = 0.0
-                                avg_pc_mb = 0.0
-
-                            collection_details.append(
-                                {
-                                    "collection_name": coll_name,
-                                    "document_count": doc_count,
-                                    "storage_mb": round(coll_size / (1024 * 1024), 2),
-                                    "index_mb": round(coll_idx_size / (1024 * 1024), 2),
-                                    "total_mb": round(
-                                        (coll_size + coll_idx_size) / (1024 * 1024), 2
-                                    ),
-                                    "avg_doc_mb": avg_doc_mb,
-                                    "pc_mb": pc_mb,
-                                    "avg_pc_mb": avg_pc_mb,
-                                }
-                            )
-
-                        database_details.append(
-                            {
-                                "db_name": db_name,
-                                "mongo_storage_mb": round(
-                                    mongo_storage_size / (1024 * 1024), 2
-                                ),
-                                "mongo_index_mb": round(
-                                    mongo_index_size / (1024 * 1024), 2
-                                ),
-                                "mongo_total_mb": round(
-                                    (mongo_storage_size + mongo_index_size)
-                                    / (1024 * 1024),
-                                    2,
-                                ),
-                                "pc_mb": round(pinecone_usage, 2),
-                                "collection_details": collection_details,
-                            }
-                        )
-
-                    except Exception as e:
-                        notify_admin(
-                            "Usage Sampling Failed",
-                            f"Failed to fetch stats for {db_name} "
-                            f"in project {project_id_str}: {e}",
-                        )
-
-                usage_doc = {
-                    "timestamp": current_time.replace(second=0, microsecond=0),
-                    "org_id": org.get("_id"),
-                    "org_name": org_name,
-                    "project_id": ObjectId(project_id_str),
-                    "project_name": project_name,
-                    "mongo_storage_mb": round(
-                        total_project_mongo_storage / (1024 * 1024), 2
-                    ),
-                    "mongo_index_mb": round(
-                        total_project_mongo_index / (1024 * 1024), 2
-                    ),
-                    "mongo_total_mb": round(
-                        (total_project_mongo_storage + total_project_mongo_index)
-                        / (1024 * 1024),
-                        2,
-                    ),
-                    "pc_mb": round(total_project_pinecone, 2),
-                    "database_details": database_details,
-                }
-
-                usage_documents.append(usage_doc)
-                cache_usage_data(usage_doc.copy())
-
-        if usage_documents:
-            mongo_usage.insert_many(usage_documents)
+                record_project_usage(org, project)
 
     except Exception as e:
         notify_admin(
@@ -189,11 +203,9 @@ def increment_collection_usage_cache(
     try:
         usage_doc = get_cached_usage(project_id_str)
         if not usage_doc:
-            notify_admin(
-                "Cache Miss",
-                f"No cached usage document found for project {project_id_str}. "
-                f"Cannot update usage after save.",
-            )
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
+            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            record_project_usage(org, project)
             return
 
         # 1. Locate the correct DB and collection in the usage document
@@ -202,10 +214,9 @@ def increment_collection_usage_cache(
             (db for db in db_detail_list if db.get("db_name") == db_name), None
         )
         if not db_detail:
-            notify_admin(
-                "Database Not Found",
-                f"No database '{db_name}' found in usage cache for project {project_id_str}.",
-            )
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
+            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            record_project_usage(org, project)
             return
 
         coll_detail_list = db_detail.get("collection_details", [])
@@ -218,10 +229,9 @@ def increment_collection_usage_cache(
             None,
         )
         if not coll_detail:
-            notify_admin(
-                "Collection Not Found",
-                f"No collection '{collection_name}' found in usage cache for project {project_id_str}.",
-            )
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
+            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            record_project_usage(org, project)
             return
 
         # 2. Calculate actual Mongo doc size in bytes, then MB
@@ -280,11 +290,9 @@ def decrement_collection_usage_cache(
     try:
         usage_doc = get_cached_usage(project_id_str)
         if not usage_doc:
-            notify_admin(
-                "Cache Miss",
-                f"No cached usage document found for project {project_id_str}. "
-                f"Cannot update usage after delete.",
-            )
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
+            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            record_project_usage(org, project)
             return
 
         # Find DB
@@ -293,10 +301,9 @@ def decrement_collection_usage_cache(
             (db for db in db_details if db.get("db_name") == db_name), None
         )
         if not db_detail:
-            notify_admin(
-                "Database Not Found",
-                f"No database '{db_name}' found in usage cache for project {project_id_str}.",
-            )
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
+            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            record_project_usage(org, project)
             return
 
         # Find collection
@@ -306,10 +313,9 @@ def decrement_collection_usage_cache(
             None,
         )
         if not coll_detail:
-            notify_admin(
-                "Collection Not Found",
-                f"No collection '{collection_name}' found in usage cache for project {project_id_str}.",
-            )
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
+            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            record_project_usage(org, project)
             return
 
         current_doc_count = coll_detail.get("document_count", 0)
