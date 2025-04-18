@@ -203,8 +203,8 @@ def increment_collection_usage_cache(
     try:
         usage_doc = get_cached_usage(project_id_str)
         if not usage_doc:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
-            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
+            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
             record_project_usage(org, project)
             return
 
@@ -214,8 +214,8 @@ def increment_collection_usage_cache(
             (db for db in db_detail_list if db.get("db_name") == db_name), None
         )
         if not db_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
-            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
+            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
             record_project_usage(org, project)
             return
 
@@ -229,8 +229,8 @@ def increment_collection_usage_cache(
             None,
         )
         if not coll_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
-            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
+            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
             record_project_usage(org, project)
             return
 
@@ -290,8 +290,8 @@ def decrement_collection_usage_cache(
     try:
         usage_doc = get_cached_usage(project_id_str)
         if not usage_doc:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
-            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
+            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
             record_project_usage(org, project)
             return
 
@@ -301,8 +301,8 @@ def decrement_collection_usage_cache(
             (db for db in db_details if db.get("db_name") == db_name), None
         )
         if not db_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
-            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
+            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
             record_project_usage(org, project)
             return
 
@@ -313,8 +313,8 @@ def decrement_collection_usage_cache(
             None,
         )
         if not coll_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id"))})
-            project = mongo_projects.find_one({"_id": ObjectId(usage_doc.get("project_id"))})
+            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
+            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
             record_project_usage(org, project)
             return
 
