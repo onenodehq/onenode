@@ -76,18 +76,30 @@ def pc_upsert(vectors: list, project_id: str, db_name: str, dimensions: int):
 
 
 def pc_client_delete_collection(project_id: str, db_name: str, collection_name: str):
+    namespace = generate_pc_namespace(project_id, db_name)
     collection_prefix = generate_pc_id_prefix(project_id, db_name, collection_name)
     ids_to_delete_1536 = []
     ids_to_delete_3072 = []
-    for ids in pc_index_1536.list(prefix=collection_prefix):
-        ids_to_delete_1536.extend(ids)
-    for ids in pc_index_3072.list(prefix=collection_prefix):
-        ids_to_delete_3072.extend(ids)
-
-    if ids_to_delete_1536:
-        pc_index_1536.delete(ids=ids_to_delete_1536)
-    if ids_to_delete_3072:
-        pc_index_3072.delete(ids=ids_to_delete_3072)
+    
+    # Check if namespace exists in 1536 index
+    index_stats_1536 = pc_index_1536.describe_index_stats()
+    namespace_exists_1536 = namespace in index_stats_1536.get("namespaces", {})
+    
+    # Check if namespace exists in 3072 index
+    index_stats_3072 = pc_index_3072.describe_index_stats()
+    namespace_exists_3072 = namespace in index_stats_3072.get("namespaces", {})
+    
+    if namespace_exists_1536:
+        for ids in pc_index_1536.list(prefix=collection_prefix, namespace=namespace):
+            ids_to_delete_1536.extend(ids)
+        if ids_to_delete_1536:
+            pc_index_1536.delete(ids=ids_to_delete_1536, namespace=namespace)
+    
+    if namespace_exists_3072:
+        for ids in pc_index_3072.list(prefix=collection_prefix, namespace=namespace):
+            ids_to_delete_3072.extend(ids)
+        if ids_to_delete_3072:
+            pc_index_3072.delete(ids=ids_to_delete_3072, namespace=namespace)
 
 
 def delete_pc_vectors_by_id_prefix(project_id: str, db_name: str, prefix: str):
