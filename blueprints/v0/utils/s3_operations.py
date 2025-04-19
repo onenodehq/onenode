@@ -151,15 +151,17 @@ def generate_object_key_prefix(
     project_id: str,
     database_name: str,
     collection_name: str,
-    doc_id: str,
+    doc_id: str = None,
     path: str = None,
 ) -> str:
-
-    if path:
-        normalized_path = path.replace(".", "/")
-        return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{normalized_path}/"
+    if doc_id:
+        if path:
+            normalized_path = path.replace(".", "/")
+            return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{normalized_path}/"
+        else:
+            return f"{project_id}/{database_name}/{collection_name}/{doc_id}/"
     else:
-        return f"{project_id}/{database_name}/{collection_name}/{doc_id}/"
+        return f"{project_id}/{database_name}/{collection_name}/"
 
 
 def delete_s3_objects(object_keys: List[str]):
@@ -206,6 +208,12 @@ def delete_s3_objects_with_prefix(object_key_prefix: str) -> None:
     # Delete any remaining objects that didn't complete a full batch.
     if objects_to_delete:
         s3.delete_objects(Bucket=S3_BUCKET_NAME, Delete={"Objects": objects_to_delete})
+
+
+def s3_delete_collection(project_id: str, db_name: str, collection_name: str):
+    prefix = generate_object_key_prefix(project_id, db_name, collection_name)
+    delete_s3_objects_with_prefix(prefix)
+    return True
 
 
 def get_secret(secret_name):
