@@ -8,6 +8,21 @@ from errors import CustomAPIError
 
 
 def register_collection(project_id: str, db_name: str, collection_name: str):
+    existing = mongo_orgs.find_one(
+        {
+            "projects._id": ObjectId(project_id),
+            "projects.collections": {
+                "$elemMatch": {
+                    "name": collection_name,
+                    "db_name": db_name
+                }
+            }
+        }
+    )
+
+    if existing:
+        return
+
     new_collection = {
         "name": collection_name,
         "db_name": db_name,
