@@ -3,6 +3,7 @@ from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from blueprints.private.user.services import (
     create_user_service,
+    delete_user_service,
     get_user_by_access_token_service,
     get_user_by_email_service,
 )
@@ -36,6 +37,17 @@ def create_user():
     notify_admin("New signup", f"New sign up on {app}\nUser: {email} \n-end-")
     return jsonify(new_user), 200
 
+@private_blueprint_user.route("/<user_id>", methods=["DELETE"])
+@require_admin_api_key
+def delete_user(user_id):
+    if not user_id:
+        raise CustomAPIError(
+            "Missing required parameters: 'user_id'"
+        )
+
+    delete_user_service(user_id)
+
+    return "", 204
 
 @private_blueprint_user.route("/email", methods=["GET"])
 @require_admin_api_key
