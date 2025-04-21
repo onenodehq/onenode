@@ -101,6 +101,21 @@ def pc_client_delete_collection(project_id: str, db_name: str, collection_name: 
         if ids_to_delete_3072:
             pc_index_3072.delete(ids=ids_to_delete_3072, namespace=namespace)
 
+def delete_pc_namespaces(project_id: str, db_name: str):
+    namespace = generate_pc_namespace(project_id, db_name)
+
+    index_stats_1536 = pc_index_1536.describe_index_stats()
+    namespace_exists_1536 = namespace in index_stats_1536.get("namespaces", {})
+
+    index_stats_3072 = pc_index_3072.describe_index_stats()
+    namespace_exists_3072 = namespace in index_stats_3072.get("namespaces", {})
+    
+    if namespace_exists_1536:
+        pc_index_1536.delete(delete_all=True, namespace=namespace)
+    if namespace_exists_3072:
+        pc_index_3072.delete(delete_all=True, namespace=namespace)
+
+    return True
 
 def delete_pc_vectors_by_id_prefix(project_id: str, db_name: str, prefix: str):
     namespace = generate_pc_namespace(project_id, db_name)
