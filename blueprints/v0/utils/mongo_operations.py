@@ -72,7 +72,7 @@ def get_client_collection(
     project_id: str,
     db_name: str,
     collection_name: str,
-    must_exist: bool = True,
+    must_exist: bool = False,
 ) -> Collection:
     db_id = generate_client_db_id(project_id, db_name)
     if must_exist and db_id not in mongo_client_cluster.list_database_names():
