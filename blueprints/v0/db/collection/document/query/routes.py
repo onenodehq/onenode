@@ -15,13 +15,14 @@ def query_chunks(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
     check_api_key_permissions(permissions, project_id)
 
-    data = json_util.loads(request.get_data(as_text=True))
-    text = data.get("query")
-    filter = data.get("filter")
-    top_k = int(data.get("top_k", "10"))
-    projection = data.get("projection")
-    include_values = data.get("include_values", False)
-    emb_model = data.get("emb_model", "text-embedding-3-small")
+    text = request.form.get("query")
+    filter_str = request.form.get("filter")
+    filter = json_util.loads(filter_str) if filter_str else None
+    top_k = int(request.form.get("top_k", "10"))
+    projection_str = request.form.get("projection")
+    projection = json_util.loads(projection_str) if projection_str else None
+    include_values = request.form.get("include_values", "False").lower() == "true"
+    emb_model = request.form.get("emb_model", "text-embedding-3-small")
 
     if not text:
         return jsonify({"error": "Please provide a text query parameter."}), 400

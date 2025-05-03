@@ -27,11 +27,16 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
     check_api_key_permissions(permissions, project_id)
 
-    data = json_util.loads(request.get_data(as_text=True))
-    docs: list[dict] = data.get("documents")
+    if 'documents' not in request.form:
+        raise CustomAPIError(
+            "Missing 'documents' field. Request must include a 'documents' array containing at least one document.",
+            status_code=400
+        )
+
+    docs = json_util.loads(request.form['documents'])
     if not docs:
         raise CustomAPIError(
-            "Missing or empty 'documents' field. Request must include a 'documents' array containing at least one document.",
+            "Empty 'documents' field. Request must include a 'documents' array containing at least one document.",
             status_code=400
         )
 
@@ -51,9 +56,14 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
     check_api_key_permissions(permissions, project_id)
 
-    data = json_util.loads(request.get_data(as_text=True))
-    filter = data.get("filter")
-    update = data.get("update")
+    if 'filter' not in request.form or 'update' not in request.form:
+        raise CustomAPIError(
+            message="Missing required fields. Request must include both 'filter' and 'update' fields.",
+            status_code=400
+        )
+
+    filter = json_util.loads(request.form['filter'])
+    update = json_util.loads(request.form['update'])
 
     if not filter:
         raise CustomAPIError(
@@ -83,8 +93,13 @@ def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
     check_api_key_permissions(permissions, project_id)
 
-    data = json_util.loads(request.get_data(as_text=True))
-    filter = data.get("filter")
+    if 'filter' not in request.form:
+        raise CustomAPIError(
+            "Missing 'filter' field in the request data. 'None' is not allowed.",
+            status_code=400
+        )
+
+    filter = json_util.loads(request.form['filter'])
 
     if filter is None:
         raise CustomAPIError(
