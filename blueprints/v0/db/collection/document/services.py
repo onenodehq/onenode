@@ -73,7 +73,6 @@ def create_docs_service(
 
     return {
         "inserted_ids": inserted_ids,
-        "task_id": task.id if all_vector_bases else None,
     }
 
 
@@ -133,7 +132,6 @@ def update_docs_service(
         "matched_count": update_result.matched_count,
         "modified_count": update_result.modified_count,
         "upserted_id": update_result.upserted_id,
-        "task_id": task.id if all_vector_bases else None,
     }
 
 
