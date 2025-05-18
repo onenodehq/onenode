@@ -17,7 +17,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12" # Set this to the Python version you use
+          python-version: "3.13" # Set this to the Python version you use
 
       - name: Install dependencies
         run: |
@@ -32,7 +32,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-east-2"
         run: |
-          eb init -p python-3.12 onenode --region $AWS_REGION
+          eb init -p python-3.13 onenode --region $AWS_REGION
           eb use onenode-env
           eb deploy
 
@@ -44,7 +44,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-east-2"
         run: |
-          eb init -p python-3.12 onenode --region $AWS_REGION
+          eb init -p python-3.13 onenode --region $AWS_REGION
           eb use onenode-beat
           eb deploy
 
@@ -56,6 +56,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-east-2"
         run: |
-          eb init -p python-3.12 OneNodeBrain --region $AWS_REGION
+          eb init -p python-3.13 OneNodeBrain --region $AWS_REGION
           eb use onenode-env-dev
           eb deploy
