@@ -1,8 +1,8 @@
 import os, time
 from pinecone import Pinecone, ServerlessSpec
 
-PINECONE_INDEX_1536 = os.getenv("PINECONE_INDEX_1536", "capydb_1536")
-PINECONE_INDEX_3072 = os.getenv("PINECONE_INDEX_3072", "capydb_3072")
+PINECONE_INDEX_1536 = os.getenv("PINECONE_INDEX_1536", "1536")
+PINECONE_INDEX_3072 = os.getenv("PINECONE_INDEX_3072", "3072")
 PC_FREE_STORAGE_LIMIT_MB = int(os.getenv("PC_FREE_STORAGE_LIMIT_MB"))
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))

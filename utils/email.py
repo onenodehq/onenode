@@ -13,8 +13,8 @@ EMAIL_SENDER_PASSWORD = os.getenv("EMAIL_SENDER_PASSWORD")
 
 def notify_admin(subject: str, body: str):
     # Email settings
-    alias_email = "no-reply@capydb.com"  # The alias to show as sender
-    primary_email = "tomo@capydb.com"  # The primary account used for authentication
+    alias_email = "no-reply@onenode.ai"  # The alias to show as sender
+    primary_email = "tomo@onenode.ai"  # The primary account used for authentication
     sender_password = EMAIL_SENDER_PASSWORD  # Use App Password if 2FA is enabled
 
     # Create a MIMEText message
