@@ -55,7 +55,6 @@ orjson==3.10.18
 packaging==24.2
 pinecone==6.0.2
 pinecone-client==6.0.0
-pinecone-plugin-inference==3.1.0
 pinecone-plugin-interface==0.0.7
 pluggy==1.6.0
 prompt_toolkit==3.0.51
