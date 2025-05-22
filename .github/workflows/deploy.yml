@@ -47,15 +47,3 @@ jobs:
           eb init -p python-3.13 onenode --region $AWS_REGION
           eb use onenode-beat
           eb deploy
-
-      # Deploy to onenode-env-dev when branch is dev
-      - name: Deploy to AWS Elastic Beanstalk (onenode-env-dev)
-        if: github.ref == 'refs/heads/dev'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: "us-east-2"
-        run: |
-          eb init -p python-3.13 OneNodeBrain --region $AWS_REGION
-          eb use onenode-env-dev
-          eb deploy

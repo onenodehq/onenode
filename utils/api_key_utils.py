@@ -22,7 +22,7 @@ load_dotenv()
 def generate_api_key(length=None):
     if length is None:
         # Use the same length as in the application
-        length = int(os.getenv("CAPYDB_API_KEY_LENGTH", 48))
+        length = int(os.getenv("ONENODE_API_KEY_LENGTH", 48))
     
     alphabet = string.ascii_letters + string.digits
     api_key = "".join(secrets.choice(alphabet) for _ in range(length))
