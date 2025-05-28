@@ -93,7 +93,7 @@ def handle_path_not_found_error(e):
 # Home route
 @application.route("/")
 def home():
-    return f"Welcome to CapyDB API!"
+    return f"Welcome to OneNode API! Visit https://wwww.onenode.ai for more information :)"
 
 
 # Only for development environment
