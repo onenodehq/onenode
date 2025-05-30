@@ -15,7 +15,7 @@ from blueprints.v0.db.collection.services import delete_collection_service
 from errors import CustomAPIError
 
 private_blueprint_collection = Blueprint(
-    "private_v1_collection",
+    "private_v0_collection",
     __name__,
     url_prefix="/<string:db_name>/collection",
 )

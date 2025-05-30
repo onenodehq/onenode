@@ -1,21 +1,23 @@
+from email.mime import base
+import re
 from bson import ObjectId
 from flask import g
-from blueprints.v1.db.collection.document.helper import (
+from blueprints.v0.db.collection.document.helper import (
     delete_overwritten_pc_vectors,
     delete_overwritten_s3_images,
     process_document,
     process_update,
 )
-from blueprints.v1.utils.free_tier_monitorings import (
+from blueprints.v0.utils.free_tier_monitorings import (
     check_mongo_storage,
     check_pc_storage,
 )
-from blueprints.v1.utils.mongo_operations import (
+from blueprints.v0.utils.mongo_operations import (
     get_client_collection,
     get_doc_ids_by_filter,
 )
-from blueprints.v1.utils.pinecone_operations import pc_delete_with_doc_ids
-from blueprints.v1.utils.s3_operations import delete_s3_objects_with_doc_ids, save_to_s3
+from blueprints.v0.utils.pinecone_operations import pc_delete_with_doc_ids
+from blueprints.v0.utils.s3_operations import delete_s3_objects_with_doc_ids, save_to_s3
 from celery_tasks import (
     save_vectors_task,
     decrement_collection_usage_cache,

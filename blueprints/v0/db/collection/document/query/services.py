@@ -1,5 +1,4 @@
 from bson import ObjectId
-from pymongo import ASCENDING
 from blueprints.v0.db.collection.document.query.helper import (
     compose_query_response,
     convert_projection,

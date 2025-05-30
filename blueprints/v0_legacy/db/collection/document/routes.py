@@ -1,27 +1,27 @@
 from flask import Blueprint, request
 from auth.api_key_decorator import require_api_key
-from blueprints.v1.db.collection.document.services import (
+from blueprints.v0.db.collection.document.services import (
     create_docs_service,
     delete_docs_service,
     update_docs_service,
 )
-from blueprints.v1.utils.api_key_permissions import check_api_key_permissions
-from blueprints.v1.utils.mongo_operations import split_db_id
+from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
+from blueprints.v0.utils.mongo_operations import split_db_id
 from bson import json_util
-from blueprints.v1.db.collection.document.query.routes import v1_blueprint_query
-from blueprints.v1.db.collection.document.find.routes import v1_blueprint_find
+from blueprints.v0.db.collection.document.query.routes import v0_blueprint_query
+from blueprints.v0.db.collection.document.find.routes import v0_blueprint_find
 from errors import CustomAPIError
 
 
-v1_blueprint_doc = Blueprint(
-    "v1_doc", __name__, url_prefix="/<string:collection_name>/document"
+v0_blueprint_doc = Blueprint(
+    "v0_doc", __name__, url_prefix="/<string:collection_name>/document"
 )
 
-v1_blueprint_doc.register_blueprint(v1_blueprint_query)
-v1_blueprint_doc.register_blueprint(v1_blueprint_find)
+v0_blueprint_doc.register_blueprint(v0_blueprint_query)
+v0_blueprint_doc.register_blueprint(v0_blueprint_find)
 
 
-@v1_blueprint_doc.route("", methods=["POST"])
+@v0_blueprint_doc.route("", methods=["POST"])
 @require_api_key
 def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
@@ -50,7 +50,7 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     return json_util.dumps(result), 200
 
 
-@v1_blueprint_doc.route("", methods=["PUT"])
+@v0_blueprint_doc.route("", methods=["PUT"])
 @require_api_key
 def update_docs(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
@@ -87,7 +87,7 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
     return json_util.dumps(result), 200
 
 
-@v1_blueprint_doc.route("", methods=["DELETE"])
+@v0_blueprint_doc.route("", methods=["DELETE"])
 @require_api_key
 def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)

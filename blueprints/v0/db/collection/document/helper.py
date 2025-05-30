@@ -1,22 +1,9 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from blueprints.v0.emb_json.emb_image import (
-    DEFAULT_IMG_CHUNK_OVERLAP,
-    DEFAULT_IMG_EMB_MODEL,
-    DEFAULT_IMG_IS_SEPARATOR_REGEX,
-    DEFAULT_IMG_KEEP_SEPARATOR,
-    DEFAULT_IMG_MAX_CHUNK_SIZE,
-    DEFAULT_IMG_SEPARATORS,
-    DEFAULT_IMG_VISION_MODEL,
-    EmbImage,
+from blueprints.v0.ejson.image import (
+    Image,
 )
-from blueprints.v0.emb_json.emb_text import (
-    DEFAULT_TXT_CHUNK_OVERLAP,
-    DEFAULT_TXT_EMB_MODEL,
-    DEFAULT_TXT_IS_SEPARATOR_REGEX,
-    DEFAULT_TXT_KEEP_SEPARATOR,
-    DEFAULT_TXT_MAX_CHUNK_SIZE,
-    DEFAULT_TXT_SEPARATORS,
-    EmbText,
+from blueprints.v0.ejson.text import (
+    Text,
 )
 from blueprints.v0.utils.pinecone_operations import (
     create_vector_bases,
@@ -56,20 +43,20 @@ def process_document(
                     status_code=400
                 )
 
-            if key == "@embText":
-                EmbText.is_valid_data(data=data)
+            if key == "xText":
+                Text.is_valid_data(data=data)
 
                 value: dict
 
                 text = value["text"]
-                emb_model = value.get("emb_model", DEFAULT_TXT_EMB_MODEL)
-                max_chunk_size = value.get("max_chunk_size", DEFAULT_TXT_MAX_CHUNK_SIZE)
-                chunk_overlap = value.get("chunk_overlap", DEFAULT_TXT_CHUNK_OVERLAP)
+                emb_model = value.get("emb_model", Text.DEFAULT_EMB_MODEL)
+                max_chunk_size = value.get("max_chunk_size", Text.DEFAULT_MAX_CHUNK_SIZE)
+                chunk_overlap = value.get("chunk_overlap", Text.DEFAULT_CHUNK_OVERLAP)
                 is_separator_regex = value.get(
-                    "is_separator_regex", DEFAULT_TXT_IS_SEPARATOR_REGEX
+                    "is_separator_regex", Text.DEFAULT_IS_SEPARATOR_REGEX
                 )
-                separators = value.get("separators", DEFAULT_TXT_SEPARATORS)
-                keep_separator = value.get("keep_separator", DEFAULT_TXT_KEEP_SEPARATOR)
+                separators = value.get("separators", Text.DEFAULT_SEPARATORS)
+                keep_separator = value.get("keep_separator", Text.DEFAULT_KEEP_SEPARATOR)
                 chunks = chunk(
                     text,
                     max_chunk_size,
@@ -101,22 +88,22 @@ def process_document(
                     )
                     all_vector_bases.extend(vector_bases)
 
-            elif key == "@embImage":
-                EmbImage.is_valid_data(data=data)
+            elif key == "xImage":
+                Image.is_valid_data(data=data)
 
                 value: dict
 
-                emb_model = value.get("emb_model", DEFAULT_IMG_EMB_MODEL)
-                vision_model = value.get("vision_model", DEFAULT_IMG_VISION_MODEL)
+                emb_model = value.get("emb_model", Image.DEFAULT_EMB_MODEL)
+                vision_model = value.get("vision_model", Image.DEFAULT_VISION_MODEL)
                 mime_type: str = value["mime_type"]
                 base64_image: str = value.pop("data")
-                max_chunk_size = value.get("max_chunk_size", DEFAULT_IMG_MAX_CHUNK_SIZE)
-                chunk_overlap = value.get("chunk_overlap", DEFAULT_IMG_CHUNK_OVERLAP)
+                max_chunk_size = value.get("max_chunk_size", Image.DEFAULT_MAX_CHUNK_SIZE)
+                chunk_overlap = value.get("chunk_overlap", Image.DEFAULT_CHUNK_OVERLAP)
                 is_separator_regex = value.get(
-                    "is_separator_regex", DEFAULT_IMG_IS_SEPARATOR_REGEX
+                    "is_separator_regex", Image.DEFAULT_IS_SEPARATOR_REGEX
                 )
-                separators = value.get("separators", DEFAULT_IMG_SEPARATORS)
-                keep_separator = value.get("keep_separator", DEFAULT_IMG_KEEP_SEPARATOR)
+                separators = value.get("separators", Image.DEFAULT_SEPARATORS)
+                keep_separator = value.get("keep_separator", Image.DEFAULT_KEEP_SEPARATOR)
 
                 for doc_id in doc_ids:
                     object_key = generate_object_key(
@@ -222,18 +209,18 @@ def process_update(
         # Check the cases (the first two conditions are mostly the same)
         # NOTE: for updating embJSON fields, check operation is one of allowed ones
         path_substrings = path.split(".")
-        if path_substrings and path_substrings[-1] == "@embText":
+        if path_substrings and path_substrings[-1] == "xText":
             raise CustomAPIError(
                 f"Unsupported operation: Updating EmbJSON fields partially is not supported yet. Invalid path: {path}",
                 status_code=400
             )
-        elif len(path_substrings) > 1 and path_substrings[-2] == "@embText":
+        elif len(path_substrings) > 1 and path_substrings[-2] == "xText":
             raise CustomAPIError(
                 f"Unsupported operation: Updating EmbJSON fields partially is not supported yet. Invalid path: {path}",
                 status_code=400
             )
 
-        elif "@embText" not in path_substrings:
+        elif "xText" not in path_substrings:
             result = process_document(
                 new_value, project_id, db_name, collection_name, doc_ids
             )
@@ -242,7 +229,7 @@ def process_update(
 
         else:
             raise CustomAPIError(
-                f"Invalid path format: {path}. The path contains '@embText' in an unsupported position.",
+                f"Invalid path format: {path}. The path contains 'xText' in an unsupported position.",
                 status_code=400
             )
 

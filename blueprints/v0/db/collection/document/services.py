@@ -1,5 +1,3 @@
-from email.mime import base
-import re
 from bson import ObjectId
 from flask import g
 from blueprints.v0.db.collection.document.helper import (

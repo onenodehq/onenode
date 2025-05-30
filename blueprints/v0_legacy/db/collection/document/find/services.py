@@ -1,6 +1,6 @@
 from typing import Dict, List, Any
 from pymongo.collection import Collection
-from blueprints.v1.utils.mongo_operations import get_client_collection
+from blueprints.v0.utils.mongo_operations import get_client_collection
 
 
 def find_docs_service(

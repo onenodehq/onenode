@@ -1,14 +1,15 @@
 from bson import ObjectId
-from blueprints.v1.db.collection.document.query.helper import (
+from pymongo import ASCENDING
+from blueprints.v0.db.collection.document.query.helper import (
     compose_query_response,
     convert_projection,
 )
-from blueprints.v1.utils.mongo_operations import (
+from blueprints.v0.utils.mongo_operations import (
     get_client_collection,
     get_doc_ids_by_filter,
 )
-from blueprints.v1.utils.openai_operations import embed_text
-from blueprints.v1.utils.pinecone_operations import (
+from blueprints.v0.utils.openai_operations import embed_text
+from blueprints.v0.utils.pinecone_operations import (
     pc_client_query,
 )
 

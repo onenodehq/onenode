@@ -10,8 +10,8 @@ def get_chunk_by_path(doc: dict, path: str, chunk_n: int) -> str | None:
     for segment in path_segments:
         current_dict = current_dict.get(segment, {})
 
-    # Step 3: Check for 'xImage' or 'xText'
-    emb_dict = current_dict.get("xImage") or current_dict.get("xText")
+    # Step 3: Check for '@embContent' or '@embText'
+    emb_dict = current_dict.get("@embContent") or current_dict.get("@embText")
 
     # Step 4: Access the 'chunks' list
     chunks_list = emb_dict.get("chunks") if emb_dict else []
