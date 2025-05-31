@@ -44,19 +44,20 @@ def process_document(
                 )
 
             if key == "xText":
-                Text.is_valid_data(data=data)
-
+                # Extract and validate all parameters using Text class
+                params = Text.extract_params(data=data)
+                
                 value: dict
-
-                text = value["text"]
-                emb_model = value.get("emb_model", Text.DEFAULT_EMB_MODEL)
-                max_chunk_size = value.get("max_chunk_size", Text.DEFAULT_MAX_CHUNK_SIZE)
-                chunk_overlap = value.get("chunk_overlap", Text.DEFAULT_CHUNK_OVERLAP)
-                is_separator_regex = value.get(
-                    "is_separator_regex", Text.DEFAULT_IS_SEPARATOR_REGEX
-                )
-                separators = value.get("separators", Text.DEFAULT_SEPARATORS)
-                keep_separator = value.get("keep_separator", Text.DEFAULT_KEEP_SEPARATOR)
+                
+                # Extract parameters for processing
+                text = params["text"]
+                emb_model = params["emb_model"]
+                max_chunk_size = params["max_chunk_size"]
+                chunk_overlap = params["chunk_overlap"]
+                is_separator_regex = params["is_separator_regex"]
+                separators = params["separators"]
+                keep_separator = params["keep_separator"]
+                
                 chunks = chunk(
                     text,
                     max_chunk_size,
@@ -89,21 +90,24 @@ def process_document(
                     all_vector_bases.extend(vector_bases)
 
             elif key == "xImage":
-                Image.is_valid_data(data=data)
-
+                # Extract and validate all parameters using Image class
+                params = Image.extract_params(data=data)
+                
                 value: dict
-
-                emb_model = value.get("emb_model", Image.DEFAULT_EMB_MODEL)
-                vision_model = value.get("vision_model", Image.DEFAULT_VISION_MODEL)
-                mime_type: str = value["mime_type"]
-                base64_image: str = value.pop("data")
-                max_chunk_size = value.get("max_chunk_size", Image.DEFAULT_MAX_CHUNK_SIZE)
-                chunk_overlap = value.get("chunk_overlap", Image.DEFAULT_CHUNK_OVERLAP)
-                is_separator_regex = value.get(
-                    "is_separator_regex", Image.DEFAULT_IS_SEPARATOR_REGEX
-                )
-                separators = value.get("separators", Image.DEFAULT_SEPARATORS)
-                keep_separator = value.get("keep_separator", Image.DEFAULT_KEEP_SEPARATOR)
+                
+                # Extract parameters for processing
+                emb_model = params["emb_model"]
+                vision_model = params["vision_model"]
+                mime_type = params["mime_type"]
+                base64_image = params["data"]  # Note: will be popped from value later
+                max_chunk_size = params["max_chunk_size"]
+                chunk_overlap = params["chunk_overlap"]
+                is_separator_regex = params["is_separator_regex"]
+                separators = params["separators"]
+                keep_separator = params["keep_separator"]
+                
+                # Remove the base64 data from the value to avoid storing it in MongoDB
+                value.pop("data", None)
 
                 for doc_id in doc_ids:
                     object_key = generate_object_key(
