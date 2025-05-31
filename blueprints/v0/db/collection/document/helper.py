@@ -57,6 +57,7 @@ def process_document(
                 is_separator_regex = params["is_separator_regex"]
                 separators = params["separators"]
                 keep_separator = params["keep_separator"]
+                index = params["index"]
                 
                 chunks = chunk(
                     text,
@@ -67,27 +68,30 @@ def process_document(
                     keep_separator,
                 )
                 value["chunks"] = chunks
-                for doc_id in doc_ids:
-                    metadata = generate_pc_metadata(
-                        project_id,
-                        db_name,
-                        collection_name,
-                        doc_id,
-                        parent_path,
-                        "text",
-                        emb_model,
-                    )
+                
+                # Only create vectors if index is True
+                if index:
+                    for doc_id in doc_ids:
+                        metadata = generate_pc_metadata(
+                            project_id,
+                            db_name,
+                            collection_name,
+                            doc_id,
+                            parent_path,
+                            "text",
+                            emb_model,
+                        )
 
-                    vector_bases = create_vector_bases(
-                        chunks,
-                        metadata,
-                        project_id,
-                        db_name,
-                        collection_name,
-                        doc_id,
-                        parent_path,
-                    )
-                    all_vector_bases.extend(vector_bases)
+                        vector_bases = create_vector_bases(
+                            chunks,
+                            metadata,
+                            project_id,
+                            db_name,
+                            collection_name,
+                            doc_id,
+                            parent_path,
+                        )
+                        all_vector_bases.extend(vector_bases)
 
             elif key == "xImage":
                 # Extract and validate all parameters using Image class
@@ -105,33 +109,36 @@ def process_document(
                 is_separator_regex = params["is_separator_regex"]
                 separators = params["separators"]
                 keep_separator = params["keep_separator"]
+                index = params["index"]
                 
                 # Remove the base64 data from the value to avoid storing it in MongoDB
                 value.pop("data", None)
 
-                for doc_id in doc_ids:
-                    object_key = generate_object_key(
-                        project_id,
-                        db_name,
-                        collection_name,
-                        doc_id,
-                        parent_path,
-                        mime_type,
-                    )
-                    emb_image_refs.append(
-                        {
-                            "object_key": object_key,
-                            "base64_image": base64_image,
-                            "mime_type": mime_type,
-                            "emb_model": emb_model,
-                            "vision_model": vision_model,
-                            "max_chunk_size": max_chunk_size,
-                            "chunk_overlap": chunk_overlap,
-                            "is_separator_regex": is_separator_regex,
-                            "separators": separators,
-                            "keep_separator": keep_separator,
-                        }
-                    )
+                # Only process for embedding if index is True
+                if index:
+                    for doc_id in doc_ids:
+                        object_key = generate_object_key(
+                            project_id,
+                            db_name,
+                            collection_name,
+                            doc_id,
+                            parent_path,
+                            mime_type,
+                        )
+                        emb_image_refs.append(
+                            {
+                                "object_key": object_key,
+                                "base64_image": base64_image,
+                                "mime_type": mime_type,
+                                "emb_model": emb_model,
+                                "vision_model": vision_model,
+                                "max_chunk_size": max_chunk_size,
+                                "chunk_overlap": chunk_overlap,
+                                "is_separator_regex": is_separator_regex,
+                                "separators": separators,
+                                "keep_separator": keep_separator,
+                            }
+                        )
 
             elif isinstance(value, dict):
                 result = process_document(

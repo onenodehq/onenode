@@ -8,6 +8,7 @@ class Image:
     DEFAULT_IS_SEPARATOR_REGEX = False
     DEFAULT_SEPARATORS = None
     DEFAULT_KEEP_SEPARATOR = False
+    DEFAULT_INDEX = True
 
     supported_mime = [
         "image/jpeg",
@@ -37,6 +38,7 @@ class Image:
             "is_separator_regex": image_data.get("is_separator_regex", cls.DEFAULT_IS_SEPARATOR_REGEX),
             "separators": image_data.get("separators", cls.DEFAULT_SEPARATORS),
             "keep_separator": image_data.get("keep_separator", cls.DEFAULT_KEEP_SEPARATOR),
+            "index": image_data.get("index", cls.DEFAULT_INDEX),
         }
         
         # Validate parameter types and ranges
@@ -100,6 +102,13 @@ class Image:
         if not isinstance(params["keep_separator"], bool):
             raise CustomAPIError(
                 f"Invalid keep_separator: Expected boolean, got {type(params['keep_separator']).__name__}",
+                status_code=400
+            )
+        
+        # Validate index
+        if not isinstance(params["index"], bool):
+            raise CustomAPIError(
+                f"Invalid index: Expected boolean, got {type(params['index']).__name__}",
                 status_code=400
             )
     
