@@ -9,7 +9,6 @@ from blueprints.v0.utils.pinecone_operations import (
     create_vector_bases,
     delete_pc_vectors_by_id_prefix,
     generate_pc_id_prefix,
-    generate_pc_metadata,
 )
 from blueprints.v0.utils.s3_operations import (
     delete_s3_objects_with_prefix,
@@ -27,6 +26,8 @@ def process_document(
     collection_name: str,
     doc_ids: list,
     parent_path: str = "",
+    request_files: dict = None,
+    doc_index: int = 0,
 ) -> dict:
     all_vector_bases = []
     emb_image_refs = []
@@ -68,34 +69,28 @@ def process_document(
                     keep_separator,
                 )
                 value["chunks"] = chunks
-                
-                # Only create vectors if index is True
+
+                # Only process for embedding if index is True
                 if index:
                     for doc_id in doc_ids:
-                        metadata = generate_pc_metadata(
-                            project_id,
-                            db_name,
-                            collection_name,
-                            doc_id,
-                            parent_path,
-                            "text",
-                            emb_model,
-                        )
-
                         vector_bases = create_vector_bases(
-                            chunks,
-                            metadata,
                             project_id,
                             db_name,
-                            collection_name,
                             doc_id,
-                            parent_path,
+                            current_path,
+                            chunks,
+                            emb_model,
                         )
                         all_vector_bases.extend(vector_bases)
 
             elif key == "xImage":
-                # Extract and validate all parameters using Image class
-                params = Image.extract_params(data=data)
+                # Extract and validate all parameters using Image class with request files
+                params = Image.extract_params(
+                    data=data,
+                    request_files=request_files, 
+                    doc_index=doc_index, 
+                    parent_path=parent_path
+                )
                 
                 value: dict
                 
@@ -103,7 +98,7 @@ def process_document(
                 emb_model = params["emb_model"]
                 vision_model = params["vision_model"]
                 mime_type = params["mime_type"]
-                base64_image = params["data"]  # Note: will be popped from value later
+                binary_data = params["data"]  # Binary data from multipart files
                 max_chunk_size = params["max_chunk_size"]
                 chunk_overlap = params["chunk_overlap"]
                 is_separator_regex = params["is_separator_regex"]
@@ -111,8 +106,8 @@ def process_document(
                 keep_separator = params["keep_separator"]
                 index = params["index"]
                 
-                # Remove the base64 data from the value to avoid storing it in MongoDB
-                value.pop("data", None)
+                # Convert binary data to base64 for existing processing pipeline
+                base64_image = Image.binary_to_base64(binary_data)
 
                 # Only process for embedding if index is True
                 if index:
@@ -148,6 +143,8 @@ def process_document(
                     collection_name=collection_name,
                     doc_ids=doc_ids,
                     parent_path=current_path,
+                    request_files=request_files,
+                    doc_index=doc_index,
                 )
                 all_vector_bases.extend(result["all_vector_bases"])
                 emb_image_refs.extend(result["emb_image_refs"])
@@ -161,6 +158,8 @@ def process_document(
                 collection_name=collection_name,
                 doc_ids=doc_ids,
                 parent_path=current_path,
+                request_files=request_files,
+                doc_index=doc_index,
             )
             all_vector_bases.extend(result["all_vector_bases"])
             emb_image_refs.extend(result["emb_image_refs"])
@@ -201,6 +200,8 @@ def process_update(
     collection_name: str,
     doc_ids: list[str],
     updated_paths: list[str],
+    request_files: dict = None,
+    doc_index: int = 0,
 ) -> list:
     if not isinstance(fields, dict):  # Check if fields is not a dictionary
         raise CustomAPIError(
@@ -233,7 +234,13 @@ def process_update(
 
         elif "xText" not in path_substrings:
             result = process_document(
-                new_value, project_id, db_name, collection_name, doc_ids
+                new_value, 
+                project_id, 
+                db_name, 
+                collection_name,
+                doc_ids,
+                request_files=request_files,
+                doc_index=doc_index,
             )
             all_vector_bases.extend(result["all_vector_bases"])
             emb_image_refs.extend(result["emb_image_refs"])

@@ -45,6 +45,7 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
         project_id,
         db_name,
         collection_name,
+        request_files=request.files,
     )
 
     return json_util.dumps(result), 200
@@ -82,6 +83,7 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
         project_id,
         db_name,
         collection_name,
+        request_files=request.files,
     )
 
     return json_util.dumps(result), 200

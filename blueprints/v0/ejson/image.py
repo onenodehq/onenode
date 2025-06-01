@@ -1,4 +1,5 @@
 from errors import CustomAPIError
+import base64
 
 class Image:
     DEFAULT_EMB_MODEL = "text-embedding-3-small"
@@ -19,17 +20,26 @@ class Image:
     ]
     
     @classmethod
-    def extract_params(cls, data: dict) -> dict:
-        """
-        Extract and validate parameters from xImage data.
-        Returns a dictionary with all parameters including defaults.
-        """
-        cls.is_valid_data(data=data)
+    def extract_params(cls, data: dict, request_files: dict = None, doc_index: int = 0, parent_path: str = "") -> dict:
+        cls.is_valid_data_structure(data=data)
         
         image_data = data["xImage"]
         
+        # Build the expected form field name for binary data using dot notation
+        if parent_path:
+            field_path = f"doc_{doc_index}.{parent_path}.xImage.data"
+        else:
+            field_path = f"doc_{doc_index}.xImage.data"
+        
+        # Get binary data from multipart files
+        binary_data = None
+        if request_files and field_path in request_files:
+            file_obj = request_files[field_path]
+            binary_data = file_obj.read()
+            file_obj.seek(0)  # Reset file pointer for potential future reads
+        
         params = {
-            "data": image_data["data"],
+            "data": binary_data,  # Binary data instead of base64
             "mime_type": image_data["mime_type"],
             "emb_model": image_data.get("emb_model", cls.DEFAULT_EMB_MODEL),
             "vision_model": image_data.get("vision_model", cls.DEFAULT_VISION_MODEL),
@@ -49,6 +59,19 @@ class Image:
     @classmethod
     def _validate_params(cls, params: dict) -> None:
         """Validate parameter types and values."""
+        # Validate binary data exists
+        if params["data"] is None:
+            raise CustomAPIError(
+                "Missing binary data: No multipart file found for xImage data field",
+                status_code=400
+            )
+        
+        if not isinstance(params["data"], bytes):
+            raise CustomAPIError(
+                f"Invalid binary data: Expected bytes, got {type(params['data']).__name__}",
+                status_code=400
+            )
+        
         # Validate emb_model
         if not isinstance(params["emb_model"], str):
             raise CustomAPIError(
@@ -113,8 +136,8 @@ class Image:
             )
     
     @staticmethod
-    def is_valid_data(data: dict) -> bool:
-        """Checks if a dictionary has the correct structure to be an Image instance."""
+    def is_valid_data_structure(data: dict) -> bool:
+        """Checks if a dictionary has the correct structure to be an Image instance (without requiring data field)."""
         # Check if data is a dictionary
         if not isinstance(data, dict):
             raise CustomAPIError(
@@ -138,19 +161,7 @@ class Image:
                 status_code=400
             )
         
-        # Check if data field exists
-        if "data" not in attributes:
-            raise CustomAPIError(
-                "Invalid Image format: Missing 'data' field in Image data type",
-                status_code=400
-            )
-        
-        # Check if data is a string
-        if not isinstance(attributes["data"], str):
-            raise CustomAPIError(
-                f"Invalid Image format: 'data' must be a string, got {type(attributes['data']).__name__}",
-                status_code=400
-            )
+        # Note: We no longer require 'data' field in JSON since it comes from multipart files
         
         # Check if mime_type field exists
         if "mime_type" not in attributes:
@@ -175,3 +186,32 @@ class Image:
             )
         
         return True
+
+    @staticmethod
+    def is_valid_data(data: dict) -> bool:
+        """Legacy method for backward compatibility - checks for base64 data field."""
+        # Check basic structure first
+        Image.is_valid_data_structure(data)
+        
+        attributes = data["xImage"]
+        
+        # Check if data field exists (for backward compatibility)
+        if "data" not in attributes:
+            raise CustomAPIError(
+                "Invalid Image format: Missing 'data' field in Image data type",
+                status_code=400
+            )
+        
+        # Check if data is a string (base64)
+        if not isinstance(attributes["data"], str):
+            raise CustomAPIError(
+                f"Invalid Image format: 'data' must be a string, got {type(attributes['data']).__name__}",
+                status_code=400
+            )
+        
+        return True
+
+    @staticmethod
+    def binary_to_base64(binary_data: bytes) -> str:
+        """Convert binary data to base64 string for existing processing pipeline."""
+        return base64.b64encode(binary_data).decode('utf-8')

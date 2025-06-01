@@ -26,7 +26,11 @@ from utils.usage import check_current_usage
 
 
 def create_docs_service(
-    documents: list[dict], project_id: str, db_name: str, collection_name: str
+    documents: list[dict], 
+    project_id: str, 
+    db_name: str, 
+    collection_name: str,
+    request_files: dict = None,
 ):
 
     if g.plan == "free":
@@ -38,7 +42,7 @@ def create_docs_service(
 
     all_vector_bases = []
     all_emb_image_refs = []
-    for document in documents:
+    for doc_index, document in enumerate(documents):
         if not document.get("_id"):
             document["_id"] = ObjectId()
         doc_id = str(document["_id"])
@@ -48,6 +52,8 @@ def create_docs_service(
             db_name,
             collection_name,
             [doc_id],
+            request_files=request_files,
+            doc_index=doc_index,
         )
         all_vector_bases.extend(result["all_vector_bases"])
         all_emb_image_refs.extend(result["emb_image_refs"])
@@ -75,7 +81,12 @@ def create_docs_service(
 
 
 def update_docs_service(
-    filter: dict, update: dict, project_id: str, db_name: str, collection_name: str
+    filter: dict, 
+    update: dict, 
+    project_id: str, 
+    db_name: str, 
+    collection_name: str,
+    request_files: dict = None,
 ):
     if g.plan == "free":
         check_mongo_storage(project_id, db_name)
@@ -99,6 +110,8 @@ def update_docs_service(
             collection_name,
             doc_ids,
             updated_paths,
+            request_files=request_files,
+            doc_index=0,  # For updates, we assume single document context
         )
         all_vector_bases.extend(result["all_vector_bases"])
         all_emb_image_refs.extend(result["emb_image_refs"])
