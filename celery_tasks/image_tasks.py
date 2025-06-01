@@ -14,7 +14,7 @@ from blueprints.v0.utils.mongo_operations import (
 from bson import ObjectId
 from utils.email import notify_admin
 
-from onenode.celery_tasks.text_tasks import save_text_tasks
+from celery_tasks.text_tasks import save_text_tasks
 from logger import logger
 
 
@@ -35,13 +35,13 @@ def embed_image_task(refs: list[dict]):
 
         try:
             # Retrieve image from S3
-            base64_image, mime_type = retrieve_from_s3(object_key)
+            binary_data, mime_type = retrieve_from_s3(object_key)
             
             # Generate public URL for the image
             public_url = generate_public_url(object_key)
 
             # Call dummy OpenAI vision function to generate description
-            description = image_to_text(base64_image, mime_type, vision_model)
+            description = image_to_text(binary_data, mime_type, vision_model)
 
             # Chunk the generated description
             chunks = chunk(

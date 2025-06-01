@@ -17,7 +17,7 @@ from blueprints.v0.utils.mongo_operations import (
 from blueprints.v0.utils.pinecone_operations import pc_delete_with_doc_ids
 from blueprints.v0.utils.s3_operations import delete_s3_objects_with_doc_ids, save_to_s3
 from celery_tasks import (
-    save_vectors_task,
+    save_text_tasks,
     decrement_collection_usage_cache,
     update_vectors_task,
 )
@@ -62,16 +62,16 @@ def create_docs_service(
     inserted_ids = insert_many_result.inserted_ids
 
     if all_text_tasks:
-        task = save_vectors_task.delay(
+        task = save_text_tasks.delay(
             all_text_tasks, project_id, db_name, collection_name, documents
         )
 
     if all_image_tasks:
         for emb_image_ref in all_image_tasks:
-            base64_image = emb_image_ref["base64_image"]
+            binary_data = emb_image_ref["binary_data"]
             object_key = emb_image_ref["object_key"]
             mime_type = emb_image_ref["mime_type"]
-            save_to_s3(base64_image, object_key, mime_type)
+            save_to_s3(binary_data, object_key, mime_type)
 
         emb_task = embed_image_task.delay(all_image_tasks)
 

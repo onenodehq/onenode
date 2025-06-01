@@ -105,9 +105,6 @@ def process_document(
                 separators = params["separators"]
                 keep_separator = params["keep_separator"]
                 index = params["index"]
-                
-                # Convert binary data to base64 for existing processing pipeline
-                base64_image = Image.binary_to_base64(binary_data)
 
                 # Only process for embedding if index is True
                 if index:
@@ -123,7 +120,7 @@ def process_document(
                         image_tasks.append(
                             {
                                 "object_key": object_key,
-                                "base64_image": base64_image,
+                                "binary_data": binary_data,
                                 "mime_type": mime_type,
                                 "emb_model": emb_model,
                                 "vision_model": vision_model,

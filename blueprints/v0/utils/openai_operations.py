@@ -1,9 +1,11 @@
+import base64
 from blueprints.v0.utils.openai_setup import openai_client
 
 
 def image_to_text(
-    base64_image: str, mime_type: str, model: str = "gpt-4o-mini", max_tokens: int = 300
+    binary_data: bytes, mime_type: str, model: str = "gpt-4o-mini", max_tokens: int = 300
 ) -> str:
+    base64_image = base64.b64encode(binary_data).decode("utf-8")
     messages = [
         {
             "role": "user",

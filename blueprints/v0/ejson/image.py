@@ -1,5 +1,4 @@
 from errors import CustomAPIError
-import base64
 
 class Image:
     DEFAULT_EMB_MODEL = "text-embedding-3-small"
@@ -39,7 +38,7 @@ class Image:
             file_obj.seek(0)  # Reset file pointer for potential future reads
         
         params = {
-            "data": binary_data,  # Binary data instead of base64
+            "data": binary_data,
             "mime_type": image_data["mime_type"],
             "emb_model": image_data.get("emb_model", cls.DEFAULT_EMB_MODEL),
             "vision_model": image_data.get("vision_model", cls.DEFAULT_VISION_MODEL),
@@ -189,7 +188,7 @@ class Image:
 
     @staticmethod
     def is_valid_data(data: dict) -> bool:
-        """Legacy method for backward compatibility - checks for base64 data field."""
+        """Legacy method for backward compatibility - checks for binary data field."""
         # Check basic structure first
         Image.is_valid_data_structure(data)
         
@@ -202,16 +201,10 @@ class Image:
                 status_code=400
             )
         
-        # Check if data is a string (base64)
-        if not isinstance(attributes["data"], str):
+        if not isinstance(attributes["data"], bytes):
             raise CustomAPIError(
-                f"Invalid Image format: 'data' must be a string, got {type(attributes['data']).__name__}",
+                f"Invalid Image format: 'data' must be bytes, got {type(attributes['data']).__name__}",
                 status_code=400
             )
         
         return True
-
-    @staticmethod
-    def binary_to_base64(binary_data: bytes) -> str:
-        """Convert binary data to base64 string for existing processing pipeline."""
-        return base64.b64encode(binary_data).decode('utf-8')

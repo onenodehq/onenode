@@ -19,106 +19,20 @@ from blueprints.v0.utils.s3_setup import (
 )
 from utils.email import notify_admin
 
-
-def process_image_resources(
-    resources: List[Dict], ids: List[str], user_id: str
-) -> List[Dict]:
-    updated_resources = []
-
-    for i, resource in enumerate(resources):
-        try:
-            metadata = resource.get("metadata", {})
-            mime_type = metadata.get("type")
-            if not mime_type:
-                raise ValueError("Missing MIME type for image")
-            if mime_type.startswith("image/"):
-                base64_image: str = resource.get("content")
-                if not base64_image or not isinstance(base64_image, str):
-                    raise ValueError("Content for image must be a base64 string")
-
-                content = image_to_text(base64_image)
-                extension = EXTENSION_MAP.get(mime_type, "bin")
-                filename = f"{user_id}/{ids[i]}.{extension}"
-                save_base64_image_legacy(base64_image=base64_image, filename=filename)
-
-                metadata["s3_key"] = filename
-                resource["metadata"] = metadata
-                resource["content"] = content
-
-            updated_resources.append(resource)
-
-        except Exception as e:
-            logging.error(f"Error processing image resource: {e}")
-            raise RuntimeError(f"Failed to process resource content: {str(e)}")
-
-    return updated_resources
-
-
-def save_base64_image_legacy(base64_image, filename):
-    try:
-        # Check if the base64 string has metadata and extract content type if available
-        if base64_image.startswith("data:"):
-            header, base64_image = base64_image.split(",", 1)
-            content_type = header.split(";")[0].split(":")[1]
-        else:
-            content_type = (
-                "application/octet-stream"  # Default content type if not specified
-            )
-
-        # Decode the base64 string
-        binary_image = base64.b64decode(base64_image)
-        file_binary = io.BytesIO(binary_image)
-
-        # Upload to S3
-        upload_to_s3_legacy(file_binary, filename, content_type)
-
-    except (base64.binascii.Error, ValueError) as e:
-        logging.error(f"Failed to process base64 image: {e}")
-        raise RuntimeError(f"Failed to save image to S3: {str(e)}")
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        raise RuntimeError(f"Failed to save image to S3: {str(e)}")
-
-
-def upload_to_s3_legacy(file_binary, filename, content_type):
-    s3.upload_fileobj(
-        file_binary,
-        S3_BUCKET_NAME,
-        filename,
-        ExtraArgs={"ContentType": content_type, "ACL": "public-read"},
-    )
-
-
-# legacy function
-def upload_to_s3(base64_image: str, mime_type: str, filename: str, namespace: str):
-    keyname = namespace + "/" + filename
-    binary_image = base64.b64decode(base64_image)
-    file_binary = io.BytesIO(binary_image)
-    s3.upload_fileobj(
-        file_binary,
-        S3_BUCKET_NAME,
-        keyname,
-        ExtraArgs={"ContentType": mime_type, "ACL": "public-read"},
-    )
-
-
-def save_to_s3(base64_image: str, object_key: str, mime_type: str):
-    binary_image = base64.b64decode(base64_image)
-    file_binary = io.BytesIO(binary_image)
-    s3.upload_fileobj(
-        file_binary,
-        S3_BUCKET_NAME,
-        object_key,
-        ExtraArgs={"ContentType": mime_type, "ACL": "public-read"},
+def save_to_s3(binary_data: bytes, object_key: str, mime_type: str):
+    s3.put_object(
+        Bucket=S3_BUCKET_NAME,
+        Key=object_key,
+        Body=binary_data,
+        ContentType=mime_type,
+        Tagging="public=true",
     )
 
 
 def retrieve_from_s3(object_key: str) -> tuple[str, str]:
     response = s3.get_object(Bucket=S3_BUCKET_NAME, Key=object_key)
-    data = response["Body"].read()  # data is of type bytes
-    # Base64 encode the bytes and decode to a UTF-8 string
-    encoded_data = base64.b64encode(data).decode("utf-8")
-    return encoded_data, response["ContentType"]
+    data = response["Body"].read()
+    return data, response["ContentType"]
 
 
 def generate_object_key(
