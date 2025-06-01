@@ -106,31 +106,30 @@ def process_document(
                 keep_separator = params["keep_separator"]
                 index = params["index"]
 
-                # Only process for embedding if index is True
-                if index:
-                    for doc_id in doc_ids:
-                        object_key = generate_object_key(
-                            project_id,
-                            db_name,
-                            collection_name,
-                            doc_id,
-                            parent_path,
-                            mime_type,
-                        )
-                        image_tasks.append(
-                            {
-                                "object_key": object_key,
-                                "binary_data": binary_data,
-                                "mime_type": mime_type,
-                                "emb_model": emb_model,
-                                "vision_model": vision_model,
-                                "max_chunk_size": max_chunk_size,
-                                "chunk_overlap": chunk_overlap,
-                                "is_separator_regex": is_separator_regex,
-                                "separators": separators,
-                                "keep_separator": keep_separator,
-                            }
-                        )
+                for doc_id in doc_ids:
+                    object_key = generate_object_key(
+                        project_id,
+                        db_name,
+                        collection_name,
+                        doc_id,
+                        parent_path,
+                        mime_type,
+                    )
+                    image_tasks.append(
+                        {
+                            "object_key": object_key,
+                            "binary_data": binary_data,
+                            "mime_type": mime_type,
+                            "emb_model": emb_model,
+                            "vision_model": vision_model,
+                            "max_chunk_size": max_chunk_size,
+                            "chunk_overlap": chunk_overlap,
+                            "is_separator_regex": is_separator_regex,
+                            "separators": separators,
+                            "keep_separator": keep_separator,
+                            "index": index,
+                        }
+                    )
 
             elif isinstance(value, dict):
                 result = process_document(

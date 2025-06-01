@@ -29,6 +29,7 @@ def embed_image_task(refs: list[dict]):
         is_separator_regex = ref["is_separator_regex"]
         separators = ref["separators"]
         keep_separator = ref["keep_separator"]
+        index = ref["index"]
         project_id, db_name, collection_name, doc_id, path, _ = object_key.split("/")
 
         mongo_collection = get_client_collection(project_id, db_name, collection_name)
@@ -40,51 +41,57 @@ def embed_image_task(refs: list[dict]):
             # Generate public URL for the image
             public_url = generate_public_url(object_key)
 
-            # Call dummy OpenAI vision function to generate description
-            description = image_to_text(binary_data, mime_type, vision_model)
+            if index:
+                # Call dummy OpenAI vision function to generate description
+                description = image_to_text(binary_data, mime_type, vision_model)
 
-            # Chunk the generated description
-            chunks = chunk(
-                description,
-                max_chunk_size=max_chunk_size,
-                chunk_overlap=chunk_overlap,
-                is_separator_regex=is_separator_regex,
-                separators=separators,
-                keep_separator=keep_separator,
-            )
+                # Chunk the generated description
+                chunks = chunk(
+                    description,
+                    max_chunk_size=max_chunk_size,
+                    chunk_overlap=chunk_overlap,
+                    is_separator_regex=is_separator_regex,
+                    separators=separators,
+                    keep_separator=keep_separator,
+                )
 
-            # Embed each chunk
-            metadata = generate_pc_metadata(
-                project_id,
-                db_name,
-                collection_name,
-                doc_id,
-                path,
-                type="image",
-                emb_model=emb_model,
-            )
-            vector_bases = create_vector_bases(
-                chunks,
-                metadata,
-                project_id,
-                db_name,
-                collection_name,
-                doc_id,
-                path,
-            )
+                # Embed each chunk
+                metadata = generate_pc_metadata(
+                    project_id,
+                    db_name,
+                    collection_name,
+                    doc_id,
+                    path,
+                    type="image",
+                    emb_model=emb_model,
+                )
+                vector_bases = create_vector_bases(
+                    chunks,
+                    metadata,
+                    project_id,
+                    db_name,
+                    collection_name,
+                    doc_id,
+                    path,
+                )
 
-            # Save the embedding to Pinecone
-            save_text_tasks(vector_bases, project_id, db_name, collection_name, [])
+                # Save the embedding to Pinecone
+                save_text_tasks(vector_bases, project_id, db_name, collection_name, [])
+
+            # Prepare the update fields
+            update_fields = {
+                f"{path}.@embImage.status": "processed",
+                f"{path}.@embImage.url": public_url,
+                f"{path}.@embImage.index": index,
+            }
+            
+            # Only add chunks if index is enabled
+            if index:
+                update_fields[f"{path}.@embImage.chunks"] = chunks
 
             mongo_collection.update_one(
                 {"_id": ObjectId(doc_id)},
-                {
-                    "$set": {
-                        f"{path}.@embImage.chunks": chunks,
-                        f"{path}.@embImage.status": "processed",
-                        f"{path}.@embImage.url": public_url,
-                    }
-                },
+                {"$set": update_fields},
             )
         except Exception as e:
             mongo_collection.update_one(
