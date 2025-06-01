@@ -14,7 +14,7 @@ from blueprints.v0.utils.mongo_operations import (
 from bson import ObjectId
 from utils.email import notify_admin
 
-from celery_tasks.vector_tasks import save_vectors_task
+from onenode.celery_tasks.text_tasks import save_text_tasks
 from logger import logger
 
 
@@ -74,7 +74,7 @@ def embed_image_task(refs: list[dict]):
             )
 
             # Save the embedding to Pinecone
-            save_vectors_task(vector_bases, project_id, db_name, collection_name, [])
+            save_text_tasks(vector_bases, project_id, db_name, collection_name, [])
 
             mongo_collection.update_one(
                 {"_id": ObjectId(doc_id)},

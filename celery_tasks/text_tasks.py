@@ -6,8 +6,8 @@ from utils.email import notify_admin
 
 
 @celery.task
-def save_vectors_task(
-    vector_bases: list,
+def save_text_tasks(
+    text_tasks: list,
     project_id_str: str,
     db_name: str,
     collection_name: str,
@@ -15,7 +15,7 @@ def save_vectors_task(
 ):
     batch_size = 100  # Process every 100 vectors
 
-    for batch in batch_iterable(vector_bases, batch_size):
+    for batch in batch_iterable(text_tasks, batch_size):
         vectors_1536 = []
         vectors_3072 = []
         total_vector_dimensions = 0
@@ -94,11 +94,11 @@ def save_vectors_task(
 
 @celery.task
 def update_vectors_task(
-    vector_bases: list, project_id_str: str, db_name: str, collection_name: str
+    text_tasks: list, project_id_str: str, db_name: str, collection_name: str
 ):
     batch_size = 100  # Process every 100 vectors
 
-    for batch in batch_iterable(vector_bases, batch_size):
+    for batch in batch_iterable(text_tasks, batch_size):
         vectors_1536 = []
         vectors_3072 = []
         for vector_basis in batch:

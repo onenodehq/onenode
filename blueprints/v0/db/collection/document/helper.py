@@ -29,8 +29,8 @@ def process_document(
     request_files: dict = None,
     doc_index: int = 0,
 ) -> dict:
-    all_vector_bases = []
-    emb_image_refs = []
+    text_tasks = []
+    image_tasks = []
     if isinstance(data, dict):
         for key, value in data.items():
             if parent_path:
@@ -81,7 +81,7 @@ def process_document(
                             chunks,
                             emb_model,
                         )
-                        all_vector_bases.extend(vector_bases)
+                        text_tasks.extend(vector_bases)
 
             elif key == "xImage":
                 # Extract and validate all parameters using Image class with request files
@@ -120,7 +120,7 @@ def process_document(
                             parent_path,
                             mime_type,
                         )
-                        emb_image_refs.append(
+                        image_tasks.append(
                             {
                                 "object_key": object_key,
                                 "base64_image": base64_image,
@@ -146,8 +146,8 @@ def process_document(
                     request_files=request_files,
                     doc_index=doc_index,
                 )
-                all_vector_bases.extend(result["all_vector_bases"])
-                emb_image_refs.extend(result["emb_image_refs"])
+                text_tasks.extend(result["text_tasks"])
+                image_tasks.extend(result["image_tasks"])
     elif isinstance(data, list):
         for i, item in enumerate(data):
             current_path = f"{parent_path}.{i}"
@@ -161,12 +161,12 @@ def process_document(
                 request_files=request_files,
                 doc_index=doc_index,
             )
-            all_vector_bases.extend(result["all_vector_bases"])
-            emb_image_refs.extend(result["emb_image_refs"])
+            text_tasks.extend(result["text_tasks"])
+            image_tasks.extend(result["image_tasks"])
 
     return {
-        "all_vector_bases": all_vector_bases,
-        "emb_image_refs": emb_image_refs,
+        "text_tasks": text_tasks,
+        "image_tasks": image_tasks,
     }
 
 
@@ -208,8 +208,8 @@ def process_update(
             message=f"Invalid update operation: Expected dictionary for {operator}, but got {type(fields).__name__} instead.",
             status_code=400
         )
-    all_vector_bases = []
-    emb_image_refs = []
+    text_tasks = []
+    image_tasks = []
     for path, new_value in fields.items():
         if not isinstance(path, str):
             raise CustomAPIError(
@@ -242,8 +242,8 @@ def process_update(
                 request_files=request_files,
                 doc_index=doc_index,
             )
-            all_vector_bases.extend(result["all_vector_bases"])
-            emb_image_refs.extend(result["emb_image_refs"])
+            text_tasks.extend(result["text_tasks"])
+            image_tasks.extend(result["image_tasks"])
 
         else:
             raise CustomAPIError(
@@ -252,8 +252,8 @@ def process_update(
             )
 
     return {
-        "all_vector_bases": all_vector_bases,
-        "emb_image_refs": emb_image_refs,
+        "text_tasks": text_tasks,
+        "image_tasks": image_tasks,
     }
 
 

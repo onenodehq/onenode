@@ -40,8 +40,8 @@ def create_docs_service(
         project_id, db_name, collection_name, must_exist=False
     )
 
-    all_vector_bases = []
-    all_emb_image_refs = []
+    all_text_tasks = []
+    all_image_tasks = []
     for doc_index, document in enumerate(documents):
         if not document.get("_id"):
             document["_id"] = ObjectId()
@@ -55,25 +55,25 @@ def create_docs_service(
             request_files=request_files,
             doc_index=doc_index,
         )
-        all_vector_bases.extend(result["all_vector_bases"])
-        all_emb_image_refs.extend(result["emb_image_refs"])
+        all_text_tasks.extend(result["text_tasks"])
+        all_image_tasks.extend(result["image_tasks"])
     # documents, all_chunks, and all_pc_ids will be modified after process_doc()
     insert_many_result = mongo_collection.insert_many(documents=documents)
     inserted_ids = insert_many_result.inserted_ids
 
-    if all_vector_bases:
+    if all_text_tasks:
         task = save_vectors_task.delay(
-            all_vector_bases, project_id, db_name, collection_name, documents
+            all_text_tasks, project_id, db_name, collection_name, documents
         )
 
-    if all_emb_image_refs:
-        for emb_image_ref in all_emb_image_refs:
+    if all_image_tasks:
+        for emb_image_ref in all_image_tasks:
             base64_image = emb_image_ref["base64_image"]
             object_key = emb_image_ref["object_key"]
             mime_type = emb_image_ref["mime_type"]
             save_to_s3(base64_image, object_key, mime_type)
 
-        emb_task = embed_image_task.delay(all_emb_image_refs)
+        emb_task = embed_image_task.delay(all_image_tasks)
 
     return {
         "inserted_ids": inserted_ids,
@@ -98,8 +98,8 @@ def update_docs_service(
     if not doc_ids:
         return
 
-    all_vector_bases = []
-    all_emb_image_refs = []
+    all_text_tasks = []
+    all_image_tasks = []
     updated_paths = []
     for operator, fields in update.items():
         result = process_update(
@@ -113,8 +113,8 @@ def update_docs_service(
             request_files=request_files,
             doc_index=0,  # For updates, we assume single document context
         )
-        all_vector_bases.extend(result["all_vector_bases"])
-        all_emb_image_refs.extend(result["emb_image_refs"])
+        all_text_tasks.extend(result["text_tasks"])
+        all_image_tasks.extend(result["image_tasks"])
 
     update_result = mongo_collection.update_many(filter=filter, update=update)
 
@@ -133,11 +133,11 @@ def update_docs_service(
         collection_name,
     )
 
-    if all_vector_bases:
-        task = update_vectors_task.delay(all_vector_bases, project_id, db_name, collection_name)
+    if all_text_tasks:
+        task = update_vectors_task.delay(all_text_tasks, project_id, db_name, collection_name)
 
-    if all_emb_image_refs:
-        emb_task = embed_image_task.delay(all_emb_image_refs)
+    if all_image_tasks:
+        emb_task = embed_image_task.delay(all_image_tasks)
 
     return {
         "matched_count": update_result.matched_count,
