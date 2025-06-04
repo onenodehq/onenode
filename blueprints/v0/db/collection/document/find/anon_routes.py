@@ -1,21 +1,18 @@
-from flask import Blueprint, request
-from auth.api_key_decorator import require_api_key
+from flask import Blueprint, request, g
 from bson import json_util
 from blueprints.v0.db.collection.document.find.services import find_docs_service
-from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
+from blueprints.v0.utils.anon_operations import create_anon_project_if_not_exists
 from blueprints.v0.utils.mongo_operations import split_db_id
-from blueprints.v0.db.collection.document.find.anon_routes import v0_blueprint_find_anon
 
 
-v0_blueprint_find = Blueprint("v0_find", __name__, url_prefix="/find")
-v0_blueprint_find.register_blueprint(v0_blueprint_find_anon)
+v0_blueprint_find_anon = Blueprint("v0_find_anon", __name__, url_prefix="/find/anon")
 
 
-@v0_blueprint_find.route("", methods=["POST"])
-@require_api_key
-def find_docs(permissions: list[dict], db_id: str, collection_name: str):
+@v0_blueprint_find_anon.route("", methods=["POST"])
+def find_docs_anon(db_id: str, collection_name: str):
     project_id, db_name = split_db_id(db_id)
-    check_api_key_permissions(permissions, project_id)
+    g.plan = "free"
+    create_anon_project_if_not_exists(project_id)
 
     filter_str = request.form.get("filter")
     filter = json_util.loads(filter_str) if filter_str else None
