@@ -63,19 +63,26 @@ def generate_object_key(
 
 def generate_object_key_prefix(
     project_id: str,
-    database_name: str,
-    collection_name: str,
+    database_name: str = None,
+    collection_name: str = None,
     doc_id: str = None,
     path: str = None,
 ) -> str:
-    if doc_id:
-        if path:
-            normalized_path = path.replace(".", "/")
-            return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{normalized_path}/"
+    if database_name:
+        if collection_name:
+
+            if doc_id:
+                if path:
+                    normalized_path = path.replace(".", "/")
+                    return f"{project_id}/{database_name}/{collection_name}/{doc_id}/{normalized_path}/"
+                else:
+                    return f"{project_id}/{database_name}/{collection_name}/{doc_id}/"
+            else:
+                return f"{project_id}/{database_name}/{collection_name}/"
         else:
-            return f"{project_id}/{database_name}/{collection_name}/{doc_id}/"
+            return f"{project_id}/{database_name}/"
     else:
-        return f"{project_id}/{database_name}/{collection_name}/"
+        return f"{project_id}/"
 
 
 def delete_s3_objects(object_keys: List[str]):
