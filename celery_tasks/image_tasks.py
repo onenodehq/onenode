@@ -81,7 +81,7 @@ def embed_image_task(refs: list[dict]):
             # Prepare the update fields
             update_fields = {
                 f"{path}.@embImage.status": "processed",
-                f"{path}.@embImage.url": public_url,
+                f"{path}.@embImage.data": public_url,
                 f"{path}.@embImage.index": index,
             }
             
@@ -99,7 +99,7 @@ def embed_image_task(refs: list[dict]):
                 {
                     "$set": {
                         f"{path}.@embImage.status": "failed",
-                        f"{path}.@embImage.url": public_url,
+                        f"{path}.@embImage.data": public_url,
                     }
                 },
             )
