@@ -11,7 +11,7 @@ from errors import CustomAPIError
 
 
 v0_blueprint_doc_anon = Blueprint(
-    "v0_doc_anon", __name__, url_prefix="/<string:collection_name>/document/anon"
+    "v0_doc_anon", __name__, url_prefix="/anon"
 )
 
 # anon endpoint for trial users without api key

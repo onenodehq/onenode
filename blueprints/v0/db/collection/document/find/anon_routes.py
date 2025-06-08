@@ -5,7 +5,7 @@ from blueprints.v0.utils.anon_operations import create_anon_project_if_not_exist
 from blueprints.v0.utils.mongo_operations import split_db_id
 
 
-v0_blueprint_find_anon = Blueprint("v0_find_anon", __name__, url_prefix="/find/anon")
+v0_blueprint_find_anon = Blueprint("v0_find_anon", __name__, url_prefix="/anon")
 
 
 @v0_blueprint_find_anon.route("", methods=["POST"])
