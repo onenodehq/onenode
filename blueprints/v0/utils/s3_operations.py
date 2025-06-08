@@ -1,18 +1,15 @@
 import base64
-import io
 import logging
 import os
 import datetime
 import json
 import boto3
-from typing import Dict, List
+from typing import List
 from botocore.signers import CloudFrontSigner
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from blueprints.v0.utils.openai_operations import image_to_text
 from blueprints.v0.utils.s3_setup import (
-    EXTENSION_MAP,
     S3_BUCKET_NAME,
     SIGNED_URL_EXPIRATION,
     s3,
@@ -48,12 +45,7 @@ def generate_object_key(
         "image/jpg": "jpg",
         "image/png": "png",
         "image/gif": "gif",
-        "image/bmp": "bmp",
-        "image/tiff": "tiff",
         "image/webp": "webp",
-        "image/svg+xml": "svg",
-        "image/heif": "heif",
-        "image/x-icon": "ico",
     }
     extension = mime_to_extension.get(mime_type, mime_type)
     normalized_path = path.replace(".", "/")
