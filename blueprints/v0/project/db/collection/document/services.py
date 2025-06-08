@@ -1,6 +1,6 @@
 from bson import ObjectId
 from flask import g
-from blueprints.v0.db.collection.document.helper import (
+from blueprints.v0.project.db.collection.document.helper import (
     delete_overwritten_pc_vectors,
     delete_overwritten_s3_images,
     process_document,

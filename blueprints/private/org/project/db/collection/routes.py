@@ -11,7 +11,7 @@ from blueprints.private.services import check_project_permission
 from blueprints.private.org.project.db.collection.documents.routes import (
     private_blueprint_document,
 )
-from blueprints.v0.db.collection.services import delete_collection_service
+from blueprints.v0.project.db.collection.services import delete_collection_service
 from errors import CustomAPIError
 
 private_blueprint_collection = Blueprint(

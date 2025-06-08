@@ -3,10 +3,10 @@ from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from bson import json_util, ObjectId
 from blueprints.private.org.project.db.collection.documents.services import list_documents_service
-from blueprints.v0.db.collection.document.find.services import find_docs_service
+from blueprints.v0.project.db.collection.document.find.services import find_docs_service
 from blueprints.private.services import check_project_permission
-from blueprints.v0.db.collection.document.query.services import query_chunks_service
-from blueprints.v0.db.collection.document.services import delete_docs_service, update_docs_service
+from blueprints.v0.project.db.collection.document.query.services import query_chunks_service
+from blueprints.v0.project.db.collection.document.services import delete_docs_service, update_docs_service
 from blueprints.v0.utils.mongo_operations import get_client_collection
 from blueprints.v0.utils.mongo_setup import mongo_orgs
 from errors import CustomAPIError

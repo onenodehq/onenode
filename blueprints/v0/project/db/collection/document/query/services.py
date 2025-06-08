@@ -1,5 +1,5 @@
 from bson import ObjectId
-from blueprints.v0.db.collection.document.query.helper import (
+from blueprints.v0.project.db.collection.document.query.helper import (
     compose_query_response,
     convert_projection,
 )

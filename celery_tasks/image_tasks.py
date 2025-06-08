@@ -3,7 +3,7 @@ from blueprints.v0.utils.s3_operations import retrieve_from_s3, generate_public_
 from blueprints.v0.utils.openai_operations import (
     image_to_text,
 )
-from blueprints.v0.db.collection.document.helper import chunk
+from blueprints.v0.project.db.collection.document.helper import chunk
 from blueprints.v0.utils.pinecone_operations import (
     create_vector_bases,
     generate_pc_metadata,

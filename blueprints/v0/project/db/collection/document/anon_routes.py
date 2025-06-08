@@ -1,47 +1,41 @@
-from flask import Blueprint, request
-from auth.api_key_decorator import require_api_key
-from blueprints.v0.db.collection.document.services import (
+from flask import Blueprint, g, request
+from blueprints.v0.project.db.collection.document.services import (
     create_docs_service,
     delete_docs_service,
     update_docs_service,
 )
-from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
-from blueprints.v0.utils.mongo_operations import split_db_id
+from blueprints.v0.utils.anon_operations import create_anon_project_if_not_exists
 from bson import json_util
-from blueprints.v0.db.collection.document.query.routes import v0_blueprint_query
-from blueprints.v0.db.collection.document.find.routes import v0_blueprint_find
 from errors import CustomAPIError
-from blueprints.v0.db.collection.document.anon_routes import v0_blueprint_doc_anon
+from blueprints.v0.project.db.collection.document.query.anon_routes import v0_blueprint_anon_query
+from blueprints.v0.project.db.collection.document.find.anon_routes import v0_blueprint_anon_find
 
-
-v0_blueprint_doc = Blueprint(
-    "v0_doc", __name__, url_prefix="/<string:collection_name>/document"
+v0_blueprint_anon_doc = Blueprint(
+    "v0_anon_doc", __name__, url_prefix="/<string:collection_name>/document"
 )
 
-v0_blueprint_doc.register_blueprint(v0_blueprint_query)
-v0_blueprint_doc.register_blueprint(v0_blueprint_find)
-v0_blueprint_doc.register_blueprint(v0_blueprint_doc_anon)
+v0_blueprint_anon_doc.register_blueprint(v0_blueprint_anon_query)
+v0_blueprint_anon_doc.register_blueprint(v0_blueprint_anon_find)
 
-
-@v0_blueprint_doc.route("", methods=["POST"])
-@require_api_key
-def create_docs(permissions: list[dict], db_id: str, collection_name: str):
-    project_id, db_name = split_db_id(db_id)
-    check_api_key_permissions(permissions, project_id)
+# anon endpoint for trial users without api key
+@v0_blueprint_anon_doc.route("", methods=["POST"])
+def create_docs_anon(project_id: str, db_name: str, collection_name: str):
+    g.plan = "free"
+    create_anon_project_if_not_exists(project_id)
 
     if 'documents' not in request.form:
         raise CustomAPIError(
             "Missing 'documents' field. Request must include a 'documents' array containing at least one document.",
             status_code=400
         )
-
+    
     docs = json_util.loads(request.form['documents'])
     if not docs:
         raise CustomAPIError(
             "Empty 'documents' field. Request must include a 'documents' array containing at least one document.",
             status_code=400
         )
-
+    
     result = create_docs_service(
         docs,
         project_id,
@@ -53,11 +47,10 @@ def create_docs(permissions: list[dict], db_id: str, collection_name: str):
     return json_util.dumps(result), 200
 
 
-@v0_blueprint_doc.route("", methods=["PUT"])
-@require_api_key
-def update_docs(permissions: list[dict], db_id: str, collection_name: str):
-    project_id, db_name = split_db_id(db_id)
-    check_api_key_permissions(permissions, project_id)
+@v0_blueprint_anon_doc.route("", methods=["PUT"])
+def update_docs_anon(project_id: str, db_name: str, collection_name: str):
+    g.plan = "free"
+    create_anon_project_if_not_exists(project_id)
 
     if 'filter' not in request.form or 'update' not in request.form:
         raise CustomAPIError(
@@ -91,11 +84,10 @@ def update_docs(permissions: list[dict], db_id: str, collection_name: str):
     return json_util.dumps(result), 200
 
 
-@v0_blueprint_doc.route("", methods=["DELETE"])
-@require_api_key
-def delete_docs(permissions: list[dict], db_id: str, collection_name: str):
-    project_id, db_name = split_db_id(db_id)
-    check_api_key_permissions(permissions, project_id)
+@v0_blueprint_anon_doc.route("", methods=["DELETE"])
+def delete_docs_anon(project_id: str, db_name: str, collection_name: str):
+    g.plan = "free"
+    create_anon_project_if_not_exists(project_id)
 
     if 'filter' not in request.form:
         raise CustomAPIError(
