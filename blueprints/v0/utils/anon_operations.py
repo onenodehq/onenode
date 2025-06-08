@@ -1,7 +1,6 @@
 import datetime
 from bson import ObjectId
 from blueprints.v0.utils.mongo_setup import mongo_orgs
-from utils.email import notify_admin
 
 def get_or_create_anon_org():
     anon_org = mongo_orgs.find_one({"name": "Anon Organization"})
