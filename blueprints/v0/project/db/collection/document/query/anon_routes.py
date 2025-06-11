@@ -35,8 +35,4 @@ def query_chunks_anon(project_id: str, db_name: str, collection_name: str):
         emb_model,
     )
 
-    response = {
-        "matches": data,
-    }
-
-    return json_util.dumps(response), 200
+    return json_util.dumps(data), 200

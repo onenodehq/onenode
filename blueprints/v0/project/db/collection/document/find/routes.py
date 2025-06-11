@@ -39,8 +39,4 @@ def find_docs(permissions: list[dict], project_id: str, db_name: str, collection
         limit,
     )
 
-    response = {
-        "docs": data,
-    }
-
-    return json_util.dumps(response), 200
+    return json_util.dumps(data), 200

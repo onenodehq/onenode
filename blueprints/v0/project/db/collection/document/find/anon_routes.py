@@ -38,8 +38,4 @@ def find_docs_anon(project_id: str, db_name: str, collection_name: str):
         limit,
     )
 
-    response = {
-        "docs": data,
-    }
-
-    return json_util.dumps(response), 200
+    return json_util.dumps(data), 200

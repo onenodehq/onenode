@@ -36,8 +36,4 @@ def query_chunks(permissions: list[dict], project_id: str, db_name: str, collect
         emb_model,
     )
 
-    response = {
-        "matches": data,
-    }
-
-    return json_util.dumps(response), 200
+    return json_util.dumps(data), 200
