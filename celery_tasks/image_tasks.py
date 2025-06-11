@@ -80,14 +80,14 @@ def embed_image_task(refs: list[dict]):
 
             # Prepare the update fields
             update_fields = {
-                f"{path}.@embImage.status": "processed",
-                f"{path}.@embImage.data": public_url,
-                f"{path}.@embImage.index": index,
+                f"{path}.xImage.status": "processed",
+                f"{path}.xImage.data": public_url,
+                f"{path}.xImage.index": index,
             }
             
             # Only add chunks if index is enabled
             if index:
-                update_fields[f"{path}.@embImage.chunks"] = chunks
+                update_fields[f"{path}.xImage.chunks"] = chunks
 
             mongo_collection.update_one(
                 {"_id": ObjectId(doc_id)},
@@ -98,8 +98,8 @@ def embed_image_task(refs: list[dict]):
                 {"_id": ObjectId(doc_id)},
                 {
                     "$set": {
-                        f"{path}.@embImage.status": "failed",
-                        f"{path}.@embImage.data": public_url,
+                        f"{path}.xImage.status": "failed",
+                        f"{path}.xImage.data": public_url,
                     }
                 },
             )
