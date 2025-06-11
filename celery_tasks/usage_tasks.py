@@ -203,9 +203,13 @@ def increment_collection_usage_cache(
     try:
         usage_doc = get_cached_usage(project_id_str)
         if not usage_doc:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
-            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
-            record_project_usage(org, project)
+            # When usage_doc is None, we need to find the org and project by project_id_str
+            # to record fresh usage data
+            org = mongo_orgs.find_one({"projects": {"$elemMatch": {"_id": ObjectId(project_id_str)}}})
+            if org:
+                project = next((p for p in org.get("projects", []) if str(p.get("_id")) == project_id_str), None)
+                if project:
+                    record_project_usage(org, project)
             return
 
         # 1. Locate the correct DB and collection in the usage document
@@ -214,9 +218,11 @@ def increment_collection_usage_cache(
             (db for db in db_detail_list if db.get("db_name") == db_name), None
         )
         if not db_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
-            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
-            record_project_usage(org, project)
+            org = mongo_orgs.find_one({"projects": {"$elemMatch": {"_id": ObjectId(project_id_str)}}})
+            if org:
+                project = next((p for p in org.get("projects", []) if str(p.get("_id")) == project_id_str), None)
+                if project:
+                    record_project_usage(org, project)
             return
 
         coll_detail_list = db_detail.get("collection_details", [])
@@ -229,9 +235,11 @@ def increment_collection_usage_cache(
             None,
         )
         if not coll_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
-            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
-            record_project_usage(org, project)
+            org = mongo_orgs.find_one({"projects": {"$elemMatch": {"_id": ObjectId(project_id_str)}}})
+            if org:
+                project = next((p for p in org.get("projects", []) if str(p.get("_id")) == project_id_str), None)
+                if project:
+                    record_project_usage(org, project)
             return
 
         # 2. Calculate actual Mongo doc size in bytes, then MB
@@ -290,9 +298,13 @@ def decrement_collection_usage_cache(
     try:
         usage_doc = get_cached_usage(project_id_str)
         if not usage_doc:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
-            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
-            record_project_usage(org, project)
+            # When usage_doc is None, we need to find the org and project by project_id_str
+            # to record fresh usage data
+            org = mongo_orgs.find_one({"projects": {"$elemMatch": {"_id": ObjectId(project_id_str)}}})
+            if org:
+                project = next((p for p in org.get("projects", []) if str(p.get("_id")) == project_id_str), None)
+                if project:
+                    record_project_usage(org, project)
             return
 
         # Find DB
@@ -301,9 +313,11 @@ def decrement_collection_usage_cache(
             (db for db in db_details if db.get("db_name") == db_name), None
         )
         if not db_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
-            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
-            record_project_usage(org, project)
+            org = mongo_orgs.find_one({"projects": {"$elemMatch": {"_id": ObjectId(project_id_str)}}})
+            if org:
+                project = next((p for p in org.get("projects", []) if str(p.get("_id")) == project_id_str), None)
+                if project:
+                    record_project_usage(org, project)
             return
 
         # Find collection
@@ -313,9 +327,11 @@ def decrement_collection_usage_cache(
             None,
         )
         if not coll_detail:
-            org = mongo_orgs.find_one({"_id": ObjectId(usage_doc.get("org_id")), "projects": {"$elemMatch": {"_id": ObjectId(usage_doc.get("project_id"))}}})
-            project = next((p for p in org.get("projects", []) if p.get("_id") == ObjectId(usage_doc.get("project_id"))), None)
-            record_project_usage(org, project)
+            org = mongo_orgs.find_one({"projects": {"$elemMatch": {"_id": ObjectId(project_id_str)}}})
+            if org:
+                project = next((p for p in org.get("projects", []) if str(p.get("_id")) == project_id_str), None)
+                if project:
+                    record_project_usage(org, project)
             return
 
         current_doc_count = coll_detail.get("document_count", 0)
