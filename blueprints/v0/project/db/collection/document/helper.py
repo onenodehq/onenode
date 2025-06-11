@@ -9,6 +9,7 @@ from blueprints.v0.utils.pinecone_operations import (
     create_vector_bases,
     delete_pc_vectors_by_id_prefix,
     generate_pc_id_prefix,
+    generate_pc_metadata,
 )
 from blueprints.v0.utils.s3_operations import (
     delete_s3_objects_with_prefix,
@@ -73,13 +74,23 @@ def process_document(
                 # Only process for embedding if index is True
                 if index:
                     for doc_id in doc_ids:
-                        vector_bases = create_vector_bases(
+                        metadata = generate_pc_metadata(
                             project_id,
                             db_name,
+                            collection_name,
                             doc_id,
-                            current_path,
+                            parent_path,
+                            type="text",
+                            emb_model=emb_model,
+                        )
+                        vector_bases = create_vector_bases(
                             chunks,
-                            emb_model,
+                            metadata,
+                            project_id,
+                            db_name,
+                            collection_name,
+                            doc_id,
+                            parent_path,
                         )
                         text_tasks.extend(vector_bases)
 
