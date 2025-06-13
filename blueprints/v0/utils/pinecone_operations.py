@@ -191,7 +191,7 @@ def pc_client_query(
     db_name: str,
     collection_name: str,
     top_k: int,
-    include_values: bool,
+    include_embedding: bool,
     model: str,
     doc_ids: list[str] = None,
 ):
@@ -211,7 +211,7 @@ def pc_client_query(
             namespace=namespace,
             filter=filter_criteria,
             top_k=top_k,
-            include_values=include_values,
+            include_values=include_embedding,
             include_metadata=True,
         )
 
@@ -222,7 +222,7 @@ def pc_client_query(
             namespace=namespace,
             filter=filter_criteria,
             top_k=top_k,
-            include_values=include_values,
+            include_values=include_embedding,
             include_metadata=True,
         )
 

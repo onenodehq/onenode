@@ -26,7 +26,7 @@ def get_chunk_by_path(doc: dict, path: str, chunk_n: int) -> str | None:
 
 
 def compose_query_response(
-    matches: list, doc_lookup: dict, include_values: bool
+    matches: list, doc_lookup: dict, include_embedding: bool
 ) -> list[dict]:
     data = []
 
@@ -35,7 +35,7 @@ def compose_query_response(
         _, _, _, doc_id, path, chunk_n_str = pc_id.split("#")
         chunk_n = int(chunk_n_str)
         score = match["score"]
-        values = match.get("values", [])
+        embedding = match.get("values", [])
 
         doc = doc_lookup.get(doc_id)
         if doc:  # Sync Failure Logic
@@ -47,7 +47,7 @@ def compose_query_response(
                 "path": path,
                 "chunk_n": chunk_n,
                 "score": score,
-                **({"values": values} if include_values else {}),
+                **({"embedding": embedding} if include_embedding else {}),
                 "document": doc,
             }
             data.append(data_item)

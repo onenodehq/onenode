@@ -21,7 +21,7 @@ def query_chunks_service(
     filter: dict,
     top_k: int,
     projection: dict | None,
-    include_values: bool,
+    include_embedding: bool,
     emb_model: str,
 ) -> list[dict]:
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
@@ -41,7 +41,7 @@ def query_chunks_service(
             db_name,
             collection_name,
             top_k,
-            include_values,
+            include_embedding,
             emb_model,
             doc_ids_to_filter,
         )
@@ -53,7 +53,7 @@ def query_chunks_service(
             db_name,
             collection_name,
             top_k,
-            include_values,
+            include_embedding,
             emb_model,
         )
 
@@ -75,7 +75,7 @@ def query_chunks_service(
     data = compose_query_response(
         matches,
         doc_lookup,
-        include_values,
+        include_embedding,
     )
 
     return data

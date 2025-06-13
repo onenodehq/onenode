@@ -18,7 +18,7 @@ def query_chunks(permissions: list[dict], project_id: str, db_name: str, collect
     top_k = int(request.form.get("top_k", "10"))
     projection_str = request.form.get("projection")
     projection = json_util.loads(projection_str) if projection_str else None
-    include_values = request.form.get("include_values", "False").lower() == "true"
+    include_embedding = request.form.get("include_embedding", "False").lower() == "true"
     emb_model = request.form.get("emb_model", "text-embedding-3-small")
 
     if not text:
@@ -32,7 +32,7 @@ def query_chunks(permissions: list[dict], project_id: str, db_name: str, collect
         filter,
         top_k,
         projection,
-        include_values,
+        include_embedding,
         emb_model,
     )
 
