@@ -200,7 +200,7 @@ def pc_client_query(
         "collection_name": {"$eq": collection_name},
         "emb_model": {"$eq": model},
     }
-    if doc_ids:
+    if doc_ids is not None:
         filter_criteria.update({"doc_id": {"$in": doc_ids}})
 
     namespace = generate_pc_namespace(project_id, db_name)
