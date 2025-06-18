@@ -23,6 +23,7 @@ from celery_tasks import (
 )
 from celery_tasks.image_tasks import embed_image_task
 from utils.usage import check_current_usage
+from errors import CustomAPIError
 
 
 def create_docs_service(
@@ -32,6 +33,12 @@ def create_docs_service(
     collection_name: str,
     request_files: dict = None,
 ):
+    # Validate documents structure
+    if not isinstance(documents, list):
+        raise CustomAPIError(
+            f"Invalid documents format. Expected a list of dictionaries, but received {type(documents).__name__}.",
+            status_code=400
+        )
 
     if g.plan == "free":
         check_current_usage(project_id)

@@ -1,6 +1,7 @@
 from typing import Dict, List, Any
 from pymongo.collection import Collection
 from blueprints.v0.utils.mongo_operations import get_client_collection
+from blueprints.v0.project.db.collection.document.query.helper import convert_projection
 
 
 def find_docs_service(
@@ -15,10 +16,13 @@ def find_docs_service(
 ) -> List[Dict[str, Any]]:
     mongo_collection: Collection = get_client_collection(project_id, db_name, collection_name)
 
+    # Convert OneNode-style projection to MongoDB projection
+    mongo_projection = convert_projection(projection)
+
     # Build query parameters dictionary with only non-None values
     query_params = {k: v for k, v in {
         "filter": filter or {},
-        "projection": projection,
+        "projection": mongo_projection,
         "sort": sort,
         "skip": skip,
         "limit": limit
