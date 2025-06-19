@@ -1,4 +1,5 @@
 from errors import CustomAPIError
+from .models import Models
 
 class Image:
     DEFAULT_EMB_MODEL = "text-embedding-3-small"
@@ -17,6 +18,10 @@ class Image:
         "image/gif",
         "image/webp",
     ]
+    
+    # Supported models from centralized models file
+    supported_embedding_models = Models.TextToEmbedding.OpenAI.values()
+    supported_vision_models = Models.ImageToText.OpenAI.values()
     
     @classmethod
     def extract_params(cls, data: dict, request_files: dict = None, doc_index: int = 0, parent_path: str = "") -> dict:
@@ -78,10 +83,24 @@ class Image:
                 status_code=400
             )
         
+        if params["emb_model"] not in cls.supported_embedding_models:
+            supported_list = ", ".join(cls.supported_embedding_models)
+            raise CustomAPIError(
+                f"Invalid emb_model: '{params['emb_model']}' is not supported. Supported models are: {supported_list}",
+                status_code=400
+            )
+        
         # Validate vision_model
         if not isinstance(params["vision_model"], str):
             raise CustomAPIError(
                 f"Invalid vision_model: Expected string, got {type(params['vision_model']).__name__}",
+                status_code=400
+            )
+        
+        if params["vision_model"] not in cls.supported_vision_models:
+            supported_list = ", ".join(cls.supported_vision_models)
+            raise CustomAPIError(
+                f"Invalid vision_model: '{params['vision_model']}' is not supported. Supported models are: {supported_list}",
                 status_code=400
             )
         

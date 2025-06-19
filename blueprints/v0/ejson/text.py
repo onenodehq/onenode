@@ -1,4 +1,5 @@
 from errors import CustomAPIError
+from .models import Models
 
 
 class Text:
@@ -9,6 +10,9 @@ class Text:
     DEFAULT_SEPARATORS = None
     DEFAULT_KEEP_SEPARATOR = False
     DEFAULT_INDEX = True
+    
+    # Supported models from centralized models file
+    supported_embedding_models = Models.TextToEmbedding.OpenAI.values()
     
     @classmethod
     def extract_params(cls, data: dict) -> dict:
@@ -43,6 +47,13 @@ class Text:
         if not isinstance(params["emb_model"], str):
             raise CustomAPIError(
                 f"Invalid emb_model: Expected string, got {type(params['emb_model']).__name__}",
+                status_code=400
+            )
+        
+        if params["emb_model"] not in cls.supported_embedding_models:
+            supported_list = ", ".join(cls.supported_embedding_models)
+            raise CustomAPIError(
+                f"Invalid emb_model: '{params['emb_model']}' is not supported. Supported models are: {supported_list}",
                 status_code=400
             )
         
