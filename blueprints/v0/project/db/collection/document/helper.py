@@ -210,6 +210,13 @@ def process_update(
     request_files: dict = None,
     doc_index: int = 0,
 ) -> list:
+    # Skip processing if operator is not $set or $setOnInsert
+    if operator not in ["$set", "$setOnInsert"]:
+        return {
+            "text_tasks": [],
+            "image_tasks": [],
+        }
+    
     if not isinstance(fields, dict):  # Check if fields is not a dictionary
         raise CustomAPIError(
             message=f"Invalid update operation: Expected dictionary for {operator}, but got {type(fields).__name__} instead.",

@@ -62,6 +62,9 @@ def update_docs(permissions: list[dict], project_id: str, db_name: str, collecti
 
     filter = json_util.loads(request.form['filter'])
     update = json_util.loads(request.form['update'])
+    
+    # Extract upsert parameter (defaults to False if not provided)
+    upsert = request.form.get('upsert', 'false').lower() == 'true'
 
     if not filter:
         raise CustomAPIError(
@@ -80,6 +83,7 @@ def update_docs(permissions: list[dict], project_id: str, db_name: str, collecti
         project_id,
         db_name,
         collection_name,
+        upsert=upsert,
         request_files=request.files,
     )
 
