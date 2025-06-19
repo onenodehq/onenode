@@ -3,7 +3,7 @@ from blueprints.v0.utils.openai_setup import openai_client
 
 
 def image_to_text(
-    binary_data: bytes, mime_type: str, model: str = "gpt-4o-mini", max_tokens: int = 300
+    binary_data: bytes, mime_type: str, model: str = "gpt-4o-mini"
 ) -> str:
     base64_image = base64.b64encode(binary_data).decode("utf-8")
     messages = [
@@ -24,7 +24,6 @@ def image_to_text(
     response = openai_client.chat.completions.create(
         model=model,
         messages=messages,
-        max_tokens=max_tokens,
     )
 
     return response.choices[0].message.content
