@@ -40,7 +40,7 @@ def create_anon_project_if_not_exists(project_id_str: str):
                 "projects": {
                     "_id": project_id,
                     "created_at": datetime.datetime.now(datetime.UTC),
-                    "name": "Anon Project",
+                    "name": "Anonymous Project",
                     "owners": ["anon"],
                     "readers": [],
                     "collections": [],
