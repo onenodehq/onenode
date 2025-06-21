@@ -11,7 +11,11 @@ def list_collections_service(org_id: str, project_id: str):
         {"$replaceRoot": {"newRoot": "$projects"}},
     ]
 
-    project: dict = list(mongo_orgs.aggregate(pipeline))[0]
+    projects = list(mongo_orgs.aggregate(pipeline))
+    if not projects:
+        return []
+    
+    project: dict = projects[0]
     collections = project.get("collections", [])
 
     return collections
@@ -19,6 +23,18 @@ def list_collections_service(org_id: str, project_id: str):
 def assign_anon_project_to_user_service(org_id: str, project_id: str, anon_project_id: str):
     anon_org = get_or_create_anon_org()
     anon_org_id = anon_org["_id"]
+
+    print(anon_org_id)
+    
+    # Check if the anonymous project exists
+    anon_project_exists = mongo_orgs.find_one({
+        "_id": anon_org_id,
+        "projects._id": ObjectId(anon_project_id)
+    })
+    
+    if not anon_project_exists:
+        return {"success": False, "message": f"Anonymous project with ID '{anon_project_id}' not found"}
+    
     collections = list_collections_service(anon_org_id, anon_project_id)
 
     if collections:
@@ -31,7 +47,9 @@ def assign_anon_project_to_user_service(org_id: str, project_id: str, anon_proje
             {"_id": ObjectId(anon_org_id)},
             {"$pull": {"projects": {"_id": ObjectId(anon_project_id)}}},
         )
-    
-    return
+        
+        return {"success": True, "message": "Anonymous project imported successfully"}
+    else:
+        return {"success": True, "message": "Anonymous project found but no collections to import"}
 
 

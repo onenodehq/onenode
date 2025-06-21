@@ -60,6 +60,6 @@ def assign_anon_project_to_user(org_id: str, project_id: str):
 
     check_project_permission(user_id, org_id, project_id)
 
-    assign_anon_project_to_user_service(org_id, project_id, anon_project_id)
-
-    return json_util.dumps({"message": "Anon project assigned to user"}), 200
+    result = assign_anon_project_to_user_service(org_id, project_id, anon_project_id)
+    
+    return json_util.dumps({"message": result["message"]}), 200
