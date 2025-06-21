@@ -23,20 +23,28 @@ def create_anon_project_if_not_exists(project_id_str: str):
 
     anon_org_id = anon_org["_id"]
 
+    # Check if project already exists to avoid duplicates
+    existing = mongo_orgs.find_one({
+        "_id": anon_org_id,
+        "projects._id": project_id
+    })
+    
+    if existing:
+        return
+    
+    # Use $push instead of $set to avoid overwriting existing projects
     mongo_orgs.update_one(
         {"_id": anon_org_id},
         {
-            "$set": {
-                "projects": [
-                    {
-                        "_id": project_id,
-                        "created_at": datetime.datetime.now(datetime.UTC),
-                        "name": "Anon Project",
-                        "owners": ["anon"],
-                        "readers": [],
-                        "collections": [],
-                    }
-                ]
+            "$push": {
+                "projects": {
+                    "_id": project_id,
+                    "created_at": datetime.datetime.now(datetime.UTC),
+                    "name": "Anon Project",
+                    "owners": ["anon"],
+                    "readers": [],
+                    "collections": [],
+                }
             }
         },
     )

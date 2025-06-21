@@ -2,6 +2,7 @@ from bson import ObjectId
 from flask import g
 import stripe
 from blueprints.v0.utils.mongo_setup import mongo_orgs
+from blueprints.v0.utils.anon_operations import get_or_create_anon_org
 
 
 def create_default_org_service(user_id: str):
@@ -71,3 +72,40 @@ def create_stripe_customer_service(org_id: str):
     )
 
     return customer.id
+
+def assign_anon_project_to_user_service(user_id: str, org_id: str, anon_project_id: str):
+        
+    anon_org = get_or_create_anon_org()
+    anon_org_id = anon_org["_id"]
+
+    anon_org_with_project = mongo_orgs.find_one({
+        "_id": anon_org_id,
+        "projects._id": ObjectId(anon_project_id)
+    })
+    
+    if not anon_org_with_project:
+        return {"success": False, "message": f"Anonymous project with ID '{anon_project_id}' not found"}
+    
+    anon_project = None
+    for project in anon_org_with_project.get("projects", []):
+        if project["_id"] == ObjectId(anon_project_id):
+            anon_project = project
+            break
+    
+    if not anon_project:
+        return {"success": False, "message": f"Anonymous project with ID '{anon_project_id}' not found"}
+    
+    anon_project["owners"] = [user_id]
+    anon_project["readers"] = []
+    
+    mongo_orgs.update_one(
+        {"_id": ObjectId(org_id)},
+        {"$push": {"projects": anon_project}},
+    )
+
+    mongo_orgs.update_one(
+        {"_id": ObjectId(anon_org_id)},
+        {"$pull": {"projects": {"_id": ObjectId(anon_project_id)}}},
+    )
+    
+    return {"success": True, "message": "Anonymous project moved to your organization successfully"}

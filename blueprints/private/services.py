@@ -54,3 +54,20 @@ def check_project_permission(
         )
 
     return True
+
+def check_org_permission(
+    user_id: str, org_id: str, role: str = "owners"
+):
+    query = {
+        "_id": ObjectId(org_id),
+        role: user_id  # Check if user_id is in the specified role array
+    }
+    
+    org = mongo_orgs.find_one(query)
+    
+    if not org:
+        raise AuthError(
+            "Access denied: User lacks permission for the specified organization."
+        )
+    
+    return True

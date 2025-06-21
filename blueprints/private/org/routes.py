@@ -1,4 +1,4 @@
-from flask import Blueprint, g, jsonify
+from flask import Blueprint, g, jsonify, request
 from auth.api_key_decorator import require_admin_api_key
 from auth.auth_decorator import requires_auth
 from blueprints.private.org.services import (
@@ -9,6 +9,8 @@ from blueprints.private.org.services import (
 )
 from bson import json_util
 from blueprints.private.org.project.routes import private_blueprint_project
+from blueprints.private.services import check_org_permission
+from blueprints.private.org.services import assign_anon_project_to_user_service
 
 
 private_blueprint_org = Blueprint("private_org", __name__, url_prefix="/org")
@@ -47,3 +49,24 @@ def list_orgs():
 def get_org(org_id):
     org = get_org_service(org_id)
     return json_util.dumps(org), 200
+
+@private_blueprint_org.route("<string:org_id>/assign_anon", methods=["POST"])
+@require_admin_api_key
+@requires_auth
+def assign_anon_project_to_user(org_id: str):
+    user_id = g.user_id
+    data = request.get_json()
+    
+    if not data:
+        return json_util.dumps({"error": "Request body is required"}), 400
+    
+    anon_project_id = data.get("anon_project_id")
+    
+    if not anon_project_id:
+        return json_util.dumps({"error": "anon_project_id is required"}), 400
+
+    check_org_permission(user_id, org_id)
+
+    result = assign_anon_project_to_user_service(user_id, org_id, anon_project_id)
+    
+    return json_util.dumps({"message": result["message"]}), 200
