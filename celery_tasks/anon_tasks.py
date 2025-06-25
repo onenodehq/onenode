@@ -11,7 +11,7 @@ from blueprints.v0.utils.anon_operations import get_or_create_anon_org
 @celery.task
 def cleanup_expired_anon_projects():
     try:
-        cutoff_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=30)
+        cutoff_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)
         
         anon_org = get_or_create_anon_org()
         
@@ -22,7 +22,10 @@ def cleanup_expired_anon_projects():
         
         for project in anon_org.get("projects", []):
             project_created_at = project["created_at"]
-            project_created_at = project_created_at.replace(tzinfo=datetime.UTC)
+            if project_created_at.tzinfo is None:
+                project_created_at = project_created_at.replace(tzinfo=datetime.timezone.utc)
+            else:
+                project_created_at = project_created_at.astimezone(datetime.timezone.utc)
             
             if project_created_at < cutoff_date:
                 projects_to_delete.append(project)
