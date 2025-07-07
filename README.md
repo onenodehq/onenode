@@ -2,6 +2,8 @@
 
 > **The AI-Native Database for Modern Applications**
 
+![OneNode Theme](static/onenode-theme.png)
+
 OneNode is a general-purpose database designed specifically for AI applications, unifying text, images, video, audio, semantic search, and asynchronous processing in a single platform. No more juggling multiple database systems, object storage, or vector databases.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -9,18 +11,18 @@ OneNode is a general-purpose database designed specifically for AI applications,
 [![JavaScript SDK](https://img.shields.io/badge/JavaScript%20SDK-0.8.7-green.svg)](https://www.npmjs.com/package/@onenodehq/onenode)
 [![Public Beta](https://img.shields.io/badge/Status-Public%20Beta-orange.svg)](https://console.onenode.ai)
 
-## 🚀 What is OneNode?
+## What is OneNode?
 
 OneNode eliminates the complexity of modern data infrastructure by providing a single database that handles everything:
 
-- **🧠 AI-Native**: Built with semantic understanding at its core
-- **🎯 Multimodal**: Native support for text, images, video, and audio
-- **🔍 Semantic Search**: Find content based on meaning, not just keywords
-- **⚡ Asynchronous Processing**: Background workers built-in
-- **🔄 MongoDB Compatible**: Familiar API with AI superpowers
-- **🏗️ Unified Platform**: Replace multiple databases with one solution
+- **AI-Native**: Built with semantic understanding at its core
+- **Multimodal**: Native support for text, images, video, and audio
+- **Semantic Search**: Find content based on meaning, not just keywords
+- **Asynchronous Processing**: Background workers built-in
+- **MongoDB Compatible**: Familiar API with AI superpowers
+- **Unified Platform**: Replace multiple databases with one solution
 
-## ✨ Key Features
+## Key Features
 
 ### AI-Powered Data Processing
 ```python
@@ -45,26 +47,24 @@ db.users.insert_one({
 ### Instant Semantic Search
 ```javascript
 // Find documents by meaning, not exact keywords
-const results = await collection.find({
-    bio: { $semantic: "artificial intelligence expert" }
-});
+const results = await collection.query("artificial intelligence expert");
 ```
 
-## 🎯 Why OneNode?
+## Why OneNode?
 
-### Traditional Approach ❌
+### Traditional Approach
 - Configure multiple database systems
 - Set up separate object storage
 - Implement vector search infrastructure
 - Build background job queues
 - Manage complex integrations
 
-### OneNode Approach ✅
+### OneNode Approach
 - **One database, everything included**
 - **Ship features, not infrastructure**
 - **Focus on your application logic**
 
-## 📦 Installation
+## Installation
 
 ### Python
 ```bash
@@ -76,10 +76,7 @@ pip install onenode
 npm install @onenodehq/onenode
 ```
 
-## 🏃‍♀️ Quick Start
-
-### Option 1: Instant Start (No Signup Required)
-Perfect for prototyping and learning:
+## Quick Start
 
 ```python
 from onenode import OneNode
@@ -96,17 +93,7 @@ collection.insert_one({
 })
 ```
 
-### Option 2: Production Setup
-Get your free API key at [console.onenode.ai](https://console.onenode.ai):
-
-```python
-import os
-from onenode import OneNode
-
-client = OneNode(api_key=os.getenv("ONENODE_API_KEY"))
-```
-
-## 🏗️ Architecture
+## Architecture
 
 OneNode unifies three storage layers under a single API:
 
@@ -116,7 +103,7 @@ OneNode unifies three storage layers under a single API:
 | **Vector Search** | Semantic search with embeddings | High-performance vector engine |
 | **Object Storage** | Scalable file storage with AI analysis | Automatic content processing |
 
-## 🌟 Use Cases
+## Use Cases
 
 - **RAG Applications**: Build intelligent chatbots and Q&A systems
 - **Content Management**: Semantic search across documents and images
@@ -124,46 +111,24 @@ OneNode unifies three storage layers under a single API:
 - **Knowledge Bases**: AI-powered documentation systems
 - **Media Applications**: Multimodal content discovery
 
-## 📚 Documentation
+## Documentation
 
 - **[Quick Start Guide](https://docs.onenode.ai)** - Get up and running in minutes
 - **[API Reference](https://docs.onenode.ai/document)** - Complete API documentation
 - **[Multimodal Guide](https://docs.onenode.ai/multimodal)** - Working with images and text
 - **[Examples](https://docs.onenode.ai/overview)** - Real-world implementation examples
 
-## 🛠️ Project Structure
 
-This repository contains the complete OneNode ecosystem:
 
-```
-onenode/
-├── onenode/              # Core API server (Python/Flask)
-├── onenode-js/           # JavaScript/TypeScript SDK
-├── onenode-py/           # Python SDK
-├── onenode-console/      # Web console (Next.js)
-├── onenode-docs/         # Documentation site
-├── onenode-web/          # Marketing website
-├── capybaradb-admin/     # Admin dashboard
-└── test/                 # Integration tests
-```
 
-## 💰 Pricing
 
-| Plan | Price | Features |
-|------|-------|----------|
-| **Free** | $0/month | 100MB storage, 500 requests, perfect for prototyping |
-| **Standard** | $25/month | 10GB+ storage, 10K+ requests, production ready |
-| **Enterprise** | Custom | Unlimited scale, dedicated support |
-
-[View detailed pricing →](https://onenode.ai/pricing)
-
-## 🐛 Public Beta & Bug Bounty
+## Public Beta & Bug Bounty
 
 OneNode is currently in **public beta**. Help us improve by reporting bugs and earn **$10** for each verified bug you discover!
 
 [Report a bug →](https://onenode.ai/contact)
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions to OneNode! Here's how you can help:
 
@@ -182,7 +147,7 @@ cd onenode
 # Follow individual component READMEs for setup instructions
 ```
 
-## 📞 Support & Community
+## Support & Community
 
 - **Documentation**: [docs.onenode.ai](https://docs.onenode.ai)
 - **Dashboard**: [console.onenode.ai](https://console.onenode.ai)
@@ -190,11 +155,11 @@ cd onenode
 - **Contact**: [Contact Form](https://onenode.ai/contact)
 - **Email**: [tomo@onenode.ai](mailto:tomo@onenode.ai)
 
-## 📄 License
+## License
 
 OneNode is released under the [MIT License](LICENSE). See individual SDK licenses for specific terms.
 
-## 🙏 Built On
+## Built On
 
 OneNode is built on proven, reliable technologies:
 
