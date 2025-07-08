@@ -167,13 +167,26 @@ def update_docs(
     if not update:
         raise CustomAPIError(message="Missing 'update' field in the request data.")
 
-    result = update_docs_service(
-        filter,
-        update,
-        project_id,
-        db_name,
-        collection_name,
-    )
+    try:
+        result = update_docs_service(
+            filter,
+            update,
+            project_id,
+            db_name,
+            collection_name,
+        )
+    except ValueError as e:
+        # Catch PyMongo validation errors and convert to API errors
+        if "update only works with $ operators" in str(e):
+            raise CustomAPIError(
+                message="Invalid update operation. All update operations must use MongoDB operators that start with '$'. "
+                        "Use operators like $set, $inc, $push, $unset, etc. "
+                        "Example: {\"$set\": {\"field\": \"value\"}} instead of {\"field\": \"value\"}",
+                status_code=400
+            )
+        else:
+            # Re-raise other ValueError instances
+            raise e
 
     return json_util.dumps(result), 200
 

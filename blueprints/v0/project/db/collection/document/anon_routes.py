@@ -75,15 +75,28 @@ def update_docs_anon(project_id: str, db_name: str, collection_name: str):
             status_code=400
         )
 
-    result = update_docs_service(
-        filter,
-        update,
-        project_id,
-        db_name,
-        collection_name,
-        upsert=upsert,
-        request_files=request.files,
-    )
+    try:
+        result = update_docs_service(
+            filter,
+            update,
+            project_id,
+            db_name,
+            collection_name,
+            upsert=upsert,
+            request_files=request.files,
+        )
+    except ValueError as e:
+        # Catch PyMongo validation errors and convert to API errors
+        if "update only works with $ operators" in str(e):
+            raise CustomAPIError(
+                message="Invalid update operation. All update operations must use MongoDB operators that start with '$'. "
+                        "Use operators like $set, $inc, $push, $unset, etc. "
+                        "Example: {\"$set\": {\"field\": \"value\"}} instead of {\"field\": \"value\"}",
+                status_code=400
+            )
+        else:
+            # Re-raise other ValueError instances
+            raise e
 
     return json_util.dumps(result), 200
 
