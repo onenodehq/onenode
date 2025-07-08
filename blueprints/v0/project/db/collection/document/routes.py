@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 from auth.api_key_decorator import require_api_key
+from auth.stats_decorator import track_v0_document_stats
 from blueprints.v0.project.db.collection.document.services import (
     create_docs_service,
     delete_docs_service,
@@ -22,6 +23,7 @@ v0_blueprint_doc.register_blueprint(v0_blueprint_find)
 
 @v0_blueprint_doc.route("", methods=["POST"])
 @require_api_key
+@track_v0_document_stats
 def create_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
     check_api_key_permissions(permissions, project_id)
 
@@ -51,6 +53,7 @@ def create_docs(permissions: list[dict], project_id: str, db_name: str, collecti
 
 @v0_blueprint_doc.route("", methods=["PUT"])
 @require_api_key
+@track_v0_document_stats
 def update_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
     check_api_key_permissions(permissions, project_id)
 
@@ -105,6 +108,7 @@ def update_docs(permissions: list[dict], project_id: str, db_name: str, collecti
 
 @v0_blueprint_doc.route("", methods=["DELETE"])
 @require_api_key
+@track_v0_document_stats
 def delete_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
     check_api_key_permissions(permissions, project_id)
 
