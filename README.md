@@ -1,10 +1,10 @@
 # OneNode
 
-> **The AI-Native Database for Modern Applications**
+> **Multi-Modal Semantic Search Framework - Your Central Hub for AI Applications**
 
 ![OneNode Theme](static/onenode-theme.png)
 
-OneNode is a general-purpose database designed specifically for AI applications, unifying text, images, video, audio, semantic search, and asynchronous processing in a single platform. No more juggling multiple database systems, object storage, or vector databases.
+OneNode is a multi-modal semantic search framework that acts as a central orchestration layer, seamlessly integrating MongoDB, Pinecone, AWS S3, Redis, and Large Language Models into a unified platform. Build powerful AI applications without the infrastructure complexity.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python SDK](https://img.shields.io/badge/Python%20SDK-0.8.6-blue.svg)](https://pypi.org/project/onenode/)
@@ -13,167 +13,285 @@ OneNode is a general-purpose database designed specifically for AI applications,
 
 ## What is OneNode?
 
-OneNode eliminates the complexity of modern data infrastructure by providing a single database that handles everything:
+OneNode eliminates the complexity of building multi-modal AI applications by providing a single framework that orchestrates your entire infrastructure stack:
 
-- **AI-Native**: Built with semantic understanding at its core
-- **Multimodal**: Native support for text, images, video, and audio
-- **Semantic Search**: Find content based on meaning, not just keywords
-- **Asynchronous Processing**: Background workers built-in
-- **MongoDB Compatible**: Familiar API with AI superpowers
-- **Unified Platform**: Replace multiple databases with one solution
+- **🎯 Central Hub**: One API to rule MongoDB, Pinecone, S3, Redis, and LLMs
+- **🔍 Multi-Modal Search**: Semantic search across text, images, video, and audio
+- **⚡ Auto-Orchestration**: Intelligent routing between storage, vector search, and processing
+- **🤖 LLM Integration**: Built-in connections to OpenAI, Anthropic, and more
+- **📊 Unified Querying**: MongoDB-compatible API with AI superpowers
+
+## The Setup Nightmare Without OneNode
+
+Building a multi-modal semantic search application traditionally requires:
+
+### Infrastructure Setup (Weeks of Work)
+```bash
+# MongoDB Setup
+- Install and configure MongoDB cluster
+- Design document schemas
+- Set up indexing strategies
+- Configure replication and sharding
+
+# Pinecone Vector Database
+- Create Pinecone account and project
+- Design vector dimensions and metrics
+- Set up multiple indexes for different content types
+- Manage embedding generation and upserts
+
+# AWS S3 Object Storage
+- Configure S3 buckets with proper permissions
+- Set up CDN and access policies
+- Implement file upload/download logic
+- Handle multipart uploads for large files
+
+# Redis Cache & Queues
+- Deploy Redis cluster
+- Configure persistence and clustering
+- Set up job queues for async processing
+- Implement retry logic and dead letter queues
+
+# LLM Integration
+- Manage API keys for multiple providers
+- Handle rate limiting and failover
+- Implement token counting and cost tracking
+- Build prompt templates and response parsing
+```
+
+### Complex Application Logic
+```python
+# Without OneNode: 200+ lines of boilerplate
+import pymongo
+import pinecone
+import boto3
+import redis
+import openai
+from celery import Celery
+
+class MultiModalSearch:
+    def __init__(self):
+        # Initialize 5 different clients
+        self.mongo = pymongo.MongoClient(MONGO_URI)
+        self.pinecone = pinecone.init(api_key=PINECONE_KEY)
+        self.s3 = boto3.client('s3')
+        self.redis = redis.Redis(host=REDIS_HOST)
+        self.openai = openai.OpenAI(api_key=OPENAI_KEY)
+        
+    def store_with_search(self, data):
+        # 1. Store document in MongoDB
+        doc_id = self.mongo.db.collection.insert_one(data)
+        
+        # 2. Generate embeddings
+        embeddings = self.openai.embeddings.create(...)
+        
+        # 3. Store in Pinecone
+        self.pinecone.upsert(vectors=[(doc_id, embeddings)])
+        
+        # 4. Upload files to S3
+        if 'files' in data:
+            for file in data['files']:
+                self.s3.upload_file(...)
+        
+        # 5. Cache frequently accessed data
+        self.redis.set(f"doc:{doc_id}", json.dumps(data))
+        
+        # 6. Queue background processing
+        process_document.delay(doc_id)
+```
+
+### Ongoing Maintenance Burden
+- **Monitoring**: Track health of 5+ different services
+- **Scaling**: Configure auto-scaling for each component
+- **Security**: Manage credentials for multiple providers
+- **Updates**: Keep SDKs and dependencies in sync
+- **Debugging**: Trace issues across distributed systems
+- **Cost Management**: Monitor usage across platforms
+
+## OneNode: One Line, Everything Connected
+
+```python
+from onenode import OneNode, Text, Image
+
+# Single initialization - all infrastructure connected
+client = OneNode()
+db = client.database("my_app")
+collection = db.collection("content")
+
+# Multi-modal storage with automatic semantic indexing
+content = {
+    "title": "AI Research Paper",
+    "content": Text("Deep learning transforms computer vision...").enable_index(),
+    "diagram": Image("architecture.png").enable_index(),
+    "metadata": {"category": "research", "year": 2024}
+}
+
+# One call handles: MongoDB storage + Pinecone vectors + S3 upload + Redis cache
+doc_id = collection.insert_one(content)
+
+# Semantic search across all modalities
+results = collection.query("neural network architectures with diagrams")
+```
+
+## Architecture: Central Orchestration Hub
+
+OneNode acts as an intelligent orchestration layer that automatically routes operations to the right backend service:
+
+```mermaid
+graph TB
+    A[OneNode Framework] --> B[MongoDB Documents]
+    A --> C[Pinecone Vectors] 
+    A --> D[AWS S3 Objects]
+    A --> E[Redis Cache]
+    A --> F[LLM APIs]
+    
+    G[Your Application] --> A
+    A --> H[Automatic Routing]
+    A --> I[Background Processing]
+    A --> J[Multi-Modal Search]
+```
+
+| Component | OneNode Integration | Your Benefit |
+|-----------|-------------------|--------------|
+| **MongoDB** | Document storage with auto-indexing | Familiar queries + AI search |
+| **Pinecone** | Vector embeddings behind the scenes | Semantic search without complexity |
+| **AWS S3** | Automatic file upload/processing | Multimodal content with AI analysis |
+| **Redis** | Smart caching and job queues | Performance + async processing |
+| **LLMs** | Built-in provider management | AI features without API juggling |
 
 ## Key Features
 
-### AI-Powered Data Processing
+### 🔍 Intelligent Query Routing
 ```python
-from onenode import Text, Image
-
-# Semantic text indexing
-content = Text("Machine learning revolutionizes data analysis")
-content.enable_index()
-
-# AI vision processing for images
-diagram = Image("architecture_diagram.png")
-diagram.enable_index()
-
-# Store everything together
-db.users.insert_one({
-    "name": "Alice",
-    "bio": content,
-    "profile_image": diagram
-})
+# OneNode automatically determines the best search strategy
+results = collection.query("show me red sports cars")
+# → Combines vector similarity + metadata filters + image analysis
 ```
 
-### Instant Semantic Search
-```javascript
-// Find documents by meaning, not exact keywords
-const results = await collection.query("artificial intelligence expert");
+### 🖼️ Multi-Modal Content Processing
+```python
+# Automatic content analysis and indexing
+doc = {
+    "product": "Tesla Model S",
+    "description": Text("Electric luxury sedan").enable_index(),
+    "image": Image("tesla.jpg").enable_index(),  # Auto-extracts: "red car, sedan, Tesla logo"
+    "video": Video("review.mp4").enable_index()  # Auto-extracts: scenes, speech-to-text
+}
+collection.insert_one(doc)
 ```
 
-## Why OneNode?
+### ⚡ Background Processing
+```python
+# Automatic async processing for heavy operations
+large_dataset = collection.insert_many(documents)  # Returns immediately
+# OneNode handles: embedding generation, image analysis, video processing in background
+```
 
-### Traditional Approach
-- Configure multiple database systems
-- Set up separate object storage
-- Implement vector search infrastructure
-- Build background job queues
-- Manage complex integrations
+## Use Cases & Examples
 
-### OneNode Approach
-- **One database, everything included**
-- **Ship features, not infrastructure**
-- **Focus on your application logic**
+### 🤖 RAG Applications
+```python
+# Build ChatGPT-like apps with your data
+knowledge_base = db.collection("docs")
+query = "How do I implement authentication?"
 
-## Installation
+# Semantic search + LLM generation in one call
+response = knowledge_base.ask(query, model="gpt-4")
+```
+
+### 🛒 E-commerce Search
+```python
+# Visual + text product search
+products.query("red running shoes under $100", filters={"category": "footwear"})
+```
+
+### 📚 Content Management
+```python
+# Search across documents, images, videos
+content.query("machine learning tutorial with code examples")
+```
+
+## Quick Start
 
 ### Python
 ```bash
 pip install onenode
 ```
 
-### JavaScript/TypeScript
+### JavaScript/TypeScript  
 ```bash
 npm install @onenodehq/onenode
 ```
 
-## Quick Start
-
 ```python
 from onenode import OneNode
 
-# Initialize without API key - completely free
-client = OneNode()
+# Initialize - connects to all backend services automatically
+client = OneNode()  # Free tier available
 db = client.database("my_app")
-collection = db.collection("users")
 
-# Start using immediately
+# Start building immediately
+collection = db.collection("products")
 collection.insert_one({
-    "name": "Bob",
-    "email": "bob@example.com"
+    "name": "Wireless Headphones",
+    "description": Text("Premium noise-canceling headphones").enable_index()
 })
+
+# Semantic search works instantly
+results = collection.query("audio equipment for music")
 ```
 
-## Architecture
+## OneNode vs. DIY Infrastructure
 
-OneNode unifies three storage layers under a single API:
+| Aspect | Without OneNode | With OneNode |
+|--------|-----------------|--------------|
+| **Setup Time** | 2-4 weeks | 5 minutes |
+| **Lines of Code** | 500+ for basic setup | 10 lines |
+| **Services to Manage** | 5+ separate platforms | 1 unified platform |
+| **Monthly Maintenance** | 20+ hours | Near zero |
+| **Expertise Required** | MongoDB + Pinecone + S3 + Redis + LLM APIs | OneNode API only |
+| **Scaling Complexity** | Manual coordination | Automatic |
 
-| Layer | Purpose | Technology |
-|-------|---------|------------|
-| **Document Store** | JSON documents with flexible schemas | MongoDB-compatible |
-| **Vector Search** | Semantic search with embeddings | High-performance vector engine |
-| **Object Storage** | Scalable file storage with AI analysis | Automatic content processing |
+## Built On Proven Infrastructure
 
-## Use Cases
+OneNode orchestrates best-in-class services:
 
-- **RAG Applications**: Build intelligent chatbots and Q&A systems
-- **Content Management**: Semantic search across documents and images
-- **E-commerce**: Visual and text-based product search
-- **Knowledge Bases**: AI-powered documentation systems
-- **Media Applications**: Multimodal content discovery
-
-## Documentation
-
-- **[Quick Start Guide](https://docs.onenode.ai)** - Get up and running in minutes
-- **[API Reference](https://docs.onenode.ai/document)** - Complete API documentation
-- **[Multimodal Guide](https://docs.onenode.ai/multimodal)** - Working with images and text
-- **[Examples](https://docs.onenode.ai/overview)** - Real-world implementation examples
-
-
-
-
+- **MongoDB** - Battle-tested document storage
+- **Pinecone** - High-performance vector search
+- **AWS S3** - Infinitely scalable object storage
+- **Redis** - Lightning-fast caching and queues
+- **OpenAI/Anthropic** - Leading LLM providers
 
 ## Public Beta & Bug Bounty
 
-OneNode is currently in **public beta**. Help us improve by reporting bugs and earn **$10** for each verified bug you discover!
+OneNode is in **public beta**. Help us improve and earn **$10** for each verified bug!
 
 [Report a bug →](https://onenode.ai/contact)
 
+## Documentation & Support
+
+- **[Quick Start Guide](https://docs.onenode.ai)** - Get running in 5 minutes
+- **[API Reference](https://docs.onenode.ai/document)** - Complete documentation
+- **[Multi-Modal Guide](https://docs.onenode.ai/multimodal)** - Images, video, audio
+- **[Dashboard](https://console.onenode.ai)** - Monitor your applications
+
 ## Contributing
 
-We welcome contributions to OneNode! Here's how you can help:
+Found an issue or want to contribute? We'd love your help!
 
-1. **Report Issues**: Found a bug? [Open an issue](https://github.com/onenodehq/onenode/issues)
-2. **Feature Requests**: Have an idea? [Start a discussion](https://github.com/onenodehq/onenode/discussions)
-3. **Documentation**: Help improve our docs
-4. **Testing**: Try OneNode with your use cases and share feedback
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/onenodehq/onenode.git
-cd onenode
-
-# Follow individual component READMEs for setup instructions
-```
-
-## Support & Community
-
-- **Documentation**: [docs.onenode.ai](https://docs.onenode.ai)
-- **Dashboard**: [console.onenode.ai](https://console.onenode.ai)
-- **Issues**: [GitHub Issues](https://github.com/onenodehq/onenode/issues)
-- **Contact**: [Contact Form](https://onenode.ai/contact)
-- **Email**: [tomo@onenode.ai](mailto:tomo@onenode.ai)
+1. **[Report Issues](https://github.com/onenodehq/onenode/issues)**
+2. **[Feature Requests](https://github.com/onenodehq/onenode/discussions)**
+3. **[Contact Us](https://onenode.ai/contact)**
 
 ## License
 
-OneNode is released under the [MIT License](LICENSE). See individual SDK licenses for specific terms.
-
-## Built On
-
-OneNode is built on proven, reliable technologies:
-
-- **MongoDB** - Document storage
-- **Pinecone** - Vector search
-- **Redis** - Caching and queues  
-- **Amazon S3** - Object storage
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
 
-**Ready to eliminate database complexity?**
+**Stop fighting infrastructure. Start building AI.**
 
-[Get Started Free](https://console.onenode.ai) • [View Documentation](https://docs.onenode.ai) • [See Examples](https://docs.onenode.ai/overview)
+[Get Started Free](https://console.onenode.ai) • [View Docs](https://docs.onenode.ai) • [See Examples](https://docs.onenode.ai/overview)
 
 </div> 
