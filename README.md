@@ -231,7 +231,7 @@ db = client.database("my_app")
 
 # Start building immediately
 collection = db.collection("products")
-collection.insert_one({
+collection.insert({
     "name": "Wireless Headphones",
     "description": Text("Premium noise-canceling headphones").enable_index()
 })
