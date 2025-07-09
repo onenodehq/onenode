@@ -31,6 +31,10 @@ beat_schedule = {
         "task": "celery_tasks.anon_tasks.cleanup_expired_anon_projects",
         "schedule": crontab(hour=2, minute=0, day_of_week=0),  # Every Sunday at 2:00 AM
     },
+    "send_daily_admin_report": {
+        "task": "celery_tasks.stats_tasks.send_daily_admin_report",
+        "schedule": crontab(hour=8, minute=0),  # Every day at 8:00 AM UTC
+    },
 }
 
 def make_celery(app):
