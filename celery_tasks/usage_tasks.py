@@ -61,7 +61,16 @@ def record_project_usage(org, project):
 
         database_details = []
 
-        for collection in project.get("collections", []):
+        # Limit collections per project to prevent memory issues
+        collections = project.get("collections", [])
+        if len(collections) > 50:  # Safety limit: max 50 collections per project
+            notify_admin(
+                "Large Project Detected",
+                f"Project {project_id_str} has {len(collections)} collections. Processing first 50 only."
+            )
+            collections = collections[:50]
+
+        for collection in collections:
             db_name = collection.get("db_name")
             if not db_name:
                 continue
@@ -81,7 +90,16 @@ def record_project_usage(org, project):
                 total_project_pinecone += pinecone_usage
 
                 collection_details = []
-                for coll_name in db.list_collection_names():
+                # Limit collection names processing
+                collection_names = db.list_collection_names()
+                if len(collection_names) > 100:  # Safety limit: max 100 collections per DB
+                    notify_admin(
+                        "Large Database Detected",
+                        f"Database {db_name} in project {project_id_str} has {len(collection_names)} collections. Processing first 100 only."
+                    )
+                    collection_names = collection_names[:100]
+                
+                for coll_name in collection_names:
                     coll_stats = db.command({"collStats": coll_name})
                     coll_size = coll_stats.get("size", 0)
                     coll_idx_size = coll_stats.get("totalIndexSize", 0)
@@ -180,12 +198,52 @@ def record_project_usage(org, project):
 
 @celery.task
 def record_usage():
-    try:        
-        orgs = mongo_orgs.find({})
-        for org in orgs:
-            for project in org.get("projects", []):
-                record_project_usage(org, project)
+    try:
+        # Add pagination and limits to prevent memory exhaustion
+        page_size = 20  # Process 20 orgs at a time
+        skip = 0
+        total_processed = 0
+        
+        while True:
+            # Get a batch of organizations with pagination
+            orgs = list(mongo_orgs.find({}).skip(skip).limit(page_size))
+            if not orgs:
+                break
+                
+            for org in orgs:
+                try:
+                    # Limit projects per org to prevent runaway memory usage
+                    projects = org.get("projects", [])
+                    if len(projects) > 100:  # Safety limit: max 100 projects per org
+                        notify_admin(
+                            "Large Organization Detected",
+                            f"Org {org.get('_id')} has {len(projects)} projects. Processing first 100 only."
+                        )
+                        projects = projects[:100]
+                    
+                    for project in projects:
+                        record_project_usage(org, project)
+                        total_processed += 1
+                        
+                except Exception as org_error:
+                    notify_admin(
+                        "Org Processing Failed", 
+                        f"Failed to process org {org.get('_id')}: {org_error}"
+                    )
+                    continue
+            
+            skip += page_size
+            
+            # Safety break to prevent infinite loops
+            if skip > 10000:  # Max 10k orgs per run
+                notify_admin(
+                    "Usage Recording Limit Reached",
+                    f"Processed {total_processed} projects across {skip} orgs. Stopping to prevent memory issues."
+                )
+                break
+        
 
+        
     except Exception as e:
         notify_admin(
             "Usage Sampling Failed",

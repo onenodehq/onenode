@@ -160,8 +160,10 @@ def send_daily_admin_report():
         
         # === API CALL STATISTICS ===
         
-        # Yesterday's API calls
-        yesterday_stats = list(mongo_stats.aggregate([
+        # Use cursors and limits to prevent large result sets
+        
+        # Yesterday's API calls - use cursor instead of list()
+        yesterday_cursor = mongo_stats.aggregate([
             {
                 "$match": {
                     "date": {"$gte": yesterday, "$lt": today}
@@ -175,10 +177,11 @@ def send_daily_admin_report():
                     "endpoints": {"$addToSet": "$endpoint"}
                 }
             }
-        ]))
+        ])
+        yesterday_stats = list(yesterday_cursor)
         
-        # Last 7 days API calls
-        weekly_stats = list(mongo_stats.aggregate([
+        # Last 7 days API calls - use cursor instead of list()
+        weekly_cursor = mongo_stats.aggregate([
             {
                 "$match": {
                     "date": {"$gte": week_ago, "$lt": today}
@@ -192,10 +195,11 @@ def send_daily_admin_report():
                     "unique_days": {"$addToSet": "$date"}
                 }
             }
-        ]))
+        ])
+        weekly_stats = list(weekly_cursor)
         
-        # Top endpoints yesterday
-        top_endpoints = list(mongo_stats.aggregate([
+        # Top endpoints yesterday - already limited to 5
+        top_endpoints_cursor = mongo_stats.aggregate([
             {
                 "$match": {
                     "date": {"$gte": yesterday, "$lt": today}
@@ -213,10 +217,11 @@ def send_daily_admin_report():
             {
                 "$limit": 5
             }
-        ]))
+        ])
+        top_endpoints = list(top_endpoints_cursor)
         
-        # Top projects yesterday
-        top_projects = list(mongo_stats.aggregate([
+        # Top projects yesterday - already limited to 5
+        top_projects_cursor = mongo_stats.aggregate([
             {
                 "$match": {
                     "date": {"$gte": yesterday, "$lt": today}
@@ -234,12 +239,13 @@ def send_daily_admin_report():
             {
                 "$limit": 5
             }
-        ]))
+        ])
+        top_projects = list(top_projects_cursor)
         
         # === STORAGE USAGE STATISTICS ===
         
-        # Latest usage snapshot
-        latest_usage = list(mongo_usage.aggregate([
+        # Latest usage snapshot - Add limit to prevent memory issues
+        latest_usage_cursor = mongo_usage.aggregate([
             {
                 "$sort": {"timestamp": -1}
             },
@@ -251,16 +257,20 @@ def send_daily_admin_report():
             },
             {
                 "$replaceRoot": {"newRoot": "$latest_usage"}
+            },
+            {
+                "$limit": 1000  # Limit to 1000 projects max
             }
-        ]))
+        ])
+        latest_usage = list(latest_usage_cursor)
         
         total_storage = sum(doc.get("mongo_total_mb", 0) for doc in latest_usage)
         total_pinecone = sum(doc.get("pc_mb", 0) for doc in latest_usage)
         
         # === PROJECT STATISTICS ===
         
-        # New projects created yesterday
-        new_projects = list(mongo_orgs.aggregate([
+        # New projects created yesterday - Add limit
+        new_projects_cursor = mongo_orgs.aggregate([
             {
                 "$unwind": "$projects"
             },
@@ -275,18 +285,23 @@ def send_daily_admin_report():
                     "project_name": "$projects.name",
                     "created_at": "$projects.created_at"
                 }
+            },
+            {
+                "$limit": 100  # Limit to 100 new projects max per report
             }
-        ]))
+        ])
+        new_projects = list(new_projects_cursor)
         
-        # Total projects count
-        total_projects = list(mongo_orgs.aggregate([
+        # Total projects count - this should be efficient as it's just a count
+        total_projects_cursor = mongo_orgs.aggregate([
             {
                 "$unwind": "$projects"
             },
             {
                 "$count": "total"
             }
-        ]))
+        ])
+        total_projects = list(total_projects_cursor)
         
         # Total organizations count
         total_orgs = mongo_orgs.count_documents({})
