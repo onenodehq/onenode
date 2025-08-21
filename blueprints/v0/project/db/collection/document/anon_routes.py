@@ -1,5 +1,5 @@
 from flask import Blueprint, g, request
-from auth.stats_decorator import track_v0_document_stats
+
 from blueprints.v0.project.db.collection.document.services import (
     create_docs_service,
     delete_docs_service,
@@ -20,7 +20,6 @@ v0_blueprint_anon_doc.register_blueprint(v0_blueprint_anon_find)
 
 # anon endpoint for trial users without api key
 @v0_blueprint_anon_doc.route("", methods=["POST"])
-@track_v0_document_stats
 def create_docs_anon(project_id: str, db_name: str, collection_name: str):
     g.plan = "free"
     create_anon_project_if_not_exists(project_id)
@@ -50,7 +49,6 @@ def create_docs_anon(project_id: str, db_name: str, collection_name: str):
 
 
 @v0_blueprint_anon_doc.route("", methods=["PUT"])
-@track_v0_document_stats
 def update_docs_anon(project_id: str, db_name: str, collection_name: str):
     g.plan = "free"
     create_anon_project_if_not_exists(project_id)
@@ -105,7 +103,6 @@ def update_docs_anon(project_id: str, db_name: str, collection_name: str):
 
 
 @v0_blueprint_anon_doc.route("", methods=["DELETE"])
-@track_v0_document_stats
 def delete_docs_anon(project_id: str, db_name: str, collection_name: str):
     g.plan = "free"
     create_anon_project_if_not_exists(project_id)

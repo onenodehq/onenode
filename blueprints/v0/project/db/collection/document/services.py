@@ -18,11 +18,9 @@ from blueprints.v0.utils.pinecone_operations import pc_delete_with_doc_ids
 from blueprints.v0.utils.s3_operations import delete_s3_objects_with_doc_ids, save_to_s3
 from celery_tasks import (
     save_text_tasks,
-    decrement_collection_usage_cache,
     update_vectors_task,
 )
 from celery_tasks.image_tasks import embed_image_task
-from utils.usage import check_current_usage
 from errors import CustomAPIError
 
 
@@ -40,8 +38,7 @@ def create_docs_service(
             status_code=400
         )
 
-    if g.plan == "free":
-        check_current_usage(project_id)
+    # Usage checking removed - free tier restrictions no longer enforced
 
     mongo_collection = get_client_collection(
         project_id, db_name, collection_name, must_exist=False
@@ -183,11 +180,4 @@ def delete_docs_service(
 
     delete_s3_objects_with_doc_ids(project_id, db_name, collection_name, doc_ids)
 
-    if doc_ids:
-        decrement_collection_usage_cache.delay(
-            project_id_str=project_id,
-            db_name=db_name,
-            collection_name=collection_name,
-            doc_delta=len(doc_ids),
-        )
     return {"deleted_count": delete_result.deleted_count}

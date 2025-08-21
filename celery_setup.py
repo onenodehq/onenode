@@ -18,24 +18,7 @@ register(
     content_encoding="utf-8",
 )
 
-beat_schedule = {
-    "record_usage_hourly": {
-        "task": "celery_tasks.usage_tasks.record_usage",
-        "schedule": crontab(minute=0),
-    },
-    "check_and_update_expired_plans": {
-        "task": "celery_tasks.plan_tasks.check_and_update_expired_plans",
-        "schedule": crontab(hour=0, minute=0),  # Every day at midnight
-    },
-    "cleanup_old_anon_projects": {
-        "task": "celery_tasks.anon_tasks.cleanup_expired_anon_projects",
-        "schedule": crontab(hour=2, minute=0, day_of_week=0),  # Every Sunday at 2:00 AM
-    },
-    "send_daily_admin_report": {
-        "task": "celery_tasks.stats_tasks.send_daily_admin_report",
-        "schedule": crontab(hour=8, minute=0),  # Every day at 8:00 AM UTC
-    },
-}
+beat_schedule = {}
 
 def make_celery(app):
     # In deployment, it automatically connects to SQS queue

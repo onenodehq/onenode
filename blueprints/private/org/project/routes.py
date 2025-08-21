@@ -10,7 +10,7 @@ from blueprints.private.org.project.api_key.routes import (
 from blueprints.private.org.project.services import list_collections_service
 from blueprints.private.services import check_project_permission
 from bson import json_util
-from celery_tasks import get_cached_usage
+
 
 private_blueprint_project = Blueprint(
     "private_project",
@@ -36,8 +36,4 @@ def list_collections(org_id, project_id):
     return json_util.dumps(collections), 200
 
 
-@require_admin_api_key
-def get_usages(org_id: str, project_id: str):
-    result = get_cached_usage(project_id)
 
-    return json_util.dumps(result), 200

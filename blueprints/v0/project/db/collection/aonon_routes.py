@@ -1,5 +1,4 @@
 from flask import Blueprint
-from auth.stats_decorator import track_v0_document_stats
 from blueprints.v0.project.db.collection.services import delete_collection_service
 from blueprints.v0.project.db.collection.document.anon_routes import v0_blueprint_anon_doc
 
@@ -10,7 +9,6 @@ v0_blueprint_anon_collection = Blueprint(
 v0_blueprint_anon_collection.register_blueprint(v0_blueprint_anon_doc)
 
 @v0_blueprint_anon_collection.route("/<string:collection_name>", methods=["DELETE"])
-@track_v0_document_stats
 def delete_collection_anon(project_id: str, db_name: str, collection_name: str):
 
     delete_collection_service(

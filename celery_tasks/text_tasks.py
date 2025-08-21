@@ -1,7 +1,6 @@
 from celery_setup import celery
 from blueprints.v0.utils.openai_operations import embed_text
 from blueprints.v0.utils.pinecone_operations import batch_iterable, pc_upsert
-from celery_tasks.usage_tasks import increment_collection_usage_cache
 from utils.email import notify_admin
 
 
@@ -76,20 +75,7 @@ def save_text_tasks(
                 )
                 continue
 
-        if total_vector_dimensions:
-            try:
-                increment_collection_usage_cache(
-                    project_id_str=project_id_str,
-                    db_name=db_name,
-                    collection_name=collection_name,
-                    inserted_documents=documents,
-                    total_vector_dimensions=total_vector_dimensions,
-                )
-            except Exception as e:
-                notify_admin(
-                    "Usage Cache Update Failed",
-                    f"Failed to update usage cache for project {project_id_str}: {e}",
-                )
+
 
 
 @celery.task
