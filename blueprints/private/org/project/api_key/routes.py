@@ -1,5 +1,4 @@
 from flask import Blueprint, g, jsonify, request
-from auth.auth_decorator import requires_auth
 from blueprints.private.org.project.api_key.services import (
     delete_api_key_from_db,
     generate_api_key,
@@ -19,7 +18,6 @@ private_blueprint_api_key = Blueprint(
 
 
 @private_blueprint_api_key.route("", methods=["POST"])
-@requires_auth
 def create_api_key(org_id, project_id):
     user_id = g.user_id
     check_project_permission(user_id, org_id, project_id)
@@ -41,7 +39,6 @@ def create_api_key(org_id, project_id):
 
 
 @private_blueprint_api_key.route("", methods=["GET"])
-@requires_auth
 def list_api_keys(org_id, project_id):
     user_id = g.user_id
     check_project_permission(user_id, org_id, project_id)
@@ -51,7 +48,6 @@ def list_api_keys(org_id, project_id):
 
 
 @private_blueprint_api_key.route("", methods=["DELETE"])
-@requires_auth
 def delete_api_key(org_id, project_id):
     user_id = g.user_id
     check_project_permission(user_id, org_id, project_id)

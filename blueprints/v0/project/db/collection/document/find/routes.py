@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from auth.api_key_decorator import require_api_key
 
 from bson import json_util
 from blueprints.v0.project.db.collection.document.find.services import find_docs_service
@@ -10,7 +9,6 @@ v0_blueprint_find = Blueprint("v0_find", __name__, url_prefix="/find")
 
 
 @v0_blueprint_find.route("", methods=["POST"])
-@require_api_key
 def find_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
     check_api_key_permissions(permissions, project_id)
 

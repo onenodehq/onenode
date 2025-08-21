@@ -1,6 +1,4 @@
 from flask import Blueprint, g, jsonify, request
-from auth.api_key_decorator import require_admin_api_key
-from auth.auth_decorator import requires_auth
 from blueprints.private.user.services import (
     create_user_service,
     delete_user_service,
@@ -15,7 +13,6 @@ private_blueprint_user = Blueprint("private_user", __name__, url_prefix="/user")
 
 
 @private_blueprint_user.route("", methods=["POST"])
-@require_admin_api_key
 def create_user():
     # create new email (mongo generates _id which will be onenode_user_id in auth0)
     data = request.get_json()
@@ -38,7 +35,6 @@ def create_user():
     return jsonify(new_user), 200
 
 @private_blueprint_user.route("/<user_id>", methods=["DELETE"])
-@require_admin_api_key
 def delete_user(user_id):
     if not user_id:
         raise CustomAPIError(
@@ -50,7 +46,6 @@ def delete_user(user_id):
     return "", 204
 
 @private_blueprint_user.route("/email", methods=["GET"])
-@require_admin_api_key
 def get_user_by_email():
     email = request.args.get("email")
     if not email:
@@ -62,7 +57,6 @@ def get_user_by_email():
 
 
 @private_blueprint_user.route("/token", methods=["GET"])
-@requires_auth
 def get_user_by_access_token():
     user_id = g.user_id
     user = get_user_by_access_token_service(user_id=user_id)

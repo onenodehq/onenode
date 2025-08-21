@@ -1,6 +1,4 @@
 from flask import Blueprint, g, jsonify, request
-from auth.api_key_decorator import require_admin_api_key
-from auth.auth_decorator import requires_auth
 from blueprints.private.services import (
     send_docs_feedback_service,
     send_feedback_service,
@@ -21,7 +19,6 @@ private_blueprint.register_blueprint(private_webhook_blueprint)
 
 
 @private_blueprint.route("/feedback", methods=["POST"])
-@requires_auth
 def send_feedback():
     user_id = g.user_id
 
@@ -36,7 +33,6 @@ def send_feedback():
 
 
 @private_blueprint.route("/docs-feedback", methods=["POST"])
-@require_admin_api_key
 def send_docs_feedback():
     data = request.get_json()
     message = data.get("message")
@@ -49,7 +45,6 @@ def send_docs_feedback():
 
 
 @private_blueprint.route("/notify-admin", methods=["POST"])
-@require_admin_api_key
 def send_admin_notification():
     data = request.get_json()
     subject = data.get("subject")

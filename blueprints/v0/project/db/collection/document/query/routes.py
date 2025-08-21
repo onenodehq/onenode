@@ -1,5 +1,4 @@
 from flask import Blueprint, jsonify, request
-from auth.api_key_decorator import require_api_key
 
 from bson import json_util
 from blueprints.v0.project.db.collection.document.query.services import query_chunks_service
@@ -9,7 +8,6 @@ v0_blueprint_query = Blueprint("v0_query", __name__, url_prefix="/query")
 
 
 @v0_blueprint_query.route("", methods=["POST"])
-@require_api_key
 def query_chunks(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
     check_api_key_permissions(permissions, project_id)
 

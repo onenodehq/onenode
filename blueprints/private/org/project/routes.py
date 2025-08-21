@@ -1,6 +1,4 @@
 from flask import Blueprint, g
-from auth.api_key_decorator import require_admin_api_key
-from auth.auth_decorator import requires_auth
 from blueprints.private.org.project.db.routes import (
     private_blueprint_db,
 )
@@ -25,7 +23,6 @@ private_blueprint_project.register_blueprint(private_blueprint_api_key)
 @private_blueprint_project.route(
     "<string:project_id>/list_collections", methods=["GET"]
 )
-@requires_auth
 def list_collections(org_id, project_id):
     user_id = g.user_id
 

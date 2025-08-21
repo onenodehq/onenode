@@ -1,6 +1,4 @@
 from flask import Blueprint, g, request
-from auth.api_key_decorator import require_admin_api_key
-from auth.auth_decorator import requires_auth
 from bson import json_util, ObjectId
 from blueprints.private.org.project.db.collection.documents.services import list_documents_service
 from blueprints.v0.project.db.collection.document.find.services import find_docs_service
@@ -19,7 +17,6 @@ private_blueprint_document = Blueprint(
 
 
 @private_blueprint_document.route("/list", methods=["GET"])
-@requires_auth
 def list_documents(org_id, project_id, db_name, collection_name):
     user_id = g.user_id
 
@@ -46,7 +43,6 @@ def list_documents(org_id, project_id, db_name, collection_name):
     return json_util.dumps(documents), 200
 
 @private_blueprint_document.route("/find", methods=["POST"])
-@requires_auth
 def find_documents(org_id, project_id, db_name, collection_name):
     user_id = g.user_id
 
@@ -103,8 +99,6 @@ def find_documents(org_id, project_id, db_name, collection_name):
 
 
 @private_blueprint_document.route("", methods=["DELETE"])
-@requires_auth
-@require_admin_api_key
 def delete_docs(
     org_id: str,
     project_id: str,
@@ -140,8 +134,6 @@ def delete_docs(
 
 
 @private_blueprint_document.route("", methods=["PUT"])
-@requires_auth
-@require_admin_api_key
 def update_docs(
     org_id: str,
     project_id: str,
@@ -191,8 +183,6 @@ def update_docs(
     return json_util.dumps(result), 200
 
 @private_blueprint_document.route("/query", methods=["POST"])
-@requires_auth
-@require_admin_api_key
 def query_documents(org_id, project_id, db_name, collection_name):
     user_id = g.user_id
 

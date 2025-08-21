@@ -1,5 +1,4 @@
 from flask import Blueprint
-from auth.api_key_decorator import require_api_key
 from blueprints.v0.project.db.collection.document.routes import v0_blueprint_doc
 from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
 from blueprints.v0.project.db.collection.services import delete_collection_service
@@ -11,7 +10,6 @@ v0_blueprint_collection = Blueprint(
 v0_blueprint_collection.register_blueprint(v0_blueprint_doc)
 
 @v0_blueprint_collection.route("/<string:collection_name>", methods=["DELETE"])
-@require_api_key
 def delete_collection(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
     check_api_key_permissions(permissions, project_id)
 
