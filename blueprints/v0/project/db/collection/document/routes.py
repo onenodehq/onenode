@@ -5,7 +5,6 @@ from blueprints.v0.project.db.collection.document.services import (
     delete_docs_service,
     update_docs_service,
 )
-from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
 from bson import json_util
 from blueprints.v0.project.db.collection.document.query.routes import v0_blueprint_query
 from blueprints.v0.project.db.collection.document.find.routes import v0_blueprint_find
@@ -21,8 +20,7 @@ v0_blueprint_doc.register_blueprint(v0_blueprint_find)
 
 
 @v0_blueprint_doc.route("", methods=["POST"])
-def create_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
-    check_api_key_permissions(permissions, project_id)
+def create_docs(project_id: str, db_name: str, collection_name: str):
 
     if 'documents' not in request.form:
         raise CustomAPIError(
@@ -49,8 +47,7 @@ def create_docs(permissions: list[dict], project_id: str, db_name: str, collecti
 
 
 @v0_blueprint_doc.route("", methods=["PUT"])
-def update_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
-    check_api_key_permissions(permissions, project_id)
+def update_docs(project_id: str, db_name: str, collection_name: str):
 
     if 'filter' not in request.form or 'update' not in request.form:
         raise CustomAPIError(
@@ -102,8 +99,7 @@ def update_docs(permissions: list[dict], project_id: str, db_name: str, collecti
 
 
 @v0_blueprint_doc.route("", methods=["DELETE"])
-def delete_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
-    check_api_key_permissions(permissions, project_id)
+def delete_docs(project_id: str, db_name: str, collection_name: str):
 
     if 'filter' not in request.form:
         raise CustomAPIError(

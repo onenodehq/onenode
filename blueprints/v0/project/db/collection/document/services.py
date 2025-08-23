@@ -1,14 +1,9 @@
 from bson import ObjectId
-from flask import g
 from blueprints.v0.project.db.collection.document.helper import (
     delete_overwritten_pc_vectors,
     delete_overwritten_s3_images,
     process_document,
     process_update,
-)
-from blueprints.v0.utils.free_tier_monitorings import (
-    check_mongo_storage,
-    check_pc_storage,
 )
 from blueprints.v0.utils.mongo_operations import (
     get_client_collection,
@@ -37,8 +32,6 @@ def create_docs_service(
             f"Invalid documents format. Expected a list of dictionaries, but received {type(documents).__name__}.",
             status_code=400
         )
-
-    # Usage checking removed - free tier restrictions no longer enforced
 
     mongo_collection = get_client_collection(
         project_id, db_name, collection_name, must_exist=False
@@ -93,9 +86,6 @@ def update_docs_service(
     upsert: bool = False,
     request_files: dict = None,
 ):
-    if g.plan == "free":
-        check_mongo_storage(project_id, db_name)
-        check_pc_storage(project_id, db_name)
     mongo_collection = get_client_collection(project_id, db_name, collection_name)
 
     documents_to_update = mongo_collection.find(filter=filter, projection={"_id": 1})

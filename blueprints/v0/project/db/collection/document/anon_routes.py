@@ -1,11 +1,10 @@
-from flask import Blueprint, g, request
+from flask import Blueprint, request
 
 from blueprints.v0.project.db.collection.document.services import (
     create_docs_service,
     delete_docs_service,
     update_docs_service,
 )
-from blueprints.v0.utils.anon_operations import create_anon_project_if_not_exists
 from bson import json_util
 from errors import CustomAPIError
 from blueprints.v0.project.db.collection.document.query.anon_routes import v0_blueprint_anon_query
@@ -21,8 +20,6 @@ v0_blueprint_anon_doc.register_blueprint(v0_blueprint_anon_find)
 # anon endpoint for trial users without api key
 @v0_blueprint_anon_doc.route("", methods=["POST"])
 def create_docs_anon(project_id: str, db_name: str, collection_name: str):
-    g.plan = "free"
-    create_anon_project_if_not_exists(project_id)
 
     if 'documents' not in request.form:
         raise CustomAPIError(
@@ -50,8 +47,6 @@ def create_docs_anon(project_id: str, db_name: str, collection_name: str):
 
 @v0_blueprint_anon_doc.route("", methods=["PUT"])
 def update_docs_anon(project_id: str, db_name: str, collection_name: str):
-    g.plan = "free"
-    create_anon_project_if_not_exists(project_id)
 
     if 'filter' not in request.form or 'update' not in request.form:
         raise CustomAPIError(
@@ -104,8 +99,6 @@ def update_docs_anon(project_id: str, db_name: str, collection_name: str):
 
 @v0_blueprint_anon_doc.route("", methods=["DELETE"])
 def delete_docs_anon(project_id: str, db_name: str, collection_name: str):
-    g.plan = "free"
-    create_anon_project_if_not_exists(project_id)
 
     if 'filter' not in request.form:
         raise CustomAPIError(

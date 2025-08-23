@@ -1,16 +1,13 @@
-from flask import Blueprint, jsonify, request, g
+from flask import Blueprint, jsonify, request
 
 from bson import json_util
 from blueprints.v0.project.db.collection.document.query.services import query_chunks_service
-from blueprints.v0.utils.anon_operations import create_anon_project_if_not_exists
 
 
 v0_blueprint_anon_query = Blueprint("v0_anon_query", __name__, url_prefix="/query")
 
 @v0_blueprint_anon_query.route("", methods=["POST"])
 def query_chunks_anon(project_id: str, db_name: str, collection_name: str):
-    g.plan = "free"
-    create_anon_project_if_not_exists(project_id)
 
     text = request.form.get("query")
     filter_str = request.form.get("filter")

@@ -2,22 +2,20 @@ from flask import Blueprint, request
 
 from bson import json_util
 from blueprints.v0.project.db.collection.document.find.services import find_docs_service
-from blueprints.v0.utils.api_key_permissions import check_api_key_permissions
 
 
 v0_blueprint_find = Blueprint("v0_find", __name__, url_prefix="/find")
 
 
 @v0_blueprint_find.route("", methods=["POST"])
-def find_docs(permissions: list[dict], project_id: str, db_name: str, collection_name: str):
-    check_api_key_permissions(permissions, project_id)
+def find_docs(project_id: str, db_name: str, collection_name: str):
 
     filter_str = request.form.get("filter")
     filter = json_util.loads(filter_str) if filter_str else None
     
     projection_str = request.form.get("projection")
     projection = json_util.loads(projection_str) if projection_str else None
-    
+
     sort_str = request.form.get("sort")
     sort = json_util.loads(sort_str) if sort_str else None
     
