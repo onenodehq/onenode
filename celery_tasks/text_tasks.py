@@ -1,7 +1,7 @@
 from celery_setup import celery
 from blueprints.v0.utils.openai_operations import embed_text
 from blueprints.v0.utils.pinecone_operations import batch_iterable, pc_upsert
-from utils.email import notify_admin
+from logger import logger
 
 
 @celery.task
@@ -32,18 +32,14 @@ def save_text_tasks(
                 elif embedding_length == 3072:
                     vectors_3072.append(vector_basis)
                 else:
-                    notify_admin(
-                        "Unsupported Vector Dimension",
-                        f"Vector with unsupported dimension {embedding_length} encountered for project {project_id_str}.",
+                    logger.error(
+                        f"Unsupported Vector Dimension: {embedding_length} for project {project_id_str}"
                     )
-                    continue
 
             except Exception as e:
-                notify_admin(
-                    "Embedding Failed",
-                    f"Failed to embed text for project {project_id_str}: {e}",
+                logger.error(
+                    f"Embedding Failed: {e} for project {project_id_str}",
                 )
-                continue
 
         if vectors_1536:
             try:
@@ -54,7 +50,7 @@ def save_text_tasks(
                     dimensions=1536,
                 )
             except Exception as e:
-                notify_admin(
+                logger.error(
                     "Pinecone Upsert Failed",
                     f"Failed to upsert 1536-dimension vectors for project {project_id_str}: {e}",
                 )
@@ -69,7 +65,7 @@ def save_text_tasks(
                     dimensions=3072,
                 )
             except Exception as e:
-                notify_admin(
+                logger.error(
                     "Pinecone Upsert Failed",
                     f"Failed to upsert 3072-dimension vectors for project {project_id_str}: {e}",
                 )
@@ -100,16 +96,11 @@ def update_vectors_task(
                 elif embedding_length == 3072:
                     vectors_3072.append(vector_basis)
                 else:
-                    notify_admin(
-                        "Unsupported Vector Dimension",
-                        f"Vector with unsupported dimension {embedding_length} encountered for project {project_id_str}.",
-                    )
                     continue
 
             except Exception as e:
-                notify_admin(
-                    "Embedding Failed",
-                    f"Failed to update embedding for project {project_id_str}: {e}",
+                logger.error(
+                    f"Embedding Failed: {e} for project {project_id_str}",
                 )
                 continue
 
@@ -122,9 +113,8 @@ def update_vectors_task(
                     dimensions=1536,
                 )
             except Exception as e:
-                notify_admin(
-                    "Pinecone Upsert Failed",
-                    f"Failed to upsert 1536-dimension vectors for project {project_id_str}: {e}",
+                logger.error(
+                    f"Pinecone Upsert Failed: {e} for project {project_id_str}",
                 )
                 continue
 
@@ -137,8 +127,7 @@ def update_vectors_task(
                     dimensions=3072,
                 )
             except Exception as e:
-                notify_admin(
-                    "Pinecone Upsert Failed",
-                    f"Failed to upsert 3072-dimension vectors for project {project_id_str}: {e}",
+                logger.error(
+                    f"Pinecone Upsert Failed: {e} for project {project_id_str}",
                 )
                 continue

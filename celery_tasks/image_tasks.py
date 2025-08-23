@@ -12,7 +12,6 @@ from blueprints.v0.utils.mongo_operations import (
     get_client_collection,
 )
 from bson import ObjectId
-from utils.email import notify_admin
 
 from celery_tasks.text_tasks import save_text_tasks
 from logger import logger
@@ -105,11 +104,5 @@ def embed_image_task(refs: list[dict]):
             )
             error_message = f"EmbImage processing failed for document {doc_id} in {project_id}/{db_name}/{collection_name}, path: {path}. Error: {str(e)}"
             logger.error(f"Exception: {e}", exc_info=True)
-            
-            # Send email notification to admin
-            notify_admin(
-                subject="EmbImage Processing Failure",
-                body=error_message
-            )
             
             continue

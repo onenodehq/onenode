@@ -14,7 +14,6 @@ from blueprints.v0.utils.s3_setup import (
     SIGNED_URL_EXPIRATION,
     s3,
 )
-from utils.email import notify_admin
 
 def save_to_s3(binary_data: bytes, object_key: str, mime_type: str):
     s3.put_object(
@@ -256,8 +255,4 @@ def generate_public_url(object_key: str) -> str:
     if custom_domain:
         return f"https://{custom_domain}/{object_key}"
     else:
-        notify_admin(
-            "S3 Custom Domain Not Configured",
-            f"S3_CUSTOM_DOMAIN environment variable is not set. Please set it to use the custom domain.",
-        )
         return f"https://{S3_BUCKET_NAME}.s3.amazonaws.com/{object_key}"

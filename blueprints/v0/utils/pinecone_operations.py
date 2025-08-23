@@ -3,7 +3,7 @@ from blueprints.v0.utils.pinecone_setup import (
     pc_index_1536,
     pc_index_3072,
 )
-from utils.email import notify_admin
+from logger import logger
 
 # helper
 def batch_iterable(iterable, batch_size):
@@ -279,47 +279,7 @@ def fetch_pinecone_usage(project_id_str: str, db_name: str) -> float:
         ) / 1024  # Convert KB to MB
         return round(storage_mb, 2)
     except Exception as e:
-        notify_admin(
-            "Usage Sampling Failed",
+        logger.error(
             f"Failed to fetch Pinecone stats for namespace {namespace}: {e}",
         )
         return 0.0
-
-
-def fetch_pinecone_usage_for_collection(
-    project_id_str: str, db_name: str, collection_name: str
-) -> float:
-    # this function is not working as expected, so we are returning 0.0
-    """     namespace = generate_pc_namespace(project_id_str, db_name)
-    try:
-        # Filter by collection name; your actual namespace might differ if you
-        # combine project_id_str, db_name, etc. Adjust as needed.
-        index_stats_1536 = pc_index_1536.describe_index_stats(
-            filter={"collection_name": collection_name}
-        )
-        namespace_stats_1536 = (
-            index_stats_1536.get("namespaces", {})
-            .get(namespace, {})
-            .get("vector_count", 0)
-        )
-
-        index_stats_3072 = pc_index_3072.describe_index_stats(
-            filter={"collection_name": collection_name}
-        )
-        namespace_stats_3072 = (
-            index_stats_3072.get("namespaces", {})
-            .get(namespace, {})
-            .get("vector_count", 0)
-        )
-        # Estimate storage based on vector count (assuming ~6KB per vector)
-        storage_mb = (
-            (namespace_stats_1536 + namespace_stats_3072) * 6
-        ) / 1024  # Convert KB to MB
-        return round(storage_mb, 2)
-    except Exception as e:
-        notify_admin(
-            "Usage Sampling Failed",
-            f"Failed to fetch Pinecone stats for collection {collection_name}: {e}",
-        )
-        return 0.0 """
-    return 0.0
