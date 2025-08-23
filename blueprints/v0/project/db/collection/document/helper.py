@@ -11,8 +11,8 @@ from blueprints.v0.utils.pinecone_operations import (
     generate_pc_id_prefix,
     generate_pc_metadata,
 )
-from blueprints.v0.utils.s3_operations import (
-    delete_s3_objects_with_prefix,
+from blueprints.v0.utils.minio_operations import (
+    delete_minio_objects_with_prefix,
     generate_object_key,
     generate_object_key_prefix,
 )
@@ -310,7 +310,7 @@ def delete_overwritten_s3_images(
                 doc_id,
                 path,
             )
-            delete_s3_objects_with_prefix(object_key_prefix)
+            delete_minio_objects_with_prefix(object_key_prefix)
 
 
 def create_pc_id_suffixes(path: str, length: int) -> list[str]:

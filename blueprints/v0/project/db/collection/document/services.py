@@ -10,7 +10,7 @@ from blueprints.v0.utils.mongo_operations import (
     get_doc_ids_by_filter,
 )
 from blueprints.v0.utils.pinecone_operations import pc_delete_with_doc_ids
-from blueprints.v0.utils.s3_operations import delete_s3_objects_with_doc_ids, save_to_s3
+from blueprints.v0.utils.minio_operations import delete_minio_objects_with_doc_ids, save_to_minio
 from celery_tasks import (
     save_text_tasks,
     update_vectors_task,
@@ -68,7 +68,7 @@ def create_docs_service(
             binary_data = emb_image_ref["binary_data"]
             object_key = emb_image_ref["object_key"]
             mime_type = emb_image_ref["mime_type"]
-            save_to_s3(binary_data, object_key, mime_type)
+            save_to_minio(binary_data, object_key, mime_type)
 
         emb_task = embed_image_task.delay(all_image_tasks)
 
@@ -168,6 +168,6 @@ def delete_docs_service(
         doc_ids,
     )
 
-    delete_s3_objects_with_doc_ids(project_id, db_name, collection_name, doc_ids)
+    delete_minio_objects_with_doc_ids(project_id, db_name, collection_name, doc_ids)
 
     return {"deleted_count": delete_result.deleted_count}

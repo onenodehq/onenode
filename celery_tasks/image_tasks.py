@@ -1,5 +1,5 @@
 from celery_setup import celery
-from blueprints.v0.utils.s3_operations import retrieve_from_s3, generate_public_url
+from blueprints.v0.utils.minio_operations import retrieve_from_minio, generate_public_url
 from blueprints.v0.utils.openai_operations import (
     image_to_text,
 )
@@ -34,8 +34,8 @@ def embed_image_task(refs: list[dict]):
         mongo_collection = get_client_collection(project_id, db_name, collection_name)
 
         try:
-            # Retrieve image from S3
-            binary_data, mime_type = retrieve_from_s3(object_key)
+            # Retrieve image from MinIO
+            binary_data, mime_type = retrieve_from_minio(object_key)
             
             # Generate public URL for the image
             public_url = generate_public_url(object_key)
