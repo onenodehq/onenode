@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 from create_app import application
 from celery import Celery
-from celery.schedules import crontab
 from bson import json_util
 
 load_dotenv()

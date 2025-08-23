@@ -1,23 +1,18 @@
-import os
 from dotenv import load_dotenv
 from errors import AuthError, CustomAPIError
 from pymongo.errors import InvalidOperation
 from logger import logger
 from utils.email import notify_admin
-import celery_tasks
 
 load_dotenv()
 
 from flask import jsonify, request
-from blueprints.private.routes import private_blueprint
 from blueprints.v0.routes import v0_blueprint_root
 from flask_cors import CORS
 from create_app import application
 
 CORS(application)
 
-# Register the Blueprint
-application.register_blueprint(private_blueprint)
 application.register_blueprint(v0_blueprint_root)
 
 
