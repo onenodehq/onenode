@@ -1,6 +1,53 @@
 version: '3.8'
 
 services:
+  web:
+    build: .
+    container_name: onenode-web
+    ports:
+      - "8000:8000"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - minio
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "application:application"]
+
+  celery-worker:
+    build: .
+    container_name: onenode-celery-worker
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - minio
+    command: ["celery", "-A", "celery_setup", "worker", "--loglevel=info"]
+
+  celery-beat:
+    build: .
+    container_name: onenode-celery-beat
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - minio
+    command: ["celery", "-A", "celery_setup", "beat", "--loglevel=info"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: onenode-redis
+    ports:
+      - "6379:6379"
+
   minio:
     image: minio/minio:latest
     container_name: onenode-minio
