@@ -29,5 +29,3 @@ EXTENSION_MAP = {
     "image/heic": "heic",
     "image/avif": "avif",
 }
-
-SIGNED_URL_EXPIRATION: int = int(os.getenv("SIGNED_URL_EXPIRATION", 3600))

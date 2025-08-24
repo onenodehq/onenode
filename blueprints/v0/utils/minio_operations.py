@@ -5,7 +5,6 @@ from urllib.parse import urljoin
 from minio.error import S3Error
 from blueprints.v0.utils.minio_setup import (
     MINIO_BUCKET_NAME,
-    SIGNED_URL_EXPIRATION,
     minio_client,
     MINIO_ENDPOINT,
     MINIO_SECURE,
@@ -165,29 +164,6 @@ def minio_delete_collection(project_id: str, db_name: str, collection_name: str)
     prefix = generate_object_key_prefix(project_id, db_name, collection_name)
     delete_minio_objects_with_prefix(prefix)
     return True
-
-
-def generate_signed_url(object_key: str) -> str:
-    """
-    Generate a signed URL for accessing a MinIO object.
-    
-    Args:
-        object_key: The MinIO object key
-        
-    Returns:
-        A string containing the signed URL
-    """
-    try:
-        from datetime import timedelta
-        signed_url = minio_client.presigned_get_object(
-            bucket_name=MINIO_BUCKET_NAME,
-            object_name=object_key,
-            expires=timedelta(seconds=SIGNED_URL_EXPIRATION)
-        )
-        return signed_url
-    except S3Error as e:
-        logging.error(f"Error generating signed URL for {object_key}: {e}")
-        raise RuntimeError(f"Failed to generate signed URL: {str(e)}")
 
 
 def generate_public_url(object_key: str) -> str:

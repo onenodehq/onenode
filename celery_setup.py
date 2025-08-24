@@ -6,7 +6,6 @@ from bson import json_util
 
 load_dotenv()
 
-# Register bson as a serializer
 from kombu.serialization import register
 
 register(
@@ -20,7 +19,6 @@ register(
 beat_schedule = {}
 
 def make_celery(app):
-    # In deployment, it automatically connects to SQS queue
     celery = Celery(
         app.import_name,
         include=["celery_tasks"],
