@@ -9,11 +9,13 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - MONGO_CLIENT_URI=mongodb://root:rootpassword@mongodb:27017/
     volumes:
       - .:/app
     depends_on:
       - redis
       - minio
+      - mongodb
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "application:application"]
 
   celery-worker:
@@ -22,11 +24,13 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - MONGO_CLIENT_URI=mongodb://root:rootpassword@mongodb:27017/
     volumes:
       - .:/app
     depends_on:
       - redis
       - minio
+      - mongodb
     command: ["celery", "-A", "celery_setup", "worker", "--loglevel=info"]
 
   celery-beat:
@@ -35,11 +39,13 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - MONGO_CLIENT_URI=mongodb://root:rootpassword@mongodb:27017/
     volumes:
       - .:/app
     depends_on:
       - redis
       - minio
+      - mongodb
     command: ["celery", "-A", "celery_setup", "beat", "--loglevel=info"]
 
   redis:
@@ -66,6 +72,25 @@ services:
       timeout: 20s
       retries: 3
 
+  mongodb:
+    image: mongo:7.0
+    container_name: onenode-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+      MONGO_INITDB_DATABASE: onenode
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   minio_data:
+    driver: local
+  mongodb_data:
     driver: local

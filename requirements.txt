@@ -10,7 +10,7 @@ billiard==4.2.1
 blinker==1.9.0
 minio==7.2.8
 celery==5.5.2
-certifi==2025.4.26
+
 cffi==1.17.1
 charset-normalizer==3.4.2
 click==8.2.0
