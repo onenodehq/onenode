@@ -1,9 +1,9 @@
 import os, time
 from pinecone import Pinecone, ServerlessSpec
 
-PINECONE_INDEX_1536 = os.getenv("PINECONE_INDEX_1536", "1536")
-PINECONE_INDEX_3072 = os.getenv("PINECONE_INDEX_3072", "3072")
-PC_FREE_STORAGE_LIMIT_MB = int(os.getenv("PC_FREE_STORAGE_LIMIT_MB"))
+# Hardcoded index names - no longer configurable via environment variables
+PINECONE_INDEX_1536 = "onenode-embeddings-1536"
+PINECONE_INDEX_3072 = "onenode-embeddings-3072"
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
@@ -26,6 +26,8 @@ if PINECONE_INDEX_3072 not in existing_indexes:
         metric="cosine",
         spec=ServerlessSpec(cloud="aws", region="us-east-1"),
     )
+    while not pc.describe_index(PINECONE_INDEX_3072).status["ready"]:
+        time.sleep(1)
 
 pc_index_1536 = pc.Index(PINECONE_INDEX_1536)
 pc_index_3072 = pc.Index(PINECONE_INDEX_3072)
