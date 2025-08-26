@@ -14,6 +14,7 @@ langchain-text-splitters==0.3.8
 
 # Task queue
 celery==5.5.2
+redis==5.0.3
 
 # Environment and utilities
 python-dotenv==1.1.0
