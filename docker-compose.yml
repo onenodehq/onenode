@@ -10,6 +10,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MONGO_CLIENT_URI=mongodb://root:rootpassword@mongodb:27017/
+      - MINIO_ENDPOINT=minio:9000
     volumes:
       - .:/app
     depends_on:
@@ -25,6 +26,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MONGO_CLIENT_URI=mongodb://root:rootpassword@mongodb:27017/
+      - MINIO_ENDPOINT=minio:9000
     volumes:
       - .:/app
     depends_on:
@@ -33,20 +35,7 @@ services:
       - mongodb
     command: ["celery", "-A", "celery_setup", "worker", "--loglevel=info"]
 
-  celery-beat:
-    build: .
-    container_name: onenode-celery-beat
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - MONGO_CLIENT_URI=mongodb://root:rootpassword@mongodb:27017/
-    volumes:
-      - .:/app
-    depends_on:
-      - redis
-      - minio
-      - mongodb
-    command: ["celery", "-A", "celery_setup", "beat", "--loglevel=info"]
+
 
   redis:
     image: redis:7-alpine

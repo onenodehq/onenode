@@ -16,8 +16,6 @@ register(
     content_encoding="utf-8",
 )
 
-beat_schedule = {}
-
 def make_celery(app):
     celery = Celery(
         app.import_name,
@@ -29,7 +27,6 @@ def make_celery(app):
         result_backend="redis://redis:6379/0",
         task_serializer="bson",
         accept_content=["bson", "json"],
-        beat_schedule=beat_schedule,
     )
 
     class ContextTask(celery.Task):
