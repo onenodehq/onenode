@@ -17,11 +17,11 @@ OneNode Community Edition is a semantic search framework that acts as a central 
 
 OneNode eliminates the complexity of building multi-modal AI applications by providing a single framework that orchestrates your entire infrastructure stack:
 
-- **🎯 Central Hub**: One API to orchestrate MongoDB, Pinecone, S3-compatible storage, Redis, and LLMs
-- **🔍 Multi-Modal Search**: Semantic search across text and images
-- **⚡ Auto-Orchestration**: Intelligent routing between storage, vector search, and processing
-- **🤖 LLM Integration**: Built-in connections to OpenAI, Anthropic, and more
-- **📊 Unified Querying**: MongoDB-compatible API with AI superpowers
+- **Central Hub**: One API to orchestrate MongoDB, Pinecone, S3-compatible storage, Redis, and LLMs
+- **Multi-Modal Search**: Semantic search across text and images
+- **Auto-Orchestration**: Intelligent routing between storage, vector search, and processing
+- **LLM Integration**: Built-in connections to OpenAI, Anthropic, and more
+- **Unified Querying**: MongoDB-compatible API with AI superpowers
 
 ## The Setup Nightmare Without OneNode
 
@@ -191,7 +191,7 @@ graph TB
 
 ## Key Features
 
-### 🔍 Intelligent Query Routing
+### Intelligent Query Routing
 ```python
 # OneNode automatically determines the best search strategy
 search_data = {"query": "show me red sports cars"}
@@ -203,7 +203,7 @@ search_response = requests.post(
 results = search_response.json()
 ```
 
-### 🖼️ Text and Image Content Processing
+### Text and Image Content Processing
 ```python
 # Automatic content analysis and indexing
 documents = [{
@@ -233,7 +233,7 @@ requests.post(f"{API_BASE}/v0/project/auto/db/products/collection/cars/document"
               data=form_data, files=files)
 ```
 
-### ⚡ Background Processing
+### Background Processing
 ```python
 # Automatic async processing for heavy operations
 for doc_list in batch_documents:
@@ -245,7 +245,7 @@ for doc_list in batch_documents:
 
 ## Use Cases & Examples
 
-### 🤖 RAG Applications
+### RAG Applications
 ```python
 # Build ChatGPT-like apps with your data
 search_data = {
@@ -261,7 +261,7 @@ response = requests.post(
 answer = response.json()
 ```
 
-### 🛒 E-commerce Search
+### E-commerce Search
 ```python
 # Visual + text product search
 search_data = {
@@ -275,7 +275,7 @@ response = requests.post(
 products = response.json()
 ```
 
-### 📚 Content Management
+### Content Management
 ```python
 # Search across documents and images
 search_data = {
@@ -441,7 +441,7 @@ OneNode is in **public beta**. Help us improve and earn **$10** for each verifie
 Found an issue or want to contribute? We'd love your help!
 
 1. **[Report Issues](https://github.com/onenodehq/onenode/issues)**
-2. **[Feature Requests](https://github.com/onenodehq/onenode/discussions)**
+2. **[Feature Requests](https://github.com/onenodehq/onenode/issues)**
 3. **[Contact Us](https://onenode.ai/contact)**
 
 ## License
