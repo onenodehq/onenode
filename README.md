@@ -432,7 +432,7 @@ OneNode is in **public beta**. Help us improve and earn **$10** for each verifie
 ## Documentation & Support
 
 - **[Quick Start Guide](https://docs.onenode.ai)** - Get running in 5 minutes
-- **[API Reference](https://docs.onenode.ai/document)** - Complete documentation
+- **[API Reference](API_REFERENCE.md)** - Complete documentation
 - **[Multi-Modal Guide](https://docs.onenode.ai/multimodal)** - Text and image processing
 - **[Dashboard](https://console.onenode.ai)** - Monitor your applications
 
