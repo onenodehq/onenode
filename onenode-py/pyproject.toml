@@ -1,0 +1,26 @@
+[project]
+name = "onenode"
+version = "0.8.7"
+description = "OneNode Official Python Client"
+authors = [{name = "Tomoh Kanazawa", email = "tomo@onenode.ai"}]
+license = {text = "MIT"}
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "requests>=2.32.3",
+    "pymongo>=4.11.3",
+    "pillow (>=11.2.1,<12.0.0)",
+    "numpy (>=2.2.6,<3.0.0)"
+]
+
+[project.urls]
+Homepage = "https://onenode.ai"
+Repository = "https://github.com/onenodehq/onenode-py"
+Documentation = "https://docs.onenode.ai"
+
+[tool.poetry]
+# Keep for compatibility with existing Poetry workflows
+packages = [{include = "onenode"}]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,81 @@
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+/* Smaller version for buttons */
+.loaderButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.loaderBounce {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: black;
+  animation: loader-bounce 1.4s infinite ease-in-out both;
+}
+
+/* Smaller dots for buttons */
+.loaderButtonDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: white;
+  animation: loader-bounce 1.4s infinite ease-in-out both;
+}
+
+.loaderBounce.first {
+  animation-delay: -0.32s;
+}
+
+.loaderButtonDot.first {
+  animation-delay: -0.32s;
+}
+
+.loaderBounce.second {
+  animation-delay: -0.16s;
+}
+
+.loaderButtonDot.second {
+  animation-delay: -0.16s;
+}
+
+@keyframes loader-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* For spinner animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* For pulse animation */
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

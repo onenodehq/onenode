@@ -1,0 +1,50 @@
+{
+  "name": "@onenodehq/onenode",
+  "version": "0.8.8",
+  "description": "The official JavaScript / TypeScript library for OneNode",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "build:postprocess": "node scripts/add-extensions.js",
+    "build": "npm run build:esm && npm run build:cjs && npm run build:postprocess",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onenodehq/onenode-js.git"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "EmbJSON"
+  ],
+  "author": "Tomoh Kanazawa <tomo@onenode.ai>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/onenodehq/onenode-js/issues"
+  },
+  "homepage": "https://docs.onenode.ai",
+  "access": "public",
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "bson": "^6.10.1"
+  }
+}
