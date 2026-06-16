@@ -1,6 +1,9 @@
 from flask import Blueprint, jsonify, request
 
 from bson import json_util
+from blueprints.v0.project.db.collection.document.json_fields import (
+    load_optional_json_form_field,
+)
 from blueprints.v0.project.db.collection.document.query.services import query_chunks_service
 
 v0_blueprint_query = Blueprint("v0_query", __name__, url_prefix="/query")
@@ -11,10 +14,10 @@ def query_chunks(project_id: str, db_name: str, collection_name: str):
 
     text = request.form.get("query")
     filter_str = request.form.get("filter")
-    filter = json_util.loads(filter_str) if filter_str else None
+    filter = load_optional_json_form_field(filter_str, "filter")
     top_k = int(request.form.get("top_k", "10"))
     projection_str = request.form.get("projection")
-    projection = json_util.loads(projection_str) if projection_str else None
+    projection = load_optional_json_form_field(projection_str, "projection")
     include_embedding = request.form.get("include_embedding", "False").lower() == "true"
     emb_model = request.form.get("emb_model", "text-embedding-3-small")
 

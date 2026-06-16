@@ -2,6 +2,9 @@ from flask import Blueprint, request
 
 from bson import json_util
 from blueprints.v0.project.db.collection.document.find.services import find_docs_service
+from blueprints.v0.project.db.collection.document.json_fields import (
+    load_optional_json_form_field,
+)
 
 
 v0_blueprint_find = Blueprint("v0_find", __name__, url_prefix="/find")
@@ -11,13 +14,13 @@ v0_blueprint_find = Blueprint("v0_find", __name__, url_prefix="/find")
 def find_docs(project_id: str, db_name: str, collection_name: str):
 
     filter_str = request.form.get("filter")
-    filter = json_util.loads(filter_str) if filter_str else None
+    filter = load_optional_json_form_field(filter_str, "filter")
     
     projection_str = request.form.get("projection")
-    projection = json_util.loads(projection_str) if projection_str else None
+    projection = load_optional_json_form_field(projection_str, "projection")
 
     sort_str = request.form.get("sort")
-    sort = json_util.loads(sort_str) if sort_str else None
+    sort = load_optional_json_form_field(sort_str, "sort")
     
     skip_str = request.form.get("skip")
     skip = int(skip_str) if skip_str else None
