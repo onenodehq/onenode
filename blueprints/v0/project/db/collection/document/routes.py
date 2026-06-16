@@ -6,6 +6,9 @@ from blueprints.v0.project.db.collection.document.services import (
     update_docs_service,
 )
 from bson import json_util
+from blueprints.v0.project.db.collection.document.json_fields import (
+    load_json_form_field,
+)
 from blueprints.v0.project.db.collection.document.query.routes import v0_blueprint_query
 from blueprints.v0.project.db.collection.document.find.routes import v0_blueprint_find
 from errors import CustomAPIError
@@ -28,7 +31,7 @@ def create_docs(project_id: str, db_name: str, collection_name: str):
             status_code=400
         )
 
-    docs = json_util.loads(request.form['documents'])
+    docs = load_json_form_field(request.form['documents'], "documents")
     if not docs:
         raise CustomAPIError(
             "Empty 'documents' field. Request must include a 'documents' array containing at least one document.",
@@ -55,8 +58,8 @@ def update_docs(project_id: str, db_name: str, collection_name: str):
             status_code=400
         )
 
-    filter = json_util.loads(request.form['filter'])
-    update = json_util.loads(request.form['update'])
+    filter = load_json_form_field(request.form['filter'], "filter")
+    update = load_json_form_field(request.form['update'], "update")
     
     # Extract upsert parameter (defaults to False if not provided)
     upsert = request.form.get('upsert', 'false').lower() == 'true'
@@ -107,7 +110,7 @@ def delete_docs(project_id: str, db_name: str, collection_name: str):
             status_code=400
         )
 
-    filter = json_util.loads(request.form['filter'])
+    filter = load_json_form_field(request.form['filter'], "filter")
 
     if filter is None:
         raise CustomAPIError(
