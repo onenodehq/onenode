@@ -121,7 +121,7 @@ def update_vectors_task(
         if vectors_3072:
             try:
                 pc_upsert(
-                    vectors=batch,
+                    vectors=vectors_3072,
                     project_id=project_id_str,
                     db_name=db_name,
                     dimensions=3072,
