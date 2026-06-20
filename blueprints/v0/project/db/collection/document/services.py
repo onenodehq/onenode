@@ -122,6 +122,7 @@ def update_docs_service(
             updated_paths,
             project_id,
             db_name,
+            collection_name,
         )
 
         delete_overwritten_s3_images(
