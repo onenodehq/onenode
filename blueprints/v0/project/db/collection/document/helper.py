@@ -253,6 +253,7 @@ def process_update(
                 db_name, 
                 collection_name,
                 doc_ids,
+                parent_path=path,
                 request_files=request_files,
                 doc_index=doc_index,
             )
@@ -276,6 +277,7 @@ def delete_overwritten_pc_vectors(
     updated_paths: list[str],
     project_id: str,
     db_name: str,
+    collection_name: str,
 ):
     # Delete all previous vectors that have the same paths that are being updated in this operation
     delete_id_prefixes: list[str] = []
@@ -284,6 +286,7 @@ def delete_overwritten_pc_vectors(
             delete_id_prefix = generate_pc_id_prefix(
                 project_id,
                 db_name,
+                collection_name,
                 doc_id,
                 path,
             )
