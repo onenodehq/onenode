@@ -13,6 +13,10 @@ from blueprints.v0.utils.pinecone_operations import (
 )
 
 
+def parse_stored_doc_id(doc_id: str):
+    return ObjectId(doc_id) if ObjectId.is_valid(doc_id) else doc_id
+
+
 def query_chunks_service(
     project_id: str,
     db_name: str,
@@ -61,7 +65,7 @@ def query_chunks_service(
 
     unique_doc_ids: list[ObjectId] = list(
         {
-            ObjectId(item["metadata"]["doc_id"])
+            parse_stored_doc_id(item["metadata"]["doc_id"])
             for item in matches
             if "metadata" in item and "doc_id" in item["metadata"]
         }
