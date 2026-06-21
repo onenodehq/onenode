@@ -19,6 +19,32 @@ from celery_tasks.image_tasks import embed_image_task
 from errors import CustomAPIError
 
 
+def _extract_direct_filter_id(filter: dict):
+    """Return a deterministic upsert _id from a simple equality filter."""
+    if not isinstance(filter, dict) or "_id" not in filter:
+        return None
+
+    filter_id = filter["_id"]
+    if isinstance(filter_id, dict):
+        return filter_id.get("$eq")
+
+    return filter_id
+
+
+def _ensure_upsert_doc_id(filter: dict, update: dict):
+    """Ensure no-match upserts have an _id before EmbJSON task creation."""
+    set_on_insert = update.get("$setOnInsert")
+    if isinstance(set_on_insert, dict) and "_id" in set_on_insert:
+        return set_on_insert["_id"]
+
+    upserted_doc_id = _extract_direct_filter_id(filter)
+    if upserted_doc_id is None:
+        upserted_doc_id = ObjectId()
+        update.setdefault("$setOnInsert", {})["_id"] = upserted_doc_id
+
+    return upserted_doc_id
+
+
 def create_docs_service(
     documents: list[dict], 
     project_id: str, 
@@ -95,7 +121,13 @@ def update_docs_service(
     all_image_tasks = []
     updated_paths = []
     
-    # Only process documents for embedding/image tasks if there are matching documents
+    upserted_doc_id = None
+    if not doc_ids and upsert:
+        upserted_doc_id = _ensure_upsert_doc_id(filter, update)
+        doc_ids = [str(upserted_doc_id)]
+
+    # Process documents for embedding/image tasks for existing matches and
+    # for the document that will be inserted by a no-match upsert.
     if doc_ids:
         for operator, fields in update.items():
             result = process_update(
@@ -122,6 +154,7 @@ def update_docs_service(
             updated_paths,
             project_id,
             db_name,
+            collection_name,
         )
 
         delete_overwritten_s3_images(
