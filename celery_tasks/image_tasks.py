@@ -17,6 +17,17 @@ from celery_tasks.text_tasks import save_text_tasks
 from logger import logger
 
 
+def parse_image_object_key(object_key: str) -> tuple[str, str, str, str, str]:
+    parts = object_key.split("/")
+    if len(parts) < 6:
+        raise ValueError(f"Invalid image object key: {object_key}")
+
+    project_id, db_name, collection_name, doc_id = parts[:4]
+    path = ".".join(parts[4:-1])
+
+    return project_id, db_name, collection_name, doc_id, path
+
+
 @celery.task
 def embed_image_task(refs: list[dict]):
     for ref in refs:
@@ -29,16 +40,16 @@ def embed_image_task(refs: list[dict]):
         separators = ref["separators"]
         keep_separator = ref["keep_separator"]
         index = ref["index"]
-        project_id, db_name, collection_name, doc_id, path, _ = object_key.split("/")
+        project_id, db_name, collection_name, doc_id, path = parse_image_object_key(
+            object_key
+        )
 
         mongo_collection = get_client_collection(project_id, db_name, collection_name)
+        public_url = generate_public_url(object_key)
 
         try:
             # Retrieve image from MinIO
             binary_data, mime_type = retrieve_from_minio(object_key)
-            
-            # Generate public URL for the image
-            public_url = generate_public_url(object_key)
 
             if index:
                 # Call dummy OpenAI vision function to generate description
