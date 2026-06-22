@@ -17,6 +17,12 @@ from celery_tasks.text_tasks import save_text_tasks
 from logger import logger
 
 
+def _doc_id_query_value(doc_id: str):
+    if ObjectId.is_valid(doc_id):
+        return {"$in": [ObjectId(doc_id), doc_id]}
+    return doc_id
+
+
 @celery.task
 def embed_image_task(refs: list[dict]):
     for ref in refs:
@@ -32,6 +38,7 @@ def embed_image_task(refs: list[dict]):
         project_id, db_name, collection_name, doc_id, path, _ = object_key.split("/")
 
         mongo_collection = get_client_collection(project_id, db_name, collection_name)
+        doc_id_query_value = _doc_id_query_value(doc_id)
 
         try:
             # Retrieve image from MinIO
@@ -89,12 +96,12 @@ def embed_image_task(refs: list[dict]):
                 update_fields[f"{path}.xImage.chunks"] = chunks
 
             mongo_collection.update_one(
-                {"_id": ObjectId(doc_id)},
+                {"_id": doc_id_query_value},
                 {"$set": update_fields},
             )
         except Exception as e:
             mongo_collection.update_one(
-                {"_id": ObjectId(doc_id)},
+                {"_id": doc_id_query_value},
                 {
                     "$set": {
                         f"{path}.xImage.status": "failed",
