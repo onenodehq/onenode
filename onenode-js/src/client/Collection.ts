@@ -180,7 +180,7 @@ export class Collection {
     }
     if ("$code" in obj) return new Code(obj["$code"]);
     if ("$timestamp" in obj) {
-      return Timestamp.fromBits(obj["$timestamp"].t, obj["$timestamp"].i);
+      return Timestamp.fromBits(obj["$timestamp"].i, obj["$timestamp"].t);
     }
     if ("$minKey" in obj) return new MinKey();
     if ("$maxKey" in obj) return new MaxKey();
