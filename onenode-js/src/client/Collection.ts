@@ -19,7 +19,9 @@ const BSON_SERIALIZERS: Record<string, SerializerFunction> = {
   ObjectId: (v: ObjectId) => ({ $oid: v.toString() }),
   Date: (v: Date) => ({ $date: v.toISOString() }),
   Decimal128: (v: Decimal128) => ({ $numberDecimal: v.toString() }),
-  Binary: (v: Binary) => ({ $binary: v.toString("hex") }),
+  Binary: (v: Binary) => ({
+    $binary: { data: v.toString("hex"), subType: v.sub_type },
+  }),
   RegExp: (v: RegExp) => ({ $regex: v.source, $options: v.flags }),
   Code: (v: Code) => ({ $code: v.toString() }),
   Timestamp: (v: Timestamp) => ({
@@ -174,7 +176,17 @@ export class Collection {
     if ("$oid" in obj) return new ObjectId(obj["$oid"]);
     if ("$date" in obj) return new Date(obj["$date"]);
     if ("$numberDecimal" in obj) return new Decimal128(obj["$numberDecimal"]);
-    if ("$binary" in obj) return new Binary(Buffer.from(obj["$binary"], "hex"));
+    if ("$binary" in obj) {
+      const binaryValue = obj["$binary"];
+      if (typeof binaryValue === "string") {
+        return Binary.createFromHexString(binaryValue);
+      }
+      const subType =
+        typeof binaryValue.subType === "string"
+          ? parseInt(binaryValue.subType, 16)
+          : binaryValue.subType;
+      return Binary.createFromHexString(binaryValue.data, subType);
+    }
     if ("$regex" in obj) {
       return new RegExp(obj["$regex"], obj["$options"] ?? "");
     }
