@@ -11,7 +11,7 @@ export interface ImageIndexOptions {
 }
 
 export class Image {
-  private data: string | File | Blob | ArrayBuffer | Uint8Array;
+  private data: string | File | Blob | ArrayBuffer | Uint8Array | null;
   private mimeType: string;
   private _chunks: string[];
   private embModel: string | null;
@@ -36,9 +36,12 @@ export class Image {
     return typeof process !== 'undefined' && process.versions && !!process.versions.node;
   }
 
-  constructor(data: string | File | Blob | ArrayBuffer | Uint8Array) {
-    // Handle different input types
-    if (typeof data === "string") {
+  constructor(data: string | File | Blob | ArrayBuffer | Uint8Array | null = null) {
+    // Handle internal deserialization placeholders for pending/projected images.
+    if (data === null) {
+      this.data = null;
+      this.mimeType = "";
+    } else if (typeof data === "string") {
       // String input - could be base64, data URL, HTTP URL, or file path
       if (data.startsWith("data:")) {
         // Data URL format
@@ -97,7 +100,7 @@ export class Image {
       this.data = data;
       this.mimeType = this.extractMimeTypeFromUint8Array(data);
     } else {
-      throw new Error("Invalid data type: must be string (base64/data URL/HTTP URL/file path), File, Blob, ArrayBuffer, or Uint8Array");
+      throw new Error("Invalid data type: must be string (base64/data URL/HTTP URL/file path), File, Blob, ArrayBuffer, Uint8Array, or null");
     }
     
     // MIME type validation only matters when indexing
@@ -197,12 +200,12 @@ export class Image {
     }
   }
 
-  public getData(): string | File | Blob | ArrayBuffer | Uint8Array {
+  public getData(): string | File | Blob | ArrayBuffer | Uint8Array | null {
     return this.data;
   }
 
   public getBinaryData(): File | Blob | ArrayBuffer | Uint8Array | null {
-    return typeof this.data === "string" ? null : this.data;
+    return typeof this.data === "string" || this.data === null ? null : this.data;
   }
 
   public getBase64Data(): string | null {
@@ -214,6 +217,9 @@ export class Image {
   }
 
   public hasBinaryData(): boolean {
+    if (this.data === null) {
+      return false;
+    }
     // Consider URL strings as processed data, not binary
     if (typeof this.data === "string") {
       return this.data.startsWith('http');  // URL is considered as processed data
@@ -367,7 +373,7 @@ export class Image {
     // Get data from database (can be URL or binary data)
     // After processing, the data field contains the public URL  
     const dataValue = data["data"];
-    const instance = new Image(dataValue || "");
+    const instance = new Image(dataValue ?? null);
     
     // Override the auto-detected mime_type with the one from database
     instance.mimeType = data["mime_type"];
