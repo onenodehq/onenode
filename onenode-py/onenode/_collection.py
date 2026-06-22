@@ -22,13 +22,18 @@ BSON_SERIALIZERS = {
     ObjectId: lambda v: {"$oid": str(v)},
     datetime: lambda v: {"$date": v.isoformat()},
     Decimal128: lambda v: {"$numberDecimal": str(v)},
-    Binary: lambda v: {"$binary": v.hex()},
+    Binary: lambda v: {"$binary": {"data": v.hex(), "subType": v.subtype}},
     Regex: lambda v: {"$regex": v.pattern, "$options": v.flags},
-    Code: lambda v: {"$code": str(v)},
     Timestamp: lambda v: {"$timestamp": {"t": v.time, "i": v.inc}},
     MinKey: lambda v: {"$minKey": 1},
     MaxKey: lambda v: {"$maxKey": 1},
 }
+
+
+def _parse_binary_subtype(subtype):
+    if isinstance(subtype, str):
+        return int(subtype, 16)
+    return int(subtype)
 
 
 class APIClientError(Exception):
@@ -81,6 +86,12 @@ class Collection:
 
     def __serialize(self, value):
         """Serialize BSON types, Text, and nested structures into JSON-compatible formats."""
+        if isinstance(value, Code):
+            result = {"$code": str(value)}
+            if value.scope is not None:
+                result["$scope"] = self.__serialize(dict(value.scope))
+            return result
+
         if value is None or isinstance(value, (bool, int, float, str)):
             return value
 
@@ -146,11 +157,25 @@ class Collection:
                     if key == "$numberDecimal":
                         return Decimal128(value["$numberDecimal"])
                     if key == "$binary":
-                        return Binary(bytes.fromhex(value["$binary"]))
+                        binary_value = value["$binary"]
+                        if isinstance(binary_value, dict):
+                            subtype = _parse_binary_subtype(
+                                binary_value.get("subType", 0)
+                            )
+                            return Binary(
+                                bytes.fromhex(binary_value.get("data", "")),
+                                subtype=subtype,
+                            )
+                        return Binary(bytes.fromhex(binary_value))
                     if key == "$regex":
                         return Regex(value["$regex"], value.get("$options", 0))
                     if key == "$code":
-                        return Code(value["$code"])
+                        scope = (
+                            self.__deserialize(value["$scope"], depth + 1)
+                            if "$scope" in value
+                            else None
+                        )
+                        return Code(value["$code"], scope)
                     if key == "$timestamp":
                         return Timestamp(
                             value["$timestamp"]["t"], value["$timestamp"]["i"]
