@@ -21,7 +21,6 @@ const BSON_SERIALIZERS: Record<string, SerializerFunction> = {
   Decimal128: (v: Decimal128) => ({ $numberDecimal: v.toString() }),
   Binary: (v: Binary) => ({ $binary: v.toString("hex") }),
   RegExp: (v: RegExp) => ({ $regex: v.source, $options: v.flags }),
-  Code: (v: Code) => ({ $code: v.toString() }),
   Timestamp: (v: Timestamp) => ({
     $timestamp: { t: v.getHighBits(), i: v.getLowBits() },
   }),
@@ -123,6 +122,14 @@ export class Collection {
       return value._serialize();
     }
 
+    if (value instanceof Code) {
+      const result: Record<string, unknown> = { $code: value.code };
+      if (value.scope != null) {
+        result.$scope = this.serialize(value.scope, depth + 1);
+      }
+      return result;
+    }
+
     const constructor = (value as object).constructor;
     const serializer = BSON_SERIALIZERS[constructor.name];
     if (serializer) {
@@ -178,7 +185,13 @@ export class Collection {
     if ("$regex" in obj) {
       return new RegExp(obj["$regex"], obj["$options"] ?? "");
     }
-    if ("$code" in obj) return new Code(obj["$code"]);
+    if ("$code" in obj) {
+      const scope =
+        "$scope" in obj
+          ? (this.deserialize(obj["$scope"], depth + 1) as Record<string, any>)
+          : undefined;
+      return new Code(obj["$code"], scope);
+    }
     if ("$timestamp" in obj) {
       return Timestamp.fromBits(obj["$timestamp"].t, obj["$timestamp"].i);
     }
